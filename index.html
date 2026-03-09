@@ -1243,11 +1243,206 @@
 
   /* ─── END 49JA EXTENDED ─── */
 
-  /* ─── responsive ─── */
+  /* ═══════════════════════════════════════════════════
+     MOBILE RESPONSIVE SYSTEM
+     Breakpoints: 900px tablet, 600px phone
+  ═══════════════════════════════════════════════════ */
+
+  /* ── Hamburger button (hidden on desktop) ── */
+  #mob-menu-btn {
+    display: none;
+    align-items: center; justify-content: center;
+    width: 40px; height: 40px;
+    background: rgba(0,245,255,0.06);
+    border: 1px solid rgba(0,245,255,0.2);
+    cursor: pointer; flex-shrink: 0;
+  }
+  #mob-menu-btn span {
+    display: block; width: 18px; height: 2px;
+    background: var(--accent-cyan);
+    position: relative; transition: all 0.25s;
+  }
+  #mob-menu-btn span::before,
+  #mob-menu-btn span::after {
+    content: ''; position: absolute; left: 0;
+    width: 18px; height: 2px;
+    background: var(--accent-cyan); transition: all 0.25s;
+  }
+  #mob-menu-btn span::before { top: -5px; }
+  #mob-menu-btn span::after  { top:  5px; }
+  /* X state when open */
+  body.mob-nav-open #mob-menu-btn span { background: transparent; }
+  body.mob-nav-open #mob-menu-btn span::before { transform: rotate(45deg); top: 0; }
+  body.mob-nav-open #mob-menu-btn span::after  { transform: rotate(-45deg); top: 0; }
+
+  /* ── Mobile overlay ── */
+  #mob-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 85;
+    backdrop-filter: blur(2px);
+  }
+  body.mob-nav-open #mob-overlay { display: block; }
+
+  /* ── Mobile current page title in topbar ── */
+  #mob-page-title {
+    display: none;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; color: var(--text-muted);
+    letter-spacing: 2px; margin-left: 12px;
+    white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; max-width: 140px;
+  }
+
+  /* ── Bottom nav (mobile only) ── */
+  #mob-bottom-nav {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 56px;
+    background: rgba(5,13,21,0.98);
+    border-top: 1px solid rgba(0,245,255,0.15);
+    z-index: 95;
+    grid-template-columns: repeat(5, 1fr);
+    align-items: stretch;
+  }
+  .mob-nav-tab {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 3px; cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px; color: var(--text-muted);
+    letter-spacing: 0.5px; padding: 0 4px;
+    transition: color 0.2s; border: none; background: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mob-nav-tab .tab-icon { font-size: 16px; line-height: 1; }
+  .mob-nav-tab.active { color: var(--accent-cyan); }
+  .mob-nav-tab.active .tab-icon { filter: drop-shadow(0 0 4px var(--accent-cyan)); }
+
+  /* ═══════ TABLET (≤900px) ═══════ */
   @media (max-width: 900px) {
-    #sidebar { display: none; }
-    #main { margin-left: 0; }
+    #sidebar { transform: translateX(-100%); transition: transform 0.28s cubic-bezier(.4,0,.2,1); }
+    body.mob-nav-open #sidebar { transform: translateX(0); }
+    #main { margin-left: 0 !important; }
+    #mob-menu-btn { display: flex; }
+    #mob-page-title { display: block; }
+    #mob-bottom-nav { display: grid; }
+    /* push content above bottom nav */
+    #main { padding-bottom: 70px !important; }
+    /* translate bar above bottom nav */
+    #translate-bar { bottom: 56px !important; }
+
     .grid-2, .grid-3 { grid-template-columns: 1fr; }
+
+    /* summary card grids across the calc pages */
+    .stats-grid { grid-template-columns: repeat(2,1fr) !important; }
+
+    /* page title smaller */
+    .page-title { font-size: 17px !important; }
+    .page-subtitle { font-size: 12px !important; }
+    .page-header { margin-bottom: 20px; padding-bottom: 14px; }
+
+    /* lang select smaller */
+    #lang-select { max-width: 90px; font-size: 9px; }
+    #user-display { display: none; }
+
+    /* Calculator 2-col layouts → 1-col */
+    #page-martingale-calc > div,
+    #page-backbet-calc > div,
+    #page-arbitrary-calc > div { grid-template-columns: 1fr !important; }
+
+    /* 49ja live banner rows */
+    #page-49ja-live .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  /* ═══════ PHONE (≤600px) ═══════ */
+  @media (max-width: 600px) {
+    #topbar { padding: 0 12px; }
+    .logo { font-size: 14px; letter-spacing: 2px; }
+    #mob-page-title { max-width: 100px; }
+
+    #main { padding: 16px 12px 70px !important; }
+
+    .page-title { font-size: 14px !important; letter-spacing: 1px; }
+    .page-subtitle { font-size: 11px !important; }
+
+    /* Cards less padding */
+    .card { padding: 16px !important; }
+
+    /* Summary cards 2-col on phone, 1-col if very narrow */
+    .stats-grid { grid-template-columns: repeat(2,1fr) !important; }
+
+    /* Calc summary cards — 2-col grid */
+    #page-martingale-calc  [style*="repeat(4,1fr)"],
+    #page-backbet-calc     [style*="repeat(5,1fr)"],
+    #page-arbitrary-calc   [style*="repeat(4,1fr)"] {
+      grid-template-columns: repeat(2,1fr) !important;
+    }
+
+    /* How-it-works banners → vertical */
+    #page-backbet-calc   [style*="repeat(3,1fr)"],
+    #page-arbitrary-calc [style*="repeat(3,1fr)"] {
+      grid-template-columns: 1fr !important;
+    }
+
+    /* Tables: allow horizontal scroll, don't crush */
+    .overflow-x-auto, [style*="overflow-x:auto"] { -webkit-overflow-scrolling: touch; }
+
+    /* Input font sizes — prevent iOS zoom (must be ≥16px) */
+    input[type="number"],
+    input[type="text"],
+    select { font-size: 16px !important; }
+
+    /* Orbitron inputs keep their weight, just fix zoom */
+    #mgt-odds, #mgt-base, #mgt-profit, #mgt-steps,
+    #bbc-rec-odd, #bbc-back-odd, #bbc-base, #bbc-profit, #bbc-steps,
+    #arb-base, #arb-profit, #arb-steps,
+    .arb-odd-chip input { font-size: 16px !important; }
+
+    /* Odds chips wrap nicer */
+    .arb-odd-chip { margin-bottom: 8px; }
+
+    /* Back-bet grouped column headers — allow wrapping */
+    #page-backbet-calc table th { white-space: normal !important; font-size: 7px !important; }
+    #page-arbitrary-calc table th { white-space: normal !important; font-size: 7px !important; }
+
+    /* Stats page tabs scroll horizontally */
+    .market-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+
+    /* Page title heading area */
+    .page-header { margin-bottom: 16px; }
+
+    /* Draw table balls smaller */
+    .b-red, .b-blue, .b-green, .b-gold {
+      width: 22px !important; height: 22px !important;
+      font-size: 9px !important;
+    }
+
+    /* Martingale power gauge — thinner on phone */
+    #mgt-power-gauge > div,
+    #bbc-power-gauge > div,
+    #arb-power-gauge > div { height: 6px !important; }
+
+    /* Strategy notes smaller text */
+    #mgt-strategy-note,
+    #bbc-strategy-note,
+    #arb-strategy-note { font-size: 10px !important; }
+
+    /* 49ja stats market tabs */
+    [id^="tab-"] { padding: 8px 10px !important; font-size: 9px !important; }
+  }
+
+  /* ═══════ VERY SMALL (≤380px) ═══════ */
+  @media (max-width: 380px) {
+    .logo { font-size: 12px; letter-spacing: 1px; }
+    #mob-page-title { display: none; }
+    .stats-grid { grid-template-columns: 1fr !important; }
+    #page-martingale-calc  [style*="repeat(4,1fr)"],
+    #page-backbet-calc     [style*="repeat(5,1fr)"],
+    #page-arbitrary-calc   [style*="repeat(4,1fr)"] {
+      grid-template-columns: 1fr !important;
+    }
   }
 </style>
 </head>
@@ -1256,7 +1451,9 @@
 
 <!-- ══════════════════════════════════════ TOPBAR ══ -->
 <div id="topbar">
+  <button id="mob-menu-btn" onclick="toggleMobNav()" aria-label="Menu"><span></span></button>
   <div class="logo">BET<span>LAB</span> PRO</div>
+  <div id="mob-page-title">DASHBOARD</div>
   <div class="topbar-right">
     <div id="lang-wrap">
       <span class="lang-icon">🌐</span>
@@ -1299,6 +1496,28 @@
     <div id="translate-progress-fill" style="height:3px;border-radius:2px;background:var(--accent-cyan);width:0%;transition:width 0.3s"></div>
   </div>
   <button onclick="revertTranslation()" style="background:none;border:1px solid rgba(255,255,255,0.15);color:#888;font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 8px;cursor:pointer">✕</button>
+</div>
+
+<!-- Mobile overlay (closes nav when tapping outside) -->
+<div id="mob-overlay" onclick="toggleMobNav()"></div>
+
+<!-- ══ MOBILE BOTTOM NAV ══ -->
+<div id="mob-bottom-nav">
+  <button class="mob-nav-tab active" onclick="mobNavGo('dashboard',this)" data-label="HOME">
+    <span class="tab-icon">⬡</span>HOME
+  </button>
+  <button class="mob-nav-tab" onclick="mobNavGo('odds-calc',this)" data-label="CALC">
+    <span class="tab-icon">◈</span>CALCS
+  </button>
+  <button class="mob-nav-tab" onclick="mobNavGo('49ja-live',this)" data-label="LIVE">
+    <span class="tab-icon">🔴</span>LIVE
+  </button>
+  <button class="mob-nav-tab" onclick="mobNavGo('49ja-stats',this)" data-label="STATS">
+    <span class="tab-icon">📊</span>STATS
+  </button>
+  <button class="mob-nav-tab" onclick="mobNavGo('data-collect',this)" data-label="DATA">
+    <span class="tab-icon">🗄</span>DATA
+  </button>
 </div>
 
 <!-- ══════════════════════════════════════ SIDEBAR ══ -->
@@ -5666,9 +5885,48 @@ export default {
     _origShowPage(id);
     if (id === '49ja-live') start49jaFeed();
     else stop49jaFeed();
-    if (id === '49ja-stats')    computeStats();
+    if (id === '49ja-stats')     computeStats();
     if (id === 'arbitrary-calc') _arbPageInit();
+    // ── Mobile: update topbar title + close drawer ──
+    const labels = {
+      'dashboard':'DASHBOARD','odds-calc':'ODDS CALC','prob-calc':'PROB CALC',
+      'stake-calc':'STAKE MGR','martingale-calc':'MARTINGALE','backbet-calc':'BACK BET',
+      'arbitrary-calc':'ARBITRARY','backtester':'BACKTESTER','data-collect':'DATA',
+      '49ja-live':'49JA LIVE','49ja-stats':'49JA STATS','profile':'SYSTEM'
+    };
+    const titleEl = document.getElementById('mob-page-title');
+    if (titleEl) titleEl.textContent = labels[id] || id.toUpperCase();
+    if (document.body.classList.contains('mob-nav-open')) toggleMobNav();
   };
+
+  // ── Toggle mobile sidebar drawer ──
+  function toggleMobNav() {
+    document.body.classList.toggle('mob-nav-open');
+  }
+
+  // ── Bottom nav tab handler ──
+  function mobNavGo(pageId, btn) {
+    showPage(pageId);
+    // Update active tab
+    document.querySelectorAll('.mob-nav-tab').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+  }
+
+  // ── Sync bottom nav tab when sidebar nav item is tapped ──
+  // (bottom nav doesn't cover all pages so only sync the 5 it knows)
+  const _mobNavPages = ['dashboard','odds-calc','49ja-live','49ja-stats','data-collect'];
+  document.querySelectorAll('#sidebar .nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const onclick = this.getAttribute('onclick') || '';
+      const match   = onclick.match(/showPage\('([^']+)'\)/);
+      if (!match) return;
+      const id = match[1];
+      const tabs = document.querySelectorAll('.mob-nav-tab');
+      const idx  = _mobNavPages.indexOf(id);
+      tabs.forEach(t => t.classList.remove('active'));
+      if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
+    });
+  });
 </script>
 
 <!-- ══════════════════════════════════════ TRANSLATION ══ -->
