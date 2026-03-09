@@ -883,7 +883,199 @@
   .jackpot-label { font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 2px; color: #ffaa00; }
   .jackpot-val { font-family: 'Orbitron', monospace; font-size: 16px; font-weight: 700; color: #ffcc00; text-shadow: 0 0 16px rgba(255,204,0,0.4); }
 
-  /* ─── END 49JA ─── */
+  /* ─── END 49JA CORE ─── */
+
+  /* ── Draw summary mini squares ── */
+  .draw-summary-grid { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px; }
+  .ds-square { width: 16px; height: 16px; border-radius: 2px; flex-shrink: 0; }
+  .ds-hi  { background: #ffffff22; border: 1px solid #ffffff44; position: relative; }
+  .ds-hi::after  { content:''; position:absolute; inset:3px 3px 6px 3px; background:#fff; clip-path:polygon(50% 0,100% 100%,0 100%); }
+  .ds-mid { background: #ffffff22; border: 1px solid #ffffff44; }
+  .ds-lo  { background: #ffffff22; border: 1px solid #ffffff44; position: relative; }
+  .ds-lo::after  { content:''; position:absolute; inset:6px 3px 3px 3px; background:#fff; clip-path:polygon(0 0,100% 0,50% 100%); }
+  .ds-col-r { background: #cc0022; }
+  .ds-col-g { background: #007733; }
+  .ds-col-b { background: #0055cc; }
+  .ds-col-n { background: #334455; }
+
+  /* ── Live draw bar ── */
+  #live-draw-bar {
+    background: rgba(0,0,0,0.6);
+    border: 1px solid var(--border-dim);
+    border-top: 2px solid var(--accent-cyan);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    min-height: 72px;
+    position: relative;
+    overflow: hidden;
+  }
+  #live-draw-bar::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-red), transparent);
+    animation: scan-line 2s linear infinite;
+  }
+  @keyframes scan-line { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+  .live-draw-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .live-draw-balls { display: flex; gap: 8px; flex: 1; }
+  .ball49-lg {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 16px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    box-shadow: inset 0 -4px 8px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.5);
+    animation: ball-drop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    flex-shrink: 0;
+  }
+  @keyframes ball-drop { from { transform: translateY(-30px) scale(0.6); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+  .live-draw-id {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    text-align: right;
+  }
+  .live-total-badge {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--text-primary);
+    background: var(--bg-deep);
+    border: 1px solid var(--border-dim);
+    padding: 8px 14px;
+    white-space: nowrap;
+  }
+  .live-hml-badge {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 10px;
+    letter-spacing: 1px;
+  }
+  .hml-badge-hi  { background: rgba(255,255,255,0.1); color: #fff; }
+  .hml-badge-mid { background: rgba(255,255,255,0.05); color: #aaa; }
+  .hml-badge-lo  { background: rgba(255,100,100,0.1); color: #ff8888; }
+
+  /* ── Market tools tabs ── */
+  .market-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0;
+    flex-wrap: wrap;
+  }
+  .market-tab {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 8px 14px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-dim);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .market-tab:hover { border-color: var(--border-glow); color: var(--text-secondary); }
+  .market-tab.active { background: var(--bg-panel); border-color: var(--accent-cyan); color: var(--accent-cyan); }
+
+  .market-panel { display: none; }
+  .market-panel.active { display: block; }
+
+  /* ── Colour select buttons ── */
+  .colour-btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .colour-btn {
+    padding: 10px 20px;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #fff;
+  }
+  .colour-btn-red   { background: #cc0022; border-color: #ff2244; }
+  .colour-btn-green { background: #007733; border-color: #00aa44; }
+  .colour-btn-blue  { background: #0055cc; border-color: #0077ff; }
+  .colour-btn-none  { background: #334455; border-color: #556677; color: #aaa; }
+  .colour-btn.selected { box-shadow: 0 0 16px rgba(255,255,255,0.4); transform: scale(1.05); }
+  .colour-btn:hover { transform: scale(1.03); }
+
+  /* ── Odds display pill ── */
+  .odds-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-dim);
+    padding: 8px 16px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+  }
+  .odds-pill-label { color: var(--text-muted); font-size: 10px; letter-spacing: 1px; }
+  .odds-pill-val { color: var(--accent-cyan); font-size: 16px; font-weight: 700; }
+
+  /* ── Market result display ── */
+  .mkt-result {
+    background: var(--bg-deep);
+    border-left: 3px solid var(--accent-cyan);
+    padding: 14px 18px;
+    margin-top: 16px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    display: none;
+  }
+  .mkt-result.show { display: block; }
+  .mkt-highlight { color: var(--accent-cyan); font-size: 15px; font-weight: bold; }
+  .mkt-green { color: var(--accent-green); }
+  .mkt-orange { color: var(--accent-orange); }
+
+  /* ── Ball picker (number selector) ── */
+  .ball-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0;
+  }
+  .bp-ball {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    opacity: 0.5;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.3);
+  }
+  .bp-ball.selected { opacity: 1; box-shadow: 0 0 12px rgba(255,255,255,0.5), inset 0 -2px 4px rgba(0,0,0,0.3); transform: scale(1.15); }
+  .bp-ball:hover { opacity: 0.85; }
+
+  /* ─── END 49JA EXTENDED ─── */
 
   /* ─── responsive ─── */
   @media (max-width: 900px) {
@@ -1455,38 +1647,268 @@
       </div>
     </div>
 
-    <!-- Main layout: table left, stats right -->
-    <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start">
+    <!-- LIVE DRAW BAR — latest result big balls -->
+    <div id="live-draw-bar">
+      <div>
+        <div class="live-draw-label">CURRENT DRAW</div>
+        <div id="live-draw-id" style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--text-primary);margin-top:3px">—</div>
+      </div>
+      <div class="live-draw-balls" id="live-draw-balls">
+        <div style="color:var(--text-muted);font-family:'Share Tech Mono',monospace;font-size:11px;align-self:center">Waiting for draw...</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <div class="live-total-badge">TOTAL: <span id="live-total">—</span></div>
+        <div id="live-hml-badge" class="live-hml-badge hml-badge-mid">—</div>
+        <div id="live-win-col" style="width:60px;height:22px;background:#334"></div>
+      </div>
+    </div>
 
-      <!-- LEFT: Draw Results Table -->
-      <div class="card" style="padding:0;overflow:hidden">
-        <div style="padding:16px 20px;border-bottom:1px solid var(--border-dim);display:flex;justify-content:space-between;align-items:center">
-          <span class="card-title" style="margin:0">DRAW RESULTS</span>
-          <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px">NUMBERS IN ORDER DRAWN</span>
+    <!-- MAIN LAYOUT: left=results+tools, right=stats -->
+    <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start">
+
+      <!-- LEFT COLUMN -->
+      <div>
+
+        <!-- Draw Results Table -->
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">
+          <div style="padding:14px 20px;border-bottom:1px solid var(--border-dim);display:flex;justify-content:space-between;align-items:center">
+            <span class="card-title" style="margin:0">DRAW RESULTS</span>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px">NUMBERS IN ORDER DRAWN</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table id="draw-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Draw</th>
+                  <th style="text-align:center">Hi Mid Lo</th>
+                  <th style="text-align:center">Win Colour</th>
+                  <th style="text-align:center">Colours</th>
+                  <th style="text-align:right">Total</th>
+                </tr>
+              </thead>
+              <tbody id="draw-tbody">
+                <tr><td colspan="6" style="text-align:center;padding:50px;color:var(--text-muted);font-family:'Share Tech Mono',monospace;font-size:12px">LOADING DRAW DATA...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div style="overflow-x:auto">
-          <table id="draw-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Draw</th>
-                <th style="text-align:center">Hi Mid Lo</th>
-                <th style="text-align:center">Win Colour</th>
-                <th style="text-align:center">Colours</th>
-                <th style="text-align:right">Total</th>
-              </tr>
-            </thead>
-            <tbody id="draw-tbody">
-              <tr><td colspan="6" style="text-align:center;padding:50px;color:var(--text-muted);font-family:'Share Tech Mono',monospace;font-size:12px">LOADING DRAW DATA...</td></tr>
-            </tbody>
-          </table>
+
+        <!-- MARKET TOOLS -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:14px 20px;border-bottom:1px solid var(--border-dim)">
+            <div class="card-title" style="margin:0 0 12px 0">MARKET TOOLS</div>
+            <div class="market-tabs">
+              <div class="market-tab active" onclick="switchMarket('bet49')">BET49</div>
+              <div class="market-tab" onclick="switchMarket('hilo')">HI LO</div>
+              <div class="market-tab" onclick="switchMarket('dragon')">DRAGON</div>
+              <div class="market-tab" onclick="switchMarket('rainbow')">RAINBOW</div>
+              <div class="market-tab" onclick="switchMarket('colour')">TOTAL COLOUR</div>
+              <div class="market-tab" onclick="switchMarket('betzero')">BET ZERO</div>
+            </div>
+          </div>
+          <div style="padding:20px">
+
+            <!-- BET49 -->
+            <div class="market-panel active" id="mkt-bet49">
+              <div style="color:var(--text-secondary);font-size:14px;margin-bottom:14px">Predict which numbers will appear. Select 1–4 numbers:</div>
+              <div class="ball-picker" id="bp-bet49"></div>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap">
+                <div class="odds-pill"><span class="odds-pill-label">BALLS</span><span class="odds-pill-val" id="b49-balls">0</span></div>
+                <div class="odds-pill"><span class="odds-pill-label">ODDS</span><span class="odds-pill-val" id="b49-odds">—</span></div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <label class="field-label" style="margin:0">STAKE ₦</label>
+                  <input type="number" id="b49-stake" value="100" min="0" style="width:90px;padding:8px;background:var(--bg-deep);border:1px solid var(--border-dim);color:var(--text-primary);font-family:'Share Tech Mono',monospace" oninput="calcBet49()">
+                </div>
+              </div>
+              <div class="mkt-result" id="b49-result"></div>
+              <div style="margin-top:12px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted)">
+                1 ball = 7.8× &nbsp;|&nbsp; 2 balls = 70× &nbsp;|&nbsp; 3 balls = 700× &nbsp;|&nbsp; 4 balls = 7000×
+              </div>
+            </div>
+
+            <!-- HI LO -->
+            <div class="market-panel" id="mkt-hilo">
+              <div style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Predict if the total of 6 balls will be Hi, Mid or Lo:</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+                <div class="hilo-btn" data-val="hi" onclick="selectHilo('hi')" style="background:var(--bg-deep);border:1px solid var(--border-dim);padding:16px;text-align:center;cursor:pointer;transition:all 0.2s">
+                  <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#fff;margin-bottom:4px">HI</div>
+                  <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted)">152–279</div>
+                  <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:var(--accent-cyan);margin-top:6px">2×</div>
+                </div>
+                <div class="hilo-btn" data-val="mid" onclick="selectHilo('mid')" style="background:var(--bg-deep);border:1px solid var(--border-dim);padding:16px;text-align:center;cursor:pointer;transition:all 0.2s">
+                  <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#fff;margin-bottom:4px">MID</div>
+                  <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted)">149–151</div>
+                  <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:#ffaa00;margin-top:6px">26×</div>
+                </div>
+                <div class="hilo-btn" data-val="lo" onclick="selectHilo('lo')" style="background:var(--bg-deep);border:1px solid var(--border-dim);padding:16px;text-align:center;cursor:pointer;transition:all 0.2s">
+                  <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#ff8888;margin-bottom:4px">LO</div>
+                  <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted)">21–148</div>
+                  <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:var(--accent-cyan);margin-top:6px">2×</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <label class="field-label" style="margin:0">STAKE ₦</label>
+                  <input type="number" id="hl-stake" value="100" min="0" style="width:90px;padding:8px;background:var(--bg-deep);border:1px solid var(--border-dim);color:var(--text-primary);font-family:'Share Tech Mono',monospace" oninput="calcHilo()">
+                </div>
+                <button class="btn btn-cyan btn-sm" onclick="calcHilo()">CALCULATE</button>
+              </div>
+              <div class="mkt-result" id="hl-result"></div>
+              <div style="margin-top:12px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted)">
+                Current draw total shown in live bar above. Last 10 draw HML shown in stats panel.
+              </div>
+            </div>
+
+            <!-- DRAGON -->
+            <div class="market-panel" id="mkt-dragon">
+              <div style="color:var(--text-secondary);font-size:14px;margin-bottom:14px">Select 6–15 numbers. Match 3+ to win:</div>
+              <div class="ball-picker" id="bp-dragon"></div>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap">
+                <div class="odds-pill"><span class="odds-pill-label">SELECTED</span><span class="odds-pill-val" id="dr-count">0</span></div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <label class="field-label" style="margin:0">STAKE ₦</label>
+                  <input type="number" id="dr-stake" value="100" min="0" style="width:90px;padding:8px;background:var(--bg-deep);border:1px solid var(--border-dim);color:var(--text-primary);font-family:'Share Tech Mono',monospace" oninput="calcDragon()">
+                </div>
+                <button class="btn btn-cyan btn-sm" onclick="calcDragon()">CALCULATE</button>
+              </div>
+              <div class="mkt-result" id="dr-result"></div>
+              <div style="margin-top:12px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted)">
+                Odds vary by balls selected. Min 6, max 15. Must match at least 3.
+              </div>
+            </div>
+
+            <!-- RAINBOW -->
+            <div class="market-panel" id="mkt-rainbow">
+              <div style="color:var(--text-secondary);font-size:14px;margin-bottom:14px">Predict how many balls of each colour will appear:</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+                <div>
+                  <div style="font-family:'Orbitron',monospace;font-size:10px;color:#ff4466;margin-bottom:8px;letter-spacing:1px">RED</div>
+                  <select id="rb-red" style="width:100%;padding:8px;background:var(--bg-deep);border:1px solid #cc0022;color:var(--text-primary);font-family:'Share Tech Mono',monospace" onchange="calcRainbow()">
+                    <option value="0">0 balls — 12×</option>
+                    <option value="2">2+ balls — 1.5×</option>
+                    <option value="3">3+ balls — 3.2×</option>
+                    <option value="4">4+ balls — 12×</option>
+                    <option value="5">5+ balls — 85×</option>
+                    <option value="6">6 balls — 1500×</option>
+                  </select>
+                </div>
+                <div>
+                  <div style="font-family:'Orbitron',monospace;font-size:10px;color:#44ee88;margin-bottom:8px;letter-spacing:1px">GREEN</div>
+                  <select id="rb-green" style="width:100%;padding:8px;background:var(--bg-deep);border:1px solid #007733;color:var(--text-primary);font-family:'Share Tech Mono',monospace" onchange="calcRainbow()">
+                    <option value="0">0 balls — 12×</option>
+                    <option value="2">2+ balls — 1.5×</option>
+                    <option value="3">3+ balls — 3.2×</option>
+                    <option value="4">4+ balls — 12×</option>
+                    <option value="5">5+ balls — 85×</option>
+                    <option value="6">6 balls — 1500×</option>
+                  </select>
+                </div>
+                <div>
+                  <div style="font-family:'Orbitron',monospace;font-size:10px;color:#55aaff;margin-bottom:8px;letter-spacing:1px">BLUE</div>
+                  <select id="rb-blue" style="width:100%;padding:8px;background:var(--bg-deep);border:1px solid #0055cc;color:var(--text-primary);font-family:'Share Tech Mono',monospace" onchange="calcRainbow()">
+                    <option value="0">0 balls — 12×</option>
+                    <option value="2">2+ balls — 1.5×</option>
+                    <option value="3">3+ balls — 3.2×</option>
+                    <option value="4">4+ balls — 12×</option>
+                    <option value="5">5+ balls — 85×</option>
+                    <option value="6">6 balls — 1500×</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <label class="field-label" style="margin:0">STAKE ₦</label>
+                  <input type="number" id="rb-stake" value="100" min="0" style="width:90px;padding:8px;background:var(--bg-deep);border:1px solid var(--border-dim);color:var(--text-primary);font-family:'Share Tech Mono',monospace" oninput="calcRainbow()">
+                </div>
+              </div>
+              <div class="mkt-result" id="rb-result"></div>
+            </div>
+
+            <!-- TOTAL COLOUR -->
+            <div class="market-panel" id="mkt-colour">
+              <div style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Predict which colour appears most in the draw:</div>
+              <div class="colour-btn-group" style="margin-bottom:16px">
+                <button class="colour-btn colour-btn-green" id="tc-btn-green" onclick="selectColour('green')">GREEN</button>
+                <button class="colour-btn colour-btn-blue" id="tc-btn-blue" onclick="selectColour('blue')">BLUE</button>
+                <button class="colour-btn colour-btn-red" id="tc-btn-red" onclick="selectColour('red')">RED</button>
+                <button class="colour-btn colour-btn-none" id="tc-btn-none" onclick="selectColour('none')">NO WINNING COLOUR</button>
+              </div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+                <div class="odds-pill"><span class="odds-pill-label">GREEN</span><span class="odds-pill-val" style="color:#44ee88">3.8×</span></div>
+                <div class="odds-pill"><span class="odds-pill-label">BLUE</span><span class="odds-pill-val" style="color:#55aaff">3.8×</span></div>
+                <div class="odds-pill"><span class="odds-pill-label">RED</span><span class="odds-pill-val" style="color:#ff6680">3.8×</span></div>
+                <div class="odds-pill"><span class="odds-pill-label">NO COLOUR</span><span class="odds-pill-val" style="color:#aaa">4×</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <label class="field-label" style="margin:0">STAKE ₦</label>
+                  <input type="number" id="tc-stake" value="100" min="0" style="width:90px;padding:8px;background:var(--bg-deep);border:1px solid var(--border-dim);color:var(--text-primary);font-family:'Share Tech Mono',monospace" oninput="calcColour()">
+                </div>
+                <button class="btn btn-cyan btn-sm" onclick="calcColour()">CALCULATE</button>
+              </div>
+              <div class="mkt-result" id="tc-result"></div>
+            </div>
+
+            <!-- BET ZERO -->
+            <div class="market-panel" id="mkt-betzero">
+              <div style="color:var(--text-secondary);font-size:14px;margin-bottom:14px">Predict which numbers will NOT appear. Select 1–4:</div>
+              <div class="ball-picker" id="bp-betzero"></div>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap">
+                <div class="odds-pill"><span class="odds-pill-label">BALLS</span><span class="odds-pill-val" id="bz-balls">0</span></div>
+                <div class="odds-pill"><span class="odds-pill-label">ODDS</span><span class="odds-pill-val" id="bz-odds">—</span></div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <label class="field-label" style="margin:0">STAKE ₦</label>
+                  <input type="number" id="bz-stake" value="100" min="0" style="width:90px;padding:8px;background:var(--bg-deep);border:1px solid var(--border-dim);color:var(--text-primary);font-family:'Share Tech Mono',monospace" oninput="calcBetZero()">
+                </div>
+              </div>
+              <div class="mkt-result" id="bz-result"></div>
+              <div style="margin-top:12px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted)">
+                1 ball = 1.1× &nbsp;|&nbsp; 2 balls = 1.25× &nbsp;|&nbsp; 3 balls = 1.45× &nbsp;|&nbsp; 4 balls = 1.65×
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
 
-      <!-- RIGHT: Stats -->
+      <!-- RIGHT COLUMN: Statistics -->
       <div>
-        <!-- Winning colour tally -->
+        <!-- Hot numbers -->
         <div class="card mb-20">
+          <div class="card-title" style="display:flex;align-items:center;gap:6px">
+            <span style="color:#ff6600">🔥</span> HOT NUMBERS
+            <span style="font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-left:auto">LAST 20</span>
+          </div>
+          <div id="hot-numbers-container"><div style="color:var(--text-muted);font-size:12px;padding:8px 0">Loading...</div></div>
+        </div>
+
+        <!-- Cold numbers -->
+        <div class="card mb-20">
+          <div class="card-title" style="display:flex;align-items:center;gap:6px">
+            <span style="color:#00bbff">❄️</span> COLD NUMBERS
+            <span style="font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-left:auto">OVERDUE</span>
+          </div>
+          <div id="late-numbers-container"><div style="color:var(--text-muted);font-size:12px;padding:8px 0">Loading...</div></div>
+        </div>
+
+        <!-- Draw summary -->
+        <div class="card mb-20">
+          <div class="card-title">DRAW SUMMARY</div>
+          <div style="display:flex;gap:16px;margin-bottom:10px">
+            <div style="text-align:center;flex:1">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px">HI/MID/LO</div>
+              <div class="draw-summary-grid" id="ds-hml"></div>
+            </div>
+            <div style="text-align:center;flex:1">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px">WIN COLOUR</div>
+              <div class="draw-summary-grid" id="ds-col"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Win colour tally -->
+        <div class="card">
           <div class="card-title">WIN COLOURS · LAST 20</div>
           <div class="colour-tally">
             <div class="colour-tally-item">
@@ -1494,8 +1916,8 @@
               <div class="colour-tally-label">RED</div>
             </div>
             <div class="colour-tally-item">
-              <div class="colour-tally-val" style="color:#ffcc00" id="ct-green">—</div>
-              <div class="colour-tally-label">YELLOW</div>
+              <div class="colour-tally-val" style="color:#44dd88" id="ct-green">—</div>
+              <div class="colour-tally-label">GREEN</div>
             </div>
             <div class="colour-tally-item">
               <div class="colour-tally-val" style="color:#44aaff" id="ct-blue">—</div>
@@ -1503,29 +1925,16 @@
             </div>
             <div class="colour-tally-item">
               <div class="colour-tally-val" style="color:#aaaaaa" id="ct-none">—</div>
-              <div class="colour-tally-label">DRAW</div>
+              <div class="colour-tally-label">NO COLOUR</div>
             </div>
           </div>
         </div>
-
-        <!-- Hot numbers -->
-        <div class="card mb-20">
-          <div class="card-title">🔥 HOT NUMBERS</div>
-          <div id="hot-numbers-container"><div style="color:var(--text-muted);font-size:12px;padding:8px 0">Loading...</div></div>
-        </div>
-
-        <!-- Late numbers -->
-        <div class="card">
-          <div class="card-title">❄️ LATE NUMBERS</div>
-          <div id="late-numbers-container"><div style="color:var(--text-muted);font-size:12px;padding:8px 0">Loading...</div></div>
-        </div>
       </div>
-
     </div>
 
-    <!-- Footer info -->
+    <!-- Footer -->
     <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:1px;text-align:center;padding:16px 0 4px">
-      AUTO-REFRESH: 60s &nbsp;·&nbsp; SOURCE: BET9JA VIRTUAL 49JA &nbsp;·&nbsp;
+      AUTO-REFRESH: 10s &nbsp;·&nbsp; SOURCE: BET9JA VIRTUAL 49JA &nbsp;·&nbsp;
       LAST UPDATE: <span id="last-update-time">—</span>
     </div>
   </div>
@@ -1960,244 +2369,398 @@
 </script>
 <!-- ══════════════════════════════════════ 49JA LIVE LOGIC ══ -->
 <script>
-  // ── Ball colour assignment (1-49) matching Bet9ja's scheme ──
-  // Red: 1-9 (low), Blue: 10-29 (mid), Green: 30-49 (high), Yellow: bonus when indicated
+  // ── Ball colour: R→B→G cycle every 3 (verified from official ball image) ──
   function ballColour(n) {
-    const num = parseInt(n);
-    if (num >= 1  && num <= 9)  return 'b-red';
-    if (num >= 10 && num <= 29) return 'b-blue';
-    if (num >= 30 && num <= 49) return 'b-green';
-    return 'b-blue';
+    const m = parseInt(n) % 3;
+    if (m === 1) return 'b-red';
+    if (m === 2) return 'b-blue';
+    return 'b-green';
   }
 
-  // ── Hi / Mid / Lo: based on sum of all 6 numbers ──
-  // Low total = more low numbers (down arrow), High total = more high numbers (up arrow)
+  // ── HILO: official Bet9ja rules ──
   function getHML(numbers) {
-    const redCount   = numbers.filter(n => parseInt(n) <= 9).length;
-    const greenCount = numbers.filter(n => parseInt(n) >= 30).length;
-    const blueCount  = numbers.filter(n => parseInt(n) >= 10 && parseInt(n) <= 29).length;
-    if (greenCount > redCount && greenCount >= blueCount) return 'up';
-    if (redCount > greenCount && redCount >= blueCount)   return 'down';
-    return 'mid';
+    const total = numbers.reduce((s, n) => s + parseInt(n), 0);
+    if (total <= 148) return 'down';
+    if (total <= 151) return 'mid';
+    return 'up';
+  }
+  function hmlLabel(hml) { return hml === 'up' ? 'HI' : hml === 'down' ? 'LO' : 'MID'; }
+
+  // ── Build ball pickers ──
+  function buildBallPicker(id, maxSelect) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let html = '';
+    for (let n = 1; n <= 49; n++) {
+      html += `<div class="bp-ball ${ballColour(n)}" data-n="${n}" onclick="toggleBall('${id}',${n},${maxSelect})">${n}</div>`;
+    }
+    el.innerHTML = html;
   }
 
-  // ── Count red/blue/green per draw ──
-  function countColours(numbers) {
-    let r = 0, g = 0, b = 0;
-    numbers.forEach(n => {
-      const num = parseInt(n);
-      if (num >= 1  && num <= 9)  r++;
-      else if (num >= 10 && num <= 29) b++;
-      else if (num >= 30 && num <= 49) g++;
+  const _pickerSelections = {};
+  function toggleBall(pickerId, n, maxSelect) {
+    if (!_pickerSelections[pickerId]) _pickerSelections[pickerId] = new Set();
+    const sel = _pickerSelections[pickerId];
+    const el = document.querySelector(`#${pickerId} [data-n="${n}"]`);
+    if (sel.has(n)) {
+      sel.delete(n);
+      el && el.classList.remove('selected');
+    } else {
+      if (sel.size >= maxSelect) {
+        const oldest = sel.values().next().value;
+        sel.delete(oldest);
+        const oldEl = document.querySelector(`#${pickerId} [data-n="${oldest}"]`);
+        oldEl && oldEl.classList.remove('selected');
+      }
+      sel.add(n);
+      el && el.classList.add('selected');
+    }
+    if (pickerId === 'bp-bet49')   calcBet49();
+    if (pickerId === 'bp-dragon')  calcDragon();
+    if (pickerId === 'bp-betzero') calcBetZero();
+  }
+
+  // ── Market tab switching ──
+  function switchMarket(id) {
+    const ids = ['bet49','hilo','dragon','rainbow','colour','betzero'];
+    document.querySelectorAll('.market-tab').forEach((t,i) => t.classList.toggle('active', ids[i] === id));
+    document.querySelectorAll('.market-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('mkt-'+id)?.classList.add('active');
+  }
+
+  // ── BET49 ──
+  const BET49_ODDS = {1:7.8, 2:70, 3:700, 4:7000};
+  function calcBet49() {
+    const sel = _pickerSelections['bp-bet49'];
+    const count = sel ? sel.size : 0;
+    document.getElementById('b49-balls').textContent = count;
+    document.getElementById('b49-odds').textContent = BET49_ODDS[count] ? BET49_ODDS[count]+'×' : '—';
+    const stake = parseFloat(document.getElementById('b49-stake').value) || 0;
+    const res = document.getElementById('b49-result');
+    if (count > 0 && count <= 4 && stake > 0) {
+      const payout = stake * BET49_ODDS[count];
+      res.innerHTML = `Selected: <span class="mkt-highlight">${[...sel].join(', ')}</span><br>
+        Odds: <span class="mkt-highlight">${BET49_ODDS[count]}×</span> &nbsp;|&nbsp;
+        Stake: <span class="mkt-highlight">₦${stake.toLocaleString()}</span> &nbsp;|&nbsp;
+        Payout: <span class="mkt-green">₦${payout.toLocaleString()}</span> &nbsp;|&nbsp;
+        Profit: <span class="mkt-green">₦${(payout-stake).toLocaleString()}</span>`;
+      res.classList.add('show');
+    } else res.classList.remove('show');
+  }
+
+  // ── HI LO ──
+  let _hiloSel = null;
+  function selectHilo(val) {
+    _hiloSel = val;
+    document.querySelectorAll('.hilo-btn').forEach(b => {
+      b.style.borderColor = b.dataset.val === val ? 'var(--accent-cyan)' : 'var(--border-dim)';
+      b.style.background  = b.dataset.val === val ? 'rgba(0,245,255,0.08)' : 'var(--bg-deep)';
     });
-    return { r, g, b };
+    calcHilo();
+  }
+  function calcHilo() {
+    if (!_hiloSel) return;
+    const ODDS = {hi:2, mid:26, lo:2};
+    const ranges = {hi:'152–279', mid:'149–151', lo:'21–148'};
+    const stake = parseFloat(document.getElementById('hl-stake').value) || 0;
+    const payout = stake * ODDS[_hiloSel];
+    const res = document.getElementById('hl-result');
+    res.innerHTML = `Selection: <span class="mkt-highlight">${_hiloSel.toUpperCase()} (${ranges[_hiloSel]})</span><br>
+      Odds: <span class="mkt-highlight">${ODDS[_hiloSel]}×</span> &nbsp;|&nbsp;
+      Stake: <span class="mkt-highlight">₦${stake.toLocaleString()}</span> &nbsp;|&nbsp;
+      Payout: <span class="mkt-green">₦${payout.toLocaleString()}</span> &nbsp;|&nbsp;
+      Profit: <span class="mkt-green">₦${(payout-stake).toLocaleString()}</span>`;
+    res.classList.add('show');
   }
 
-  // ── Win colour → which colour had the most balls ──
-  function deriveWinColour(numbers) {
-    const { r, g, b } = countColours(numbers);
-    const max = Math.max(r, g, b);
-    // If tied → none
-    const winners = [r===max&&'red', g===max&&'green', b===max&&'blue'].filter(Boolean);
-    if (winners.length > 1) return 'none';
-    return winners[0] || 'none';
+  // ── Dragon ──
+  function calcDragon() {
+    const sel = _pickerSelections['bp-dragon'];
+    const count = sel ? sel.size : 0;
+    document.getElementById('dr-count').textContent = count;
+    const stake = parseFloat(document.getElementById('dr-stake').value) || 0;
+    const res = document.getElementById('dr-result');
+    if (count >= 6 && count <= 15 && stake > 0) {
+      function comb(n,k) { if(k>n)return 0;if(k===0||k===n)return 1;let r=1;for(let i=0;i<k;i++)r=r*(n-i)/(i+1);return r; }
+      const total = comb(49,6);
+      let p = 0;
+      for (let k=3; k<=Math.min(6,count); k++) p += comb(count,k)*comb(49-count,6-k)/total;
+      res.innerHTML = `Selected: <span class="mkt-highlight">${count} numbers</span><br>
+        Probability 3+ match: <span class="mkt-highlight">${(p*100).toFixed(2)}%</span><br>
+        Stake: <span class="mkt-highlight">₦${stake.toLocaleString()}</span><br>
+        <span style="color:var(--text-muted);font-size:10px">Payout varies by match count. Min 3 matches needed.</span>`;
+      res.classList.add('show');
+    } else if (count > 0 && count < 6) {
+      res.innerHTML = `<span style="color:var(--accent-orange)">Need at least 6 numbers (${count} selected)</span>`;
+      res.classList.add('show');
+    } else res.classList.remove('show');
   }
 
-  // ── Fetch via multiple CORS proxy fallbacks ──
+  // ── Rainbow ──
+  const RB_ODDS = {0:12, 2:1.5, 3:3.2, 4:12, 5:85, 6:1500};
+  function calcRainbow() {
+    const r = parseInt(document.getElementById('rb-red').value);
+    const g = parseInt(document.getElementById('rb-green').value);
+    const b = parseInt(document.getElementById('rb-blue').value);
+    const stake = parseFloat(document.getElementById('rb-stake').value) || 0;
+    const combined = RB_ODDS[r] * RB_ODDS[g] * RB_ODDS[b];
+    const payout = stake * combined;
+    const lbl = v => v===0?'0 balls':v+'+ balls';
+    const res = document.getElementById('rb-result');
+    res.innerHTML = `R: <span style="color:#ff4466">${lbl(r)} (${RB_ODDS[r]}×)</span> &nbsp;
+      G: <span style="color:#44ee88">${lbl(g)} (${RB_ODDS[g]}×)</span> &nbsp;
+      B: <span style="color:#55aaff">${lbl(b)} (${RB_ODDS[b]}×)</span><br>
+      Combined: <span class="mkt-highlight">${combined.toLocaleString()}×</span> &nbsp;|&nbsp;
+      Stake: <span class="mkt-highlight">₦${stake.toLocaleString()}</span> &nbsp;|&nbsp;
+      Payout: <span class="mkt-green">₦${payout.toLocaleString()}</span>`;
+    res.classList.add('show');
+  }
+
+  // ── Total Colour ──
+  let _tcSel = null;
+  function selectColour(col) {
+    _tcSel = col;
+    ['green','blue','red','none'].forEach(c =>
+      document.getElementById('tc-btn-'+c)?.classList.toggle('selected', c===col));
+    calcColour();
+  }
+  function calcColour() {
+    if (!_tcSel) return;
+    const ODDS = {green:3.8, blue:3.8, red:3.8, none:4};
+    const names = {green:'GREEN',blue:'BLUE',red:'RED',none:'NO WINNING COLOUR'};
+    const stake = parseFloat(document.getElementById('tc-stake').value) || 0;
+    const payout = stake * ODDS[_tcSel];
+    const res = document.getElementById('tc-result');
+    res.innerHTML = `Selection: <span class="mkt-highlight">${names[_tcSel]}</span><br>
+      Odds: <span class="mkt-highlight">${ODDS[_tcSel]}×</span> &nbsp;|&nbsp;
+      Stake: <span class="mkt-highlight">₦${stake.toLocaleString()}</span> &nbsp;|&nbsp;
+      Payout: <span class="mkt-green">₦${payout.toLocaleString()}</span> &nbsp;|&nbsp;
+      Profit: <span class="mkt-green">₦${(payout-stake).toLocaleString()}</span>`;
+    res.classList.add('show');
+  }
+
+  // ── Bet Zero ──
+  const BZ_ODDS = {1:1.1, 2:1.25, 3:1.45, 4:1.65};
+  function calcBetZero() {
+    const sel = _pickerSelections['bp-betzero'];
+    const count = sel ? sel.size : 0;
+    document.getElementById('bz-balls').textContent = count;
+    document.getElementById('bz-odds').textContent = BZ_ODDS[count] ? BZ_ODDS[count]+'×' : '—';
+    const stake = parseFloat(document.getElementById('bz-stake').value) || 0;
+    const res = document.getElementById('bz-result');
+    if (count > 0 && count <= 4 && stake > 0) {
+      const payout = stake * BZ_ODDS[count];
+      res.innerHTML = `Won't appear: <span class="mkt-highlight">${[...sel].join(', ')}</span><br>
+        Odds: <span class="mkt-highlight">${BZ_ODDS[count]}×</span> &nbsp;|&nbsp;
+        Stake: <span class="mkt-highlight">₦${stake.toLocaleString()}</span> &nbsp;|&nbsp;
+        Payout: <span class="mkt-green">₦${payout.toLocaleString()}</span> &nbsp;|&nbsp;
+        Profit: <span class="mkt-green">₦${(payout-stake).toLocaleString()}</span>`;
+      res.classList.add('show');
+    } else res.classList.remove('show');
+  }
+
+  // ── Fetch with 3-proxy fallback ──
   async function fetch49ja() {
     const statusEl = document.getElementById('feed-status');
     statusEl.textContent = 'Fetching...';
     statusEl.style.color = 'var(--text-muted)';
-
     const TARGET = 'https://49ja.bet9ja.com/Tv';
     const PROXIES = [
-      url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-      url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-      url => `https://thingproxy.freeboard.io/fetch/${url}`,
+      u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+      u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+      u => `https://thingproxy.freeboard.io/fetch/${u}`,
     ];
-
     for (let i = 0; i < PROXIES.length; i++) {
       try {
         const res = await fetch(PROXIES[i](TARGET), { cache: 'no-store' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
-        let html;
         const ct = res.headers.get('content-type') || '';
-        if (ct.includes('json')) {
-          const json = await res.json();
-          html = json.contents || json.body || '';
-        } else {
-          html = await res.text();
-        }
-        if (!html || html.length < 200) throw new Error('Empty response');
+        let html = ct.includes('json') ? (await res.json()).contents : await res.text();
+        if (!html || html.length < 200) throw new Error('Empty');
         parse49jaHTML(html);
         statusEl.textContent = '● LIVE';
         statusEl.style.color = 'var(--accent-green)';
         document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString();
-        return; // success — stop trying proxies
-      } catch(err) {
-        console.warn(`Proxy ${i+1} failed:`, err.message);
-        statusEl.textContent = `Trying proxy ${i+2}...`;
+        return;
+      } catch(e) {
+        console.warn('Proxy ' + (i+1) + ' failed:', e.message);
+        if (i < PROXIES.length - 1) statusEl.textContent = 'Trying proxy ' + (i+2) + '...';
       }
     }
-    // All proxies failed
-    statusEl.textContent = '✗ All proxies failed — check console';
+    statusEl.textContent = '✗ Fetch failed';
     statusEl.style.color = 'var(--accent-red)';
   }
 
   function parse49jaHTML(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
-
-    // ── Parse result rows ──
-    // Table structure: ID | n1 | n2 | n3 | n4 | n5 | n6 | Colours(R G B) | WinColour
     const draws = [];
     doc.querySelectorAll('table tr').forEach(row => {
       const cells = Array.from(row.querySelectorAll('td'));
       if (cells.length < 8) return;
       const id = cells[0]?.textContent?.trim();
       if (!id || isNaN(parseInt(id))) return;
-
       const numbers = [];
       for (let i = 1; i <= 6; i++) {
         const v = cells[i]?.textContent?.trim();
         if (v && !isNaN(parseInt(v))) numbers.push(v);
       }
       if (numbers.length < 6) return;
-
-      // Colours cell: "2 2 2" = R G B counts
-      const colourText = cells[7]?.textContent?.trim() || '';
-      const colParts   = colourText.split(/\s+/).map(Number);
-      const colR = colParts[0] || 0;
-      const colG = colParts[1] || 0;
-      const colB = colParts[2] || 0;
-
-      // Winning Colour from site: Red / Blue / Yellow / Draw
-      const winColour = (cells[8]?.textContent?.trim() || '').toLowerCase();
-
-      draws.push({ id, numbers, colR, colG, colB, winColour });
+      const colParts = (cells[7]?.textContent?.trim()||'').split(/\s+/).map(Number);
+      draws.push({ id, numbers,
+        colR:colParts[0]||0, colG:colParts[1]||0, colB:colParts[2]||0,
+        winCol:(cells[8]?.textContent?.trim()||'').toLowerCase() });
     });
 
-    // ── Parse statistics section ──
-    // Page has: LATE NUMBERS (number + delay) then HOT NUMBERS (number + frequency)
-    const lateItems = [], hotItems = [];
-    const sections = doc.querySelectorAll('h3');
-    sections.forEach(h3 => {
+    const lateItems=[], hotItems=[];
+    doc.querySelectorAll('h3').forEach(h3 => {
       const title = h3.textContent.toUpperCase();
       const ul = h3.nextElementSibling;
       if (!ul) return;
       const items = Array.from(ul.querySelectorAll('li')).map(li => {
-        const parts = li.textContent.trim().split(/\s+/);
-        return { num: parseInt(parts[0]), count: parseInt(parts[1]) };
-      }).filter(x => !isNaN(x.num) && !isNaN(x.count));
-
+        const p = li.textContent.trim().split(/\s+/);
+        return {num:parseInt(p[0]), count:parseInt(p[1])};
+      }).filter(x=>!isNaN(x.num)&&!isNaN(x.count));
       if (title.includes('LATE')) lateItems.push(...items);
       else if (title.includes('HOT')) hotItems.push(...items);
     });
 
-    // ── Win colour tally from draws using site data ──
-    const colourTally = { red: 0, yellow: 0, blue: 0, draw: 0 };
-    draws.forEach(d => {
-      const wc = d.winColour;
-      if (colourTally.hasOwnProperty(wc)) colourTally[wc]++;
+    const tally = {red:0,blue:0,yellow:0,draw:0};
+    doc.querySelectorAll('li').forEach(li => {
+      const txt = li.textContent.toUpperCase();
+      const m = txt.match(/(\d+)\s*DRAWS?/);
+      const count = m ? parseInt(m[1]) : 0;
+      if (txt.includes('RED'))    tally.red=count;
+      if (txt.includes('BLUE'))   tally.blue=count;
+      if (txt.includes('YELLOW')) tally.yellow=count;
+      if (txt.includes('DRAW')&&!txt.includes('DRAWS')) tally.draw=count;
     });
 
-    // ── Jackpot ──
-    const amtMatch = html.match(/100,000|[\d,]{5,}\s*₦/);
-    if (amtMatch) {
-      document.getElementById('jackpot-val').textContent = '₦100,000';
-      document.getElementById('jackpot-bar').style.display = 'flex';
-    }
+    const jEl = document.getElementById('jackpot-bar');
+    if (jEl) { document.getElementById('jackpot-val').textContent='₦100,000'; jEl.style.display='flex'; }
 
+    if (draws.length) renderLiveBall(draws[0]);
     renderDrawTable(draws);
-    renderHotNumbers(hotItems.slice(0, 7));
-    renderLateNumbers(lateItems.slice(0, 7));
-    renderColourTally(colourTally);
+    renderHotNumbers(hotItems.slice(0,7));
+    renderLateNumbers(lateItems.slice(0,7));
+    renderDrawSummary(draws.slice(0,10));
+    renderColourTally(tally);
   }
 
-  // ── Render draws table using site-provided colour counts and win colour ──
+  // ── Live ball bar ──
+  function renderLiveBall(draw) {
+    if (!draw) return;
+    const total = draw.numbers.reduce((s,n)=>s+parseInt(n),0);
+    const hml = getHML(draw.numbers);
+    const wcBg = {red:'#cc1122',blue:'#1155cc',yellow:'#228833',draw:'#445'};
+    document.getElementById('live-draw-id').textContent = '#' + draw.id;
+    document.getElementById('live-total').textContent = total;
+    const badge = document.getElementById('live-hml-badge');
+    badge.textContent = hmlLabel(hml);
+    badge.className = 'live-hml-badge hml-badge-'+(hml==='up'?'hi':hml==='down'?'lo':'mid');
+    const wc = document.getElementById('live-win-col');
+    wc.style.background = wcBg[draw.winCol]||'#445';
+    document.getElementById('live-draw-balls').innerHTML = draw.numbers.map((n,i)=>
+      `<div class="ball49-lg ${ballColour(n)}" style="animation-delay:${i*0.07}s">${n}</div>`
+    ).join('');
+  }
+
+  // ── Draw table ──
   function renderDrawTable(draws) {
     const tbody = document.getElementById('draw-tbody');
     if (!draws.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);font-family:\'Share Tech Mono\',monospace">NO DATA AVAILABLE</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);font-family:\'Share Tech Mono\',monospace">NO DATA RECEIVED</td></tr>';
       return;
     }
-
-    tbody.innerHTML = draws.map((d, idx) => {
-      const nums = d.numbers;
-      const total = nums.reduce((s, n) => s + parseInt(n), 0);
-      const hml   = getHML(nums);
-
-      // Balls — colour each ball based on number range
-      const ballsHtml = nums.map(n => {
-        return `<div class="ball49 ${ballColour(n)}">${n}</div>`;
-      }).join('');
-
-      // Hi/Mid/Lo arrow
-      const arrowHtml = hml === 'up'
+    const wcBg = {red:'#cc1122',blue:'#1155cc',yellow:'#228833',draw:'#555'};
+    tbody.innerHTML = draws.map((d,idx)=>{
+      const total = d.numbers.reduce((s,n)=>s+parseInt(n),0);
+      const hml = getHML(d.numbers);
+      const ballsHtml = d.numbers.map(n=>`<div class="ball49 ${ballColour(n)}">${n}</div>`).join('');
+      const arrowHtml = hml==='up'
         ? `<div class="hml-arrow hml-up"></div>`
-        : hml === 'down'
-          ? `<div class="hml-arrow hml-down"></div>`
-          : `<div class="hml-mid"></div>`;
-
-      // Win colour — use site's value: Red/Blue/Yellow/Draw
-      const wcBgMap = { red: '#cc0022', blue: '#0055cc', yellow: '#cc8800', draw: '#555555' };
-      const wc = d.winColour;
-      const winColHtml = wcBgMap[wc]
-        ? `<div class="win-colour-box" style="background:${wcBgMap[wc]}"></div>`
-        : `<span class="win-none">none</span>`;
-
-      // Colour count boxes — from site's R G B data
+        : hml==='down' ? `<div class="hml-arrow hml-down"></div>` : `<div class="hml-mid"></div>`;
+      const winColHtml = wcBg[d.winCol]
+        ? `<div class="win-colour-box" style="background:${wcBg[d.winCol]}"></div>`
+        : `<span class="win-none">—</span>`;
       const ccHtml = `<div class="colour-counts">
         <div class="cc-box cc-red">${d.colR}</div>
         <div class="cc-box cc-green">${d.colG}</div>
-        <div class="cc-box cc-blue">${d.colB}</div>
-      </div>`;
-
-      return `<tr style="${idx === 0 ? 'background:rgba(0,245,255,0.04)' : ''}">
-        <td class="draw-id-cell">${d.id}${idx === 0 ? ' <span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:var(--accent-cyan);letter-spacing:1px">NEW</span>' : ''}</td>
+        <div class="cc-box cc-blue">${d.colB}</div></div>`;
+      return `<tr style="${idx===0?'background:rgba(0,245,255,0.04)':''}">
+        <td class="draw-id-cell">${d.id}${idx===0?' <span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:var(--accent-cyan);letter-spacing:1px">NEW</span>':''}</td>
         <td><div class="balls-cell">${ballsHtml}</div></td>
         <td class="hml-cell">${arrowHtml}</td>
         <td style="text-align:center">${winColHtml}</td>
         <td>${ccHtml}</td>
-        <td class="total-cell">${total}</td>
-      </tr>`;
+        <td class="total-cell">${total}</td></tr>`;
     }).join('');
   }
 
+  // ── Draw summary mini squares ──
+  function renderDrawSummary(draws) {
+    const hmlEl = document.getElementById('ds-hml');
+    const colEl = document.getElementById('ds-col');
+    if (!hmlEl||!colEl) return;
+    const wcCls = {red:'ds-col-r',blue:'ds-col-b',yellow:'ds-col-g',draw:'ds-col-n'};
+    hmlEl.innerHTML = draws.map(d => {
+      const h=getHML(d.numbers);
+      const total=d.numbers.reduce((s,n)=>s+parseInt(n),0);
+      const cls = h==='up'?'ds-hi':h==='down'?'ds-lo':'ds-mid';
+      return `<div class="ds-square ${cls}" title="${hmlLabel(h)} (${total})"></div>`;
+    }).join('');
+    colEl.innerHTML = draws.map(d =>
+      `<div class="ds-square ${wcCls[d.winCol]||'ds-col-n'}" title="${d.winCol||'none'}"></div>`
+    ).join('');
+  }
+
+  // ── Hot/Cold numbers (with coloured balls) ──
+  function ballBg(n) {
+    const m = parseInt(n)%3;
+    return m===1?'#cc0022':m===2?'#0055cc':'#007733';
+  }
   function renderHotNumbers(items) {
     const el = document.getElementById('hot-numbers-container');
-    if (!items.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No data</div>'; return; }
-    const max = Math.max(...items.map(i => i.count), 1);
-    el.innerHTML = items.map(i => `
+    if (!items.length) { el.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No data</div>'; return; }
+    const max = Math.max(...items.map(i=>i.count),1);
+    el.innerHTML = items.map(i=>`
       <div class="hot-bar">
-        <div class="hot-num">${i.num}</div>
+        <div style="width:28px;height:28px;border-radius:50%;background:${ballBg(i.num)};display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">${i.num}</div>
         <div class="hot-fill"><div class="hot-fill-inner" style="width:${Math.round(i.count/max*100)}%"></div></div>
         <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent-orange);width:28px;text-align:right">${i.count}×</div>
       </div>`).join('');
   }
-
   function renderLateNumbers(items) {
     const el = document.getElementById('late-numbers-container');
-    if (!items.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No data</div>'; return; }
-    const max = Math.max(...items.map(i => i.count), 1);
-    el.innerHTML = items.map(i => `
+    if (!items.length) { el.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No data</div>'; return; }
+    const max = Math.max(...items.map(i=>i.count),1);
+    el.innerHTML = items.map(i=>`
       <div class="hot-bar">
-        <div class="hot-num cold-num">${i.num}</div>
+        <div style="width:28px;height:28px;border-radius:50%;background:${ballBg(i.num)};display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">${i.num}</div>
         <div class="hot-fill"><div class="hot-fill-inner cold-fill-inner" style="width:${Math.round(i.count/max*100)}%"></div></div>
         <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent-cyan);width:40px;text-align:right">${i.count}d</div>
       </div>`).join('');
   }
 
+  // ── Colour tally ──
   function renderColourTally(t) {
-    document.getElementById('ct-red').textContent    = t.red    || 0;
-    document.getElementById('ct-green').textContent  = t.yellow || 0;  // reuse green slot for yellow
-    document.getElementById('ct-blue').textContent   = t.blue   || 0;
-    document.getElementById('ct-none').textContent   = t.draw   || 0;
+    document.getElementById('ct-red').textContent   = t.red    || 0;
+    document.getElementById('ct-green').textContent = t.yellow || 0;
+    document.getElementById('ct-blue').textContent  = t.blue   || 0;
+    document.getElementById('ct-none').textContent  = t.draw   || 0;
   }
 
-  // ── Auto-refresh lifecycle ──
+  // ── Lifecycle ──
   let _49jaTimer = null;
-  function start49jaFeed() { fetch49ja(); _49jaTimer = setInterval(fetch49ja, 60000); }
-  function stop49jaFeed()  { if (_49jaTimer) { clearInterval(_49jaTimer); _49jaTimer = null; } }
+  function start49jaFeed() {
+    buildBallPicker('bp-bet49', 4);
+    buildBallPicker('bp-dragon', 15);
+    buildBallPicker('bp-betzero', 4);
+    fetch49ja();
+    _49jaTimer = setInterval(fetch49ja, 10000);
+  }
+  function stop49jaFeed() {
+    if (_49jaTimer) { clearInterval(_49jaTimer); _49jaTimer = null; }
+  }
 
   const _origShowPage = window.showPage;
   window.showPage = function(id) {
