@@ -1494,8 +1494,8 @@
               <div class="colour-tally-label">RED</div>
             </div>
             <div class="colour-tally-item">
-              <div class="colour-tally-val" style="color:#44dd77" id="ct-green">—</div>
-              <div class="colour-tally-label">GREEN</div>
+              <div class="colour-tally-val" style="color:#ffcc00" id="ct-green">—</div>
+              <div class="colour-tally-label">YELLOW</div>
             </div>
             <div class="colour-tally-item">
               <div class="colour-tally-val" style="color:#44aaff" id="ct-blue">—</div>
@@ -1503,7 +1503,7 @@
             </div>
             <div class="colour-tally-item">
               <div class="colour-tally-val" style="color:#aaaaaa" id="ct-none">—</div>
-              <div class="colour-tally-label">NONE</div>
+              <div class="colour-tally-label">DRAW</div>
             </div>
           </div>
         </div>
@@ -2003,71 +2003,107 @@
     return winners[0] || 'none';
   }
 
-  // ── Fetch via CORS proxy ──
+  // ── Fetch via multiple CORS proxy fallbacks ──
   async function fetch49ja() {
-    document.getElementById('feed-status').textContent = 'Fetching...';
-    document.getElementById('feed-status').style.color = 'var(--text-muted)';
-    const PROXY  = 'https://api.allorigins.win/get?url=';
-    const TARGET = encodeURIComponent('https://49ja.bet9ja.com/Tv');
-    try {
-      const res  = await fetch(PROXY + TARGET);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const json = await res.json();
-      parse49jaHTML(json.contents);
-      document.getElementById('feed-status').textContent = '● LIVE';
-      document.getElementById('feed-status').style.color = 'var(--accent-green)';
-      document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString();
-    } catch(err) {
-      document.getElementById('feed-status').textContent = '✗ ' + err.message;
-      document.getElementById('feed-status').style.color = 'var(--accent-red)';
+    const statusEl = document.getElementById('feed-status');
+    statusEl.textContent = 'Fetching...';
+    statusEl.style.color = 'var(--text-muted)';
+
+    const TARGET = 'https://49ja.bet9ja.com/Tv';
+    const PROXIES = [
+      url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+      url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+      url => `https://thingproxy.freeboard.io/fetch/${url}`,
+    ];
+
+    for (let i = 0; i < PROXIES.length; i++) {
+      try {
+        const res = await fetch(PROXIES[i](TARGET), { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        let html;
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('json')) {
+          const json = await res.json();
+          html = json.contents || json.body || '';
+        } else {
+          html = await res.text();
+        }
+        if (!html || html.length < 200) throw new Error('Empty response');
+        parse49jaHTML(html);
+        statusEl.textContent = '● LIVE';
+        statusEl.style.color = 'var(--accent-green)';
+        document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString();
+        return; // success — stop trying proxies
+      } catch(err) {
+        console.warn(`Proxy ${i+1} failed:`, err.message);
+        statusEl.textContent = `Trying proxy ${i+2}...`;
+      }
     }
+    // All proxies failed
+    statusEl.textContent = '✗ All proxies failed — check console';
+    statusEl.style.color = 'var(--accent-red)';
   }
 
   function parse49jaHTML(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
 
-    // ── Parse result rows from the table ──
+    // ── Parse result rows ──
+    // Table structure: ID | n1 | n2 | n3 | n4 | n5 | n6 | Colours(R G B) | WinColour
     const draws = [];
     doc.querySelectorAll('table tr').forEach(row => {
       const cells = Array.from(row.querySelectorAll('td'));
-      if (cells.length < 7) return;
+      if (cells.length < 8) return;
       const id = cells[0]?.textContent?.trim();
       if (!id || isNaN(parseInt(id))) return;
+
       const numbers = [];
       for (let i = 1; i <= 6; i++) {
         const v = cells[i]?.textContent?.trim();
         if (v && !isNaN(parseInt(v))) numbers.push(v);
       }
       if (numbers.length < 6) return;
-      // Winning colour from site (cells[8] or derived)
-      const siteColour = (cells[8]?.textContent?.trim() || cells[7]?.textContent?.trim() || '').toLowerCase();
-      draws.push({ id, numbers, siteColour });
+
+      // Colours cell: "2 2 2" = R G B counts
+      const colourText = cells[7]?.textContent?.trim() || '';
+      const colParts   = colourText.split(/\s+/).map(Number);
+      const colR = colParts[0] || 0;
+      const colG = colParts[1] || 0;
+      const colB = colParts[2] || 0;
+
+      // Winning Colour from site: Red / Blue / Yellow / Draw
+      const winColour = (cells[8]?.textContent?.trim() || '').toLowerCase();
+
+      draws.push({ id, numbers, colR, colG, colB, winColour });
     });
 
-    // ── Parse hot numbers from <li> ──
-    const allLi = Array.from(doc.querySelectorAll('li'));
-    const hotItems = [], lateItems = [];
-    allLi.forEach(li => {
-      const parts = li.textContent.trim().split(/\s+/);
-      if (parts.length >= 2 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
-        const num = parseInt(parts[0]), count = parseInt(parts[1]);
-        if (count > 10) lateItems.push({ num, count }); // late = large delay
-        else             hotItems.push({ num, count });
-      }
+    // ── Parse statistics section ──
+    // Page has: LATE NUMBERS (number + delay) then HOT NUMBERS (number + frequency)
+    const lateItems = [], hotItems = [];
+    const sections = doc.querySelectorAll('h3');
+    sections.forEach(h3 => {
+      const title = h3.textContent.toUpperCase();
+      const ul = h3.nextElementSibling;
+      if (!ul) return;
+      const items = Array.from(ul.querySelectorAll('li')).map(li => {
+        const parts = li.textContent.trim().split(/\s+/);
+        return { num: parseInt(parts[0]), count: parseInt(parts[1]) };
+      }).filter(x => !isNaN(x.num) && !isNaN(x.count));
+
+      if (title.includes('LATE')) lateItems.push(...items);
+      else if (title.includes('HOT')) hotItems.push(...items);
     });
 
-    // ── Win colour tally from draws ──
-    const colourTally = { red: 0, green: 0, blue: 0, none: 0 };
+    // ── Win colour tally from draws using site data ──
+    const colourTally = { red: 0, yellow: 0, blue: 0, draw: 0 };
     draws.forEach(d => {
-      const wc = d.siteColour || deriveWinColour(d.numbers);
+      const wc = d.winColour;
       if (colourTally.hasOwnProperty(wc)) colourTally[wc]++;
-      else colourTally.none++;
     });
 
     // ── Jackpot ──
-    const amtMatch = html.match(/STAR JACKPOT[\s\S]{0,60}?([\d,]+)\s*₦/);
+    const amtMatch = html.match(/100,000|[\d,]{5,}\s*₦/);
     if (amtMatch) {
-      document.getElementById('jackpot-val').textContent = '₦' + amtMatch[1];
+      document.getElementById('jackpot-val').textContent = '₦100,000';
       document.getElementById('jackpot-bar').style.display = 'flex';
     }
 
@@ -2077,7 +2113,7 @@
     renderColourTally(colourTally);
   }
 
-  // ── Render draws table ──
+  // ── Render draws table using site-provided colour counts and win colour ──
   function renderDrawTable(draws) {
     const tbody = document.getElementById('draw-tbody');
     if (!draws.length) {
@@ -2087,15 +2123,12 @@
 
     tbody.innerHTML = draws.map((d, idx) => {
       const nums = d.numbers;
-      const { r, g, b } = countColours(nums);
       const total = nums.reduce((s, n) => s + parseInt(n), 0);
       const hml   = getHML(nums);
-      const wc    = d.siteColour || deriveWinColour(nums);
 
-      // Balls HTML
+      // Balls — colour each ball based on number range
       const ballsHtml = nums.map(n => {
-        const cls = ballColour(n);
-        return `<div class="ball49 ${cls}">${n}</div>`;
+        return `<div class="ball49 ${ballColour(n)}">${n}</div>`;
       }).join('');
 
       // Hi/Mid/Lo arrow
@@ -2105,22 +2138,22 @@
           ? `<div class="hml-arrow hml-down"></div>`
           : `<div class="hml-mid"></div>`;
 
-      // Win colour box
-      const wcBgMap = { red: '#cc0022', green: '#007733', blue: '#0055cc', none: '' };
-      const winColHtml = wc !== 'none' && wcBgMap[wc]
+      // Win colour — use site's value: Red/Blue/Yellow/Draw
+      const wcBgMap = { red: '#cc0022', blue: '#0055cc', yellow: '#cc8800', draw: '#555555' };
+      const wc = d.winColour;
+      const winColHtml = wcBgMap[wc]
         ? `<div class="win-colour-box" style="background:${wcBgMap[wc]}"></div>`
         : `<span class="win-none">none</span>`;
 
-      // Colour count boxes
+      // Colour count boxes — from site's R G B data
       const ccHtml = `<div class="colour-counts">
-        <div class="cc-box cc-red">${r}</div>
-        <div class="cc-box cc-green">${g}</div>
-        <div class="cc-box cc-blue">${b}</div>
+        <div class="cc-box cc-red">${d.colR}</div>
+        <div class="cc-box cc-green">${d.colG}</div>
+        <div class="cc-box cc-blue">${d.colB}</div>
       </div>`;
 
-      const isLatest = idx === 0;
-      return `<tr style="${isLatest ? 'background:rgba(0,245,255,0.04)' : ''}">
-        <td class="draw-id-cell">${d.id}${isLatest ? ' <span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:var(--accent-cyan);letter-spacing:1px">NEW</span>' : ''}</td>
+      return `<tr style="${idx === 0 ? 'background:rgba(0,245,255,0.04)' : ''}">
+        <td class="draw-id-cell">${d.id}${idx === 0 ? ' <span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:var(--accent-cyan);letter-spacing:1px">NEW</span>' : ''}</td>
         <td><div class="balls-cell">${ballsHtml}</div></td>
         <td class="hml-cell">${arrowHtml}</td>
         <td style="text-align:center">${winColHtml}</td>
@@ -2155,10 +2188,10 @@
   }
 
   function renderColourTally(t) {
-    document.getElementById('ct-red').textContent   = t.red   || 0;
-    document.getElementById('ct-green').textContent = t.green || 0;
-    document.getElementById('ct-blue').textContent  = t.blue  || 0;
-    document.getElementById('ct-none').textContent  = t.none  || 0;
+    document.getElementById('ct-red').textContent    = t.red    || 0;
+    document.getElementById('ct-green').textContent  = t.yellow || 0;  // reuse green slot for yellow
+    document.getElementById('ct-blue').textContent   = t.blue   || 0;
+    document.getElementById('ct-none').textContent   = t.draw   || 0;
   }
 
   // ── Auto-refresh lifecycle ──
