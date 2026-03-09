@@ -1633,12 +1633,11 @@
       <div class="page-subtitle" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
         Live draw results · Bet9ja Virtual 49ja
         <span id="feed-status">Connecting...</span>
+        <span id="feed-countdown" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent-orange);display:none">⏱ NEXT: <span id="countdown-val">—</span>s</span>
         <button class="btn btn-cyan btn-sm" onclick="fetch49ja()">↺ REFRESH</button>
       </div>
     </div>
-
-    <!-- Jackpot bar -->
-    <div class="jackpot-bar" id="jackpot-bar" style="display:none">
+        <div class="jackpot-bar" id="jackpot-bar" style="display:none">
       <div><div class="jackpot-label">⭐ STAR JACKPOT</div></div>
       <div class="jackpot-val" id="jackpot-val">—</div>
       <div style="text-align:right">
@@ -2559,107 +2558,148 @@
     } else res.classList.remove('show');
   }
 
-  // ── Fetch with 3-proxy fallback ──
+
+  // ── Real game API endpoints (confirmed) ──
+  const API_HISTORY  = 'https://logigames.bet9ja.com/Games/Balls49/DrawHistory';
+  const API_TIMELEFT = 'https://logigames.bet9ja.com/Games/Balls49/TimeLeft';
+
+  const PROXIES = [
+    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+    u => `https://thingproxy.freeboard.io/fetch/${u}`,
+  ];
+
+  async function fetchJSON(url) {
+    const body = JSON.stringify({
+      pff: 1,
+      gameId: 11000,
+      tmp: new Date().toISOString()
+    });
+    const opts = {
+      method: 'POST',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // send session cookies if same-domain
+      body,
+    };
+
+    // Try direct first (works if opened alongside the game in the same browser)
+    try {
+      const res = await fetch(url, opts);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.status !== -1 && !data.error) return data;
+      }
+    } catch(_) {}
+
+    // Fall back to CORS proxies (proxies can't forward cookies, but worth trying)
+    for (const proxy of PROXIES) {
+      try {
+        const res = await fetch(proxy(url), {
+          method: 'POST',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+        });
+        if (!res.ok) continue;
+        const ct = res.headers.get('content-type') || '';
+        const raw = ct.includes('json') ? await res.json() : JSON.parse(await res.text());
+        const data = raw?.contents ? JSON.parse(raw.contents) : raw;
+        if (data && data.status !== -1) return data;
+      } catch(_) {}
+    }
+    return null;
+  }
+
   async function fetch49ja() {
     const statusEl = document.getElementById('feed-status');
     statusEl.textContent = 'Fetching...';
     statusEl.style.color = 'var(--text-muted)';
-    const TARGET = 'https://49ja.bet9ja.com/Tv';
-    const PROXIES = [
-      u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-      u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
-      u => `https://thingproxy.freeboard.io/fetch/${u}`,
-    ];
-    for (let i = 0; i < PROXIES.length; i++) {
-      try {
-        const res = await fetch(PROXIES[i](TARGET), { cache: 'no-store' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const ct = res.headers.get('content-type') || '';
-        let html = ct.includes('json') ? (await res.json()).contents : await res.text();
-        if (!html || html.length < 200) throw new Error('Empty');
-        parse49jaHTML(html);
-        statusEl.textContent = '● LIVE';
-        statusEl.style.color = 'var(--accent-green)';
-        document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString();
-        return;
-      } catch(e) {
-        console.warn('Proxy ' + (i+1) + ' failed:', e.message);
-        if (i < PROXIES.length - 1) statusEl.textContent = 'Trying proxy ' + (i+2) + '...';
-      }
+
+    const data = await fetchJSON(API_HISTORY);
+
+    if (!data || data.status === -1 || data.error) {
+      statusEl.textContent = '✗ Connection failed';
+      statusEl.style.color = 'var(--accent-red)';
+      return;
     }
-    statusEl.textContent = '✗ Fetch failed';
-    statusEl.style.color = 'var(--accent-red)';
+
+    if (parseGameJSON(data)) {
+      statusEl.textContent = '● LIVE';
+      statusEl.style.color = 'var(--accent-green)';
+      document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString();
+    } else {
+      statusEl.textContent = '⚠ Unexpected data format';
+      statusEl.style.color = '#ffaa00';
+      console.warn('DrawHistory raw response:', data);
+    }
   }
 
-  function parse49jaHTML(html) {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const draws = [];
-    doc.querySelectorAll('table tr').forEach(row => {
-      const cells = Array.from(row.querySelectorAll('td'));
-      if (cells.length < 8) return;
-      const id = cells[0]?.textContent?.trim();
-      if (!id || isNaN(parseInt(id))) return;
-      const numbers = [];
-      for (let i = 1; i <= 6; i++) {
-        const v = cells[i]?.textContent?.trim();
-        if (v && !isNaN(parseInt(v))) numbers.push(v);
+  // ── Parse game JSON response (handles various shapes) ──
+  // ── Parse DrawHistory response ──
+  // Confirmed shape: { status:1, data:{ draws:[{ id:"5475161", dr:"9,29,1,47,13,15", total:114, ... }] } }
+  function parseGameJSON(data) {
+    const draws = data?.data?.draws;
+    if (!Array.isArray(draws) || !draws.length) return false;
+
+    const parsed = draws.map(row => {
+      const id = String(row.id ?? '');
+      // "dr" = comma-separated ball numbers e.g. "9,29,1,47,13,15"
+      const numbers = String(row.dr ?? '').split(',')
+        .map(n => parseInt(n.trim()))
+        .filter(n => n >= 1 && n <= 49)
+        .slice(0, 6);
+      if (!id || numbers.length < 6) return null;
+
+      const colR = numbers.filter(n => n % 3 === 1).length;
+      const colG = numbers.filter(n => n % 3 === 0).length;
+      const colB = numbers.filter(n => n % 3 === 2).length;
+
+      // Use API win colour if present, else compute from majority
+      let winCol = String(row.winColour ?? row.winColor ?? row.wc ?? row.colour ?? row.color ?? '').toLowerCase();
+      if (!winCol || !['red','blue','yellow','none','draw'].includes(winCol)) {
+        const max = Math.max(colR, colG, colB);
+        const winners = [colR===max&&'red', colG===max&&'yellow', colB===max&&'blue'].filter(Boolean);
+        winCol = winners.length === 1 ? winners[0] : 'draw';
       }
-      if (numbers.length < 6) return;
-      const colParts = (cells[7]?.textContent?.trim()||'').split(/\s+/).map(Number);
-      draws.push({ id, numbers,
-        colR:colParts[0]||0, colG:colParts[1]||0, colB:colParts[2]||0,
-        winCol:(cells[8]?.textContent?.trim()||'').toLowerCase() });
-    });
 
-    const lateItems=[], hotItems=[];
-    doc.querySelectorAll('h3').forEach(h3 => {
-      const title = h3.textContent.toUpperCase();
-      const ul = h3.nextElementSibling;
-      if (!ul) return;
-      const items = Array.from(ul.querySelectorAll('li')).map(li => {
-        const p = li.textContent.trim().split(/\s+/);
-        return {num:parseInt(p[0]), count:parseInt(p[1])};
-      }).filter(x=>!isNaN(x.num)&&!isNaN(x.count));
-      if (title.includes('LATE')) lateItems.push(...items);
-      else if (title.includes('HOT')) hotItems.push(...items);
-    });
+      return { id, numbers: numbers.map(String), colR, colG, colB, winCol };
+    }).filter(Boolean);
 
-    const tally = {red:0,blue:0,yellow:0,draw:0};
-    doc.querySelectorAll('li').forEach(li => {
-      const txt = li.textContent.toUpperCase();
-      const m = txt.match(/(\d+)\s*DRAWS?/);
-      const count = m ? parseInt(m[1]) : 0;
-      if (txt.includes('RED'))    tally.red=count;
-      if (txt.includes('BLUE'))   tally.blue=count;
-      if (txt.includes('YELLOW')) tally.yellow=count;
-      if (txt.includes('DRAW')&&!txt.includes('DRAWS')) tally.draw=count;
-    });
+    if (!parsed.length) return false;
 
-    const jEl = document.getElementById('jackpot-bar');
-    if (jEl) { document.getElementById('jackpot-val').textContent='₦100,000'; jEl.style.display='flex'; }
+    // Compute hot/cold from the draw history
+    const freq = {};
+    parsed.forEach(d => d.numbers.forEach(n => { freq[n] = (freq[n]||0)+1; }));
+    const sorted = Object.entries(freq).sort((a,b) => b[1]-a[1]);
+    const hotItems  = sorted.slice(0,7).map(([n,c]) => ({ num:parseInt(n), count:c }));
+    const lateItems = sorted.slice(-7).reverse().map(([n,c]) => ({ num:parseInt(n), count:parsed.length-c }));
 
-    if (draws.length) renderLiveBall(draws[0]);
-    renderDrawTable(draws);
-    renderHotNumbers(hotItems.slice(0,7));
-    renderLateNumbers(lateItems.slice(0,7));
-    renderDrawSummary(draws.slice(0,10));
+    const tally = { red:0, blue:0, yellow:0, draw:0 };
+    parsed.slice(0,20).forEach(d => { if (tally.hasOwnProperty(d.winCol)) tally[d.winCol]++; });
+
+    renderLiveBall(parsed[0]);
+    renderDrawTable(parsed);
+    renderHotNumbers(hotItems);
+    renderLateNumbers(lateItems);
+    renderDrawSummary(parsed.slice(0,10));
     renderColourTally(tally);
+    return true;
   }
 
-  // ── Live ball bar ──
+  // ── Live draw bar ──
   function renderLiveBall(draw) {
     if (!draw) return;
-    const total = draw.numbers.reduce((s,n)=>s+parseInt(n),0);
+    const total = draw.numbers.reduce((s, n) => s + parseInt(n), 0);
     const hml = getHML(draw.numbers);
-    const wcBg = {red:'#cc1122',blue:'#1155cc',yellow:'#228833',draw:'#445'};
+    const wcBg = { red:'#cc1122', blue:'#1155cc', yellow:'#228833', draw:'#445' };
     document.getElementById('live-draw-id').textContent = '#' + draw.id;
     document.getElementById('live-total').textContent = total;
     const badge = document.getElementById('live-hml-badge');
     badge.textContent = hmlLabel(hml);
-    badge.className = 'live-hml-badge hml-badge-'+(hml==='up'?'hi':hml==='down'?'lo':'mid');
-    const wc = document.getElementById('live-win-col');
-    wc.style.background = wcBg[draw.winCol]||'#445';
-    document.getElementById('live-draw-balls').innerHTML = draw.numbers.map((n,i)=>
+    badge.className = 'live-hml-badge hml-badge-' + (hml==='up'?'hi':hml==='down'?'lo':'mid');
+    document.getElementById('live-win-col').style.background = wcBg[draw.winCol] || '#445';
+    document.getElementById('live-draw-balls').innerHTML = draw.numbers.map((n, i) =>
       `<div class="ball49-lg ${ballColour(n)}" style="animation-delay:${i*0.07}s">${n}</div>`
     ).join('');
   }
@@ -2671,14 +2711,14 @@
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);font-family:\'Share Tech Mono\',monospace">NO DATA RECEIVED</td></tr>';
       return;
     }
-    const wcBg = {red:'#cc1122',blue:'#1155cc',yellow:'#228833',draw:'#555'};
-    tbody.innerHTML = draws.map((d,idx)=>{
-      const total = d.numbers.reduce((s,n)=>s+parseInt(n),0);
+    const wcBg = { red:'#cc1122', blue:'#1155cc', yellow:'#228833', draw:'#555' };
+    tbody.innerHTML = draws.map((d, idx) => {
+      const total = d.numbers.reduce((s, n) => s + parseInt(n), 0);
       const hml = getHML(d.numbers);
-      const ballsHtml = d.numbers.map(n=>`<div class="ball49 ${ballColour(n)}">${n}</div>`).join('');
-      const arrowHtml = hml==='up'
+      const ballsHtml = d.numbers.map(n => `<div class="ball49 ${ballColour(n)}">${n}</div>`).join('');
+      const arrowHtml = hml === 'up'
         ? `<div class="hml-arrow hml-up"></div>`
-        : hml==='down' ? `<div class="hml-arrow hml-down"></div>` : `<div class="hml-mid"></div>`;
+        : hml === 'down' ? `<div class="hml-arrow hml-down"></div>` : `<div class="hml-mid"></div>`;
       const winColHtml = wcBg[d.winCol]
         ? `<div class="win-colour-box" style="background:${wcBg[d.winCol]}"></div>`
         : `<span class="win-none">—</span>`;
@@ -2700,29 +2740,28 @@
   function renderDrawSummary(draws) {
     const hmlEl = document.getElementById('ds-hml');
     const colEl = document.getElementById('ds-col');
-    if (!hmlEl||!colEl) return;
-    const wcCls = {red:'ds-col-r',blue:'ds-col-b',yellow:'ds-col-g',draw:'ds-col-n'};
+    if (!hmlEl || !colEl) return;
+    const wcCls = { red:'ds-col-r', blue:'ds-col-b', yellow:'ds-col-g', draw:'ds-col-n' };
     hmlEl.innerHTML = draws.map(d => {
-      const h=getHML(d.numbers);
-      const total=d.numbers.reduce((s,n)=>s+parseInt(n),0);
-      const cls = h==='up'?'ds-hi':h==='down'?'ds-lo':'ds-mid';
-      return `<div class="ds-square ${cls}" title="${hmlLabel(h)} (${total})"></div>`;
+      const h = getHML(d.numbers);
+      const t = d.numbers.reduce((s,n)=>s+parseInt(n),0);
+      return `<div class="ds-square ${h==='up'?'ds-hi':h==='down'?'ds-lo':'ds-mid'}" title="${hmlLabel(h)} (${t})"></div>`;
     }).join('');
     colEl.innerHTML = draws.map(d =>
       `<div class="ds-square ${wcCls[d.winCol]||'ds-col-n'}" title="${d.winCol||'none'}"></div>`
     ).join('');
   }
 
-  // ── Hot/Cold numbers (with coloured balls) ──
+  // ── Hot/cold numbers ──
   function ballBg(n) {
-    const m = parseInt(n)%3;
-    return m===1?'#cc0022':m===2?'#0055cc':'#007733';
+    const m = parseInt(n) % 3;
+    return m===1 ? '#cc0022' : m===2 ? '#0055cc' : '#007733';
   }
   function renderHotNumbers(items) {
     const el = document.getElementById('hot-numbers-container');
-    if (!items.length) { el.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No data</div>'; return; }
-    const max = Math.max(...items.map(i=>i.count),1);
-    el.innerHTML = items.map(i=>`
+    if (!items.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No data</div>'; return; }
+    const max = Math.max(...items.map(i=>i.count), 1);
+    el.innerHTML = items.map(i => `
       <div class="hot-bar">
         <div style="width:28px;height:28px;border-radius:50%;background:${ballBg(i.num)};display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">${i.num}</div>
         <div class="hot-fill"><div class="hot-fill-inner" style="width:${Math.round(i.count/max*100)}%"></div></div>
@@ -2731,9 +2770,9 @@
   }
   function renderLateNumbers(items) {
     const el = document.getElementById('late-numbers-container');
-    if (!items.length) { el.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No data</div>'; return; }
-    const max = Math.max(...items.map(i=>i.count),1);
-    el.innerHTML = items.map(i=>`
+    if (!items.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No data</div>'; return; }
+    const max = Math.max(...items.map(i=>i.count), 1);
+    el.innerHTML = items.map(i => `
       <div class="hot-bar">
         <div style="width:28px;height:28px;border-radius:50%;background:${ballBg(i.num)};display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">${i.num}</div>
         <div class="hot-fill"><div class="hot-fill-inner cold-fill-inner" style="width:${Math.round(i.count/max*100)}%"></div></div>
@@ -2751,15 +2790,40 @@
 
   // ── Lifecycle ──
   let _49jaTimer = null;
+  let _countdownTimer = null;
+  let _lastDrawId = null;
+
+  async function pollTimeLeft() {
+    try {
+      const data = await fetchJSON(API_TIMELEFT);
+      if (!data || data.status === -1 || data.error) return;
+      const secs = data?.data?.timeLeft ?? data?.data?.seconds ?? data?.timeLeft ?? data?.seconds ?? null;
+      if (secs !== null) {
+        const el = document.getElementById('feed-countdown');
+        const val = document.getElementById('countdown-val');
+        el.style.display = 'inline';
+        val.textContent = Math.max(0, Math.round(secs));
+        // When a new draw has just fired (timeLeft resets to high value after being near 0)
+        if (secs <= 3) {
+          setTimeout(fetch49ja, 3500); // fetch results ~3.5s after draw
+        }
+      }
+    } catch(_) {}
+  }
+
   function start49jaFeed() {
     buildBallPicker('bp-bet49', 4);
     buildBallPicker('bp-dragon', 15);
     buildBallPicker('bp-betzero', 4);
     fetch49ja();
-    _49jaTimer = setInterval(fetch49ja, 10000);
+    _49jaTimer = setInterval(fetch49ja, 15000);       // full results refresh every 15s
+    _countdownTimer = setInterval(pollTimeLeft, 1000); // countdown every 1s
   }
   function stop49jaFeed() {
     if (_49jaTimer) { clearInterval(_49jaTimer); _49jaTimer = null; }
+    if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
+    const el = document.getElementById('feed-countdown');
+    if (el) el.style.display = 'none';
   }
 
   const _origShowPage = window.showPage;
