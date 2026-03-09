@@ -1,0 +1,2182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BetLab Pro — Trader's Arsenal</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg-void: #020408;
+    --bg-deep: #050d15;
+    --bg-panel: #0a1628;
+    --bg-card: #0d1f38;
+    --bg-hover: #112440;
+    --accent-cyan: #00f5ff;
+    --accent-green: #00ff88;
+    --accent-orange: #ff6b00;
+    --accent-red: #ff2244;
+    --accent-purple: #bf00ff;
+    --text-primary: #e8f4ff;
+    --text-secondary: #7aa0c4;
+    --text-muted: #3a5a7a;
+    --border-dim: #0e2a45;
+    --border-glow: #1a4a7a;
+    --glow-cyan: 0 0 20px rgba(0,245,255,0.3);
+    --glow-green: 0 0 20px rgba(0,255,136,0.3);
+    --glow-orange: 0 0 20px rgba(255,107,0,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--bg-void);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── ANIMATED GRID BACKGROUND ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,245,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── TOPBAR ─── */
+  #topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    background: rgba(5,13,21,0.95);
+    border-bottom: 1px solid var(--border-dim);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  #topbar::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+    opacity: 0.4;
+  }
+
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--accent-cyan);
+    text-shadow: var(--glow-cyan);
+    flex: 1;
+  }
+
+  .logo span {
+    color: var(--accent-green);
+    text-shadow: var(--glow-green);
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  #user-display {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+  }
+
+  .btn {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 8px 18px;
+    border: 1px solid;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn:hover::before { opacity: 1; }
+
+  .btn-cyan {
+    color: var(--accent-cyan);
+    border-color: var(--accent-cyan);
+  }
+  .btn-cyan::before { background: rgba(0,245,255,0.1); }
+  .btn-cyan:hover { box-shadow: var(--glow-cyan); }
+
+  .btn-green {
+    color: var(--accent-green);
+    border-color: var(--accent-green);
+  }
+  .btn-green::before { background: rgba(0,255,136,0.1); }
+  .btn-green:hover { box-shadow: var(--glow-green); }
+
+  .btn-orange {
+    color: var(--accent-orange);
+    border-color: var(--accent-orange);
+  }
+  .btn-orange::before { background: rgba(255,107,0,0.1); }
+  .btn-orange:hover { box-shadow: var(--glow-orange); }
+
+  .btn-sm { font-size: 9px; padding: 6px 12px; }
+
+  /* ─── SIDEBAR NAV ─── */
+  #sidebar {
+    position: fixed;
+    top: 60px; left: 0; bottom: 0;
+    width: 220px;
+    background: rgba(5,13,21,0.98);
+    border-right: 1px solid var(--border-dim);
+    z-index: 90;
+    overflow-y: auto;
+    padding: 20px 0;
+  }
+
+  .nav-section {
+    margin-bottom: 8px;
+  }
+
+  .nav-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    padding: 8px 20px 4px;
+    text-transform: uppercase;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    position: relative;
+  }
+
+  .nav-item:hover {
+    color: var(--text-primary);
+    background: rgba(0,245,255,0.04);
+  }
+
+  .nav-item.active {
+    color: var(--accent-cyan);
+    border-left-color: var(--accent-cyan);
+    background: rgba(0,245,255,0.06);
+  }
+
+  .nav-item .nav-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+  }
+
+  .nav-badge {
+    margin-left: auto;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    background: rgba(0,245,255,0.15);
+    color: var(--accent-cyan);
+    padding: 2px 6px;
+    border: 1px solid rgba(0,245,255,0.3);
+  }
+
+  .nav-divider {
+    height: 1px;
+    background: var(--border-dim);
+    margin: 12px 20px;
+  }
+
+  /* ─── MAIN CONTENT ─── */
+  #main {
+    margin-left: 220px;
+    margin-top: 60px;
+    padding: 30px;
+    position: relative;
+    z-index: 1;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* ─── PAGES ─── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ─── PAGE HEADER ─── */
+  .page-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-dim);
+    position: relative;
+  }
+
+  .page-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0;
+    width: 120px; height: 1px;
+    background: var(--accent-cyan);
+    box-shadow: var(--glow-cyan);
+  }
+
+  .page-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+  }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    padding: 24px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent-cyan), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .card:hover { border-color: var(--border-glow); }
+  .card:hover::before { opacity: 0.5; }
+
+  .card-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--accent-cyan);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  /* ─── STATS GRID ─── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 60px; height: 60px;
+    background: radial-gradient(circle, var(--accent-glow, rgba(0,245,255,0.1)) 0%, transparent 70%);
+  }
+
+  .stat-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-value.positive { color: var(--accent-green); }
+  .stat-value.negative { color: var(--accent-red); }
+  .stat-value.accent { color: var(--accent-cyan); }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* ─── GRID LAYOUTS ─── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .mb-20 { margin-bottom: 20px; }
+  .mb-30 { margin-bottom: 30px; }
+
+  /* ─── INPUTS ─── */
+  .field-group { margin-bottom: 16px; }
+
+  .field-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  select, textarea {
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-dim);
+    color: var(--text-primary);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 1px rgba(0,245,255,0.2);
+  }
+
+  select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237aa0c4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* ─── RESULT BOX ─── */
+  .result-box {
+    background: var(--bg-deep);
+    border: 1px solid var(--accent-cyan);
+    border-left: 3px solid var(--accent-cyan);
+    padding: 16px 20px;
+    margin-top: 16px;
+    box-shadow: inset 0 0 30px rgba(0,245,255,0.03);
+  }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-dim);
+  }
+
+  .result-row:last-child { border-bottom: none; }
+
+  .result-key {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+  }
+
+  .result-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-cyan);
+  }
+
+  .result-val.green { color: var(--accent-green); }
+  .result-val.orange { color: var(--accent-orange); }
+  .result-val.red { color: var(--accent-red); }
+
+  /* ─── TABLE ─── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-dim);
+    background: var(--bg-deep);
+  }
+
+  .data-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-dim);
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .data-table tr:hover td { background: rgba(0,245,255,0.02); }
+
+  .tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border: 1px solid;
+    display: inline-block;
+    letter-spacing: 1px;
+  }
+
+  .tag-green { color: var(--accent-green); border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.05); }
+  .tag-red { color: var(--accent-red); border-color: rgba(255,34,68,0.3); background: rgba(255,34,68,0.05); }
+  .tag-cyan { color: var(--accent-cyan); border-color: rgba(0,245,255,0.3); background: rgba(0,245,255,0.05); }
+  .tag-orange { color: var(--accent-orange); border-color: rgba(255,107,0,0.3); background: rgba(255,107,0,0.05); }
+
+  /* ─── RANGE SLIDER ─── */
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--border-dim);
+    border: none;
+    outline: none;
+    padding: 0;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    background: var(--accent-cyan);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(0,245,255,0.5);
+  }
+
+
+
+  /* ─── DASHBOARD WELCOME ─── */
+  .welcome-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .welcome-bar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(180deg, var(--accent-cyan), var(--accent-green));
+  }
+
+  .welcome-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .welcome-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  /* ─── TOOL CARDS (Dashboard) ─── */
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .tool-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tool-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 100%, var(--tc-glow, rgba(0,245,255,0.05)) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .tool-card:hover {
+    border-color: var(--tc-border, var(--accent-cyan));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+
+  .tool-card:hover::after { opacity: 1; }
+
+  .tool-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .tool-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .tool-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .tool-status {
+    margin-top: 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg-void); }
+  ::-webkit-scrollbar-thumb { background: var(--border-glow); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
+
+  /* ─── PULSE ANIMATION ─── */
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  .pulse { animation: pulse-glow 2s ease-in-out infinite; }
+
+  /* ─── NOTIFICATION ─── */
+  #notif {
+    position: fixed;
+    top: 80px; right: 20px;
+    background: var(--bg-panel);
+    border: 1px solid var(--accent-green);
+    border-left: 3px solid var(--accent-green);
+    padding: 14px 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--accent-green);
+    z-index: 999;
+    transform: translateX(300px);
+    transition: transform 0.3s;
+    max-width: 260px;
+    box-shadow: var(--glow-green);
+  }
+
+  #notif.show { transform: translateX(0); }
+  #notif.error { border-color: var(--accent-red); color: var(--accent-red); box-shadow: 0 0 20px rgba(255,34,68,0.3); }
+
+  /* ─── COMING SOON ─── */
+  .coming-soon {
+    text-align: center;
+    padding: 80px 40px;
+  }
+
+  .coming-soon-icon { font-size: 60px; margin-bottom: 20px; }
+
+  .coming-soon h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    color: var(--text-secondary);
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+  }
+
+  .coming-soon p {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-bar {
+    height: 4px;
+    background: var(--border-dim);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+    transition: width 0.5s ease;
+    position: relative;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 20px; height: 100%;
+    background: white;
+    filter: blur(4px);
+    opacity: 0.5;
+  }
+
+  /* ─── 49JA LIVE FEED ─── */
+  .live-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--accent-red);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent-red);
+    animation: pulse-glow 1s ease-in-out infinite;
+    margin-right: 6px;
+  }
+
+  /* ── Draw Table ── */
+  #draw-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  #draw-table th {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--accent-cyan);
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-dim);
+    background: var(--bg-deep);
+    white-space: nowrap;
+  }
+
+  #draw-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-dim);
+    vertical-align: middle;
+  }
+
+  #draw-table tr:first-child td { background: rgba(0,245,255,0.03); }
+  #draw-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .draw-id-cell {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  /* ── Balls ── */
+  .balls-cell {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+
+  .ball49 {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 900;
+    flex-shrink: 0;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.4);
+  }
+
+  .b-red    { background: radial-gradient(circle at 35% 35%, #ff6680, #cc0022); border: 1px solid #ff2244; }
+  .b-blue   { background: radial-gradient(circle at 35% 35%, #55aaff, #0055cc); border: 1px solid #0077ff; }
+  .b-green  { background: radial-gradient(circle at 35% 35%, #44ee88, #007733); border: 1px solid #00cc44; }
+  .b-yellow { background: radial-gradient(circle at 35% 35%, #ffe066, #cc8800); border: 1px solid #ffcc00; color: #333; text-shadow: none; }
+
+  /* ── Hi/Mid/Lo ── */
+  .hml-cell {
+    text-align: center;
+  }
+
+  .hml-arrow {
+    display: inline-block;
+    width: 0; height: 0;
+  }
+
+  .hml-up {
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 18px solid #ffffff;
+  }
+
+  .hml-down {
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 18px solid #ffffff;
+  }
+
+  .hml-mid {
+    width: 28px; height: 14px;
+    background: #ffffff;
+    display: inline-block;
+  }
+
+  /* ── Win Colour ── */
+  .win-colour-box {
+    width: 52px; height: 26px;
+    display: inline-block;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .win-none {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  /* ── Colour counts ── */
+  .colour-counts {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+  }
+
+  .cc-box {
+    width: 26px; height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    border-radius: 3px;
+  }
+
+  .cc-red    { background: #cc0022; }
+  .cc-green  { background: #007733; }
+  .cc-blue   { background: #0055cc; }
+
+  /* ── Total ── */
+  .total-cell {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* ── Stats side panel ── */
+  .hot-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-dim);
+  }
+  .hot-bar:last-child { border-bottom: none; }
+  .hot-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent-orange);
+    width: 32px;
+    text-align: center;
+  }
+  .hot-fill { flex: 1; height: 6px; background: var(--border-dim); overflow: hidden; }
+  .hot-fill-inner { height: 100%; background: linear-gradient(90deg, var(--accent-orange), #ffcc00); transition: width 0.5s ease; }
+  .cold-num { color: var(--accent-cyan); }
+  .cold-fill-inner { background: linear-gradient(90deg, var(--accent-cyan), #0099cc); }
+
+  .colour-tally { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .colour-tally-item { background: var(--bg-deep); border: 1px solid var(--border-dim); padding: 14px; text-align: center; }
+  .colour-tally-val { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .colour-tally-label { font-family: 'Share Tech Mono', monospace; font-size: 9px; letter-spacing: 2px; color: var(--text-muted); }
+
+  #feed-status { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--text-muted); margin-left: 12px; }
+
+  .jackpot-bar {
+    background: linear-gradient(90deg, rgba(255,204,0,0.05), rgba(255,107,0,0.05));
+    border: 1px solid rgba(255,204,0,0.2);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .jackpot-label { font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 2px; color: #ffaa00; }
+  .jackpot-val { font-family: 'Orbitron', monospace; font-size: 16px; font-weight: 700; color: #ffcc00; text-shadow: 0 0 16px rgba(255,204,0,0.4); }
+
+  /* ─── END 49JA ─── */
+
+  /* ─── responsive ─── */
+  @media (max-width: 900px) {
+    #sidebar { display: none; }
+    #main { margin-left: 0; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+</head>
+<body>
+
+
+<!-- ══════════════════════════════════════ TOPBAR ══ -->
+<div id="topbar">
+  <div class="logo">BET<span>LAB</span> PRO</div>
+  <div class="topbar-right">
+    <div id="user-display">// DEV MODE — NO AUTH //</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ SIDEBAR ══ -->
+<nav id="sidebar">
+  <div class="nav-section">
+    <div class="nav-label">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="nav-icon">⬡</span> Dashboard
+    </div>
+  </div>
+
+  <div class="nav-divider"></div>
+
+  <div class="nav-section">
+    <div class="nav-label">Calculators</div>
+    <div class="nav-item" onclick="showPage('odds-calc')">
+      <span class="nav-icon">◈</span> Odds Calculator
+    </div>
+    <div class="nav-item" onclick="showPage('prob-calc')">
+      <span class="nav-icon">◈</span> Probability Calc
+    </div>
+    <div class="nav-item" onclick="showPage('stake-calc')">
+      <span class="nav-icon">◈</span> Stake Manager
+    </div>
+  </div>
+
+  <div class="nav-divider"></div>
+
+  <div class="nav-section">
+    <div class="nav-label">Live Data</div>
+    <div class="nav-item" onclick="showPage('49ja-live')">
+      <span class="nav-icon">🔴</span> 49ja Live Feed
+    </div>
+  </div>
+
+  <div class="nav-divider"></div>
+
+  <div class="nav-section">
+    <div class="nav-label">Analysis</div>
+    <div class="nav-item" onclick="showPage('backtester')">
+      <span class="nav-icon">▷</span> Backtester
+    </div>
+    <div class="nav-item" onclick="showPage('data-collect')">
+      <span class="nav-icon">▷</span> Data Collection
+    </div>
+  </div>
+
+  <div class="nav-divider"></div>
+
+  <div class="nav-section">
+    <div class="nav-label">System</div>
+    <div class="nav-item" onclick="showPage('profile')">
+      <span class="nav-icon">○</span> System Info
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════ MAIN ══ -->
+<main id="main">
+
+  <!-- ── DASHBOARD ── -->
+  <div id="page-dashboard" class="page active">
+    <div class="page-header">
+      <div class="page-title">COMMAND CENTER</div>
+      <div class="page-subtitle">Your betting intelligence hub</div>
+    </div>
+
+    <div class="welcome-bar">
+      <div>
+        <div class="welcome-name" id="dash-name">WELCOME, TRADER</div>
+        <div class="welcome-sub">System ready. All tools online.</div>
+      </div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);text-align:right">
+        <div id="dash-date" class="pulse"></div>
+        <div style="margin-top:4px;color:var(--accent-green)">● CONNECTED</div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Tools Available</div>
+        <div class="stat-value accent">06</div>
+        <div class="stat-sub">Active modules</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Version</div>
+        <div class="stat-value accent">1.0</div>
+        <div class="stat-sub">Build stable</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Status</div>
+        <div class="stat-value positive">LIVE</div>
+        <div class="stat-sub">All systems go</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Data Sync</div>
+        <div class="stat-value accent">LOCAL</div>
+        <div class="stat-sub">Dev mode active</div>
+      </div>
+    </div>
+
+    <div class="card mb-20">
+      <div class="card-title">Quick Access — Tools</div>
+      <div class="tools-grid">
+        <div class="tool-card" style="--tc-border:#00f5ff;--tc-glow:rgba(0,245,255,0.08)" onclick="showPage('odds-calc')">
+          <span class="tool-icon">🎯</span>
+          <div class="tool-name">Odds Calculator</div>
+          <div class="tool-desc">Convert odds formats, calculate implied probability & payouts.</div>
+          <div class="tool-status" style="color:var(--accent-cyan)">● ACTIVE</div>
+        </div>
+        <div class="tool-card" style="--tc-border:#00ff88;--tc-glow:rgba(0,255,136,0.08)" onclick="showPage('prob-calc')">
+          <span class="tool-icon">📊</span>
+          <div class="tool-name">Probability Calc</div>
+          <div class="tool-desc">True probability vs market probability edge finder.</div>
+          <div class="tool-status" style="color:var(--accent-green)">● ACTIVE</div>
+        </div>
+        <div class="tool-card" style="--tc-border:#ff6b00;--tc-glow:rgba(255,107,0,0.08)" onclick="showPage('stake-calc')">
+          <span class="tool-icon">💰</span>
+          <div class="tool-name">Stake Manager</div>
+          <div class="tool-desc">Kelly Criterion, flat staking, unit-based bankroll management.</div>
+          <div class="tool-status" style="color:var(--accent-orange)">● ACTIVE</div>
+        </div>
+        <div class="tool-card" style="--tc-border:#00f5ff;--tc-glow:rgba(0,245,255,0.08)" onclick="showPage('backtester')">
+          <span class="tool-icon">⏪</span>
+          <div class="tool-name">Backtester</div>
+          <div class="tool-desc">Test strategies against historical data. Analyse ROI & drawdown.</div>
+          <div class="tool-status" style="color:var(--accent-cyan)">● ACTIVE</div>
+        </div>
+        <div class="tool-card" style="--tc-border:#bf00ff;--tc-glow:rgba(191,0,255,0.08)" onclick="showPage('data-collect')">
+          <span class="tool-icon">🗄️</span>
+          <div class="tool-name">Data Collection</div>
+          <div class="tool-desc">Log, store and organise your betting history and market data.</div>
+          <div class="tool-status" style="color:var(--accent-purple)">● ACTIVE</div>
+        </div>
+        <div class="tool-card" style="--tc-border:#ff2244;--tc-glow:rgba(255,34,68,0.08)" onclick="showPage('49ja-live')">
+          <span class="tool-icon">🎱</span>
+          <div class="tool-name">49ja Live Feed</div>
+          <div class="tool-desc">Live draw results, hot/cold numbers & draw history from Bet9ja.</div>
+          <div class="tool-status" style="color:var(--accent-red)">● LIVE</div>
+        </div>
+        <div class="tool-card" style="--tc-border:#7aa0c4;--tc-glow:rgba(122,160,196,0.08)">
+          <span class="tool-icon">⚙️</span>
+          <div class="tool-name">More Tools</div>
+          <div class="tool-desc">Additional modules coming — describe your needs.</div>
+          <div class="tool-status" style="color:var(--text-muted)">● PENDING</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ODDS CALCULATOR ── -->
+  <div id="page-odds-calc" class="page">
+    <div class="page-header">
+      <div class="page-title">ODDS CALCULATOR</div>
+      <div class="page-subtitle">Convert formats · Calculate implied probability · Find value</div>
+    </div>
+
+    <div class="grid-2 mb-20">
+      <div class="card">
+        <div class="card-title">Odds Input</div>
+        <div class="field-group">
+          <label class="field-label">Odds Format</label>
+          <select id="odds-format" onchange="updateOddsPlaceholder()">
+            <option value="decimal">Decimal (e.g. 2.50)</option>
+            <option value="fractional">Fractional (e.g. 3/2)</option>
+            <option value="american">American (e.g. +150 or -200)</option>
+            <option value="percentage">Implied % (e.g. 40)</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Enter Odds</label>
+          <input type="text" id="odds-input" placeholder="e.g. 2.50" oninput="calcOdds()">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Stake (£)</label>
+          <input type="number" id="odds-stake" placeholder="e.g. 10.00" oninput="calcOdds()" min="0">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Conversions</div>
+        <div class="result-box" id="odds-result">
+          <div class="result-row"><span class="result-key">DECIMAL</span><span class="result-val" id="r-decimal">—</span></div>
+          <div class="result-row"><span class="result-key">FRACTIONAL</span><span class="result-val" id="r-fractional">—</span></div>
+          <div class="result-row"><span class="result-key">AMERICAN</span><span class="result-val" id="r-american">—</span></div>
+          <div class="result-row"><span class="result-key">IMPLIED PROB</span><span class="result-val" id="r-implied">—</span></div>
+          <div class="result-row"><span class="result-key">POTENTIAL RETURN</span><span class="result-val green" id="r-return">—</span></div>
+          <div class="result-row"><span class="result-key">NET PROFIT</span><span class="result-val green" id="r-profit">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Value Bet Finder</div>
+      <div class="grid-3">
+        <div class="field-group">
+          <label class="field-label">Your True Probability (%)</label>
+          <input type="number" id="vb-true" placeholder="e.g. 55" oninput="calcValue()" min="0" max="100">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Bookmaker Decimal Odds</label>
+          <input type="number" id="vb-odds" placeholder="e.g. 2.10" oninput="calcValue()" step="0.01" min="1">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Stake (£)</label>
+          <input type="number" id="vb-stake" placeholder="e.g. 20" oninput="calcValue()" min="0">
+        </div>
+      </div>
+      <div class="result-box" id="value-result" style="display:none">
+        <div class="result-row"><span class="result-key">EDGE</span><span class="result-val" id="r-edge">—</span></div>
+        <div class="result-row"><span class="result-key">EXPECTED VALUE</span><span class="result-val" id="r-ev">—</span></div>
+        <div class="result-row"><span class="result-key">VERDICT</span><span class="result-val" id="r-verdict">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PROBABILITY CALCULATOR ── -->
+  <div id="page-prob-calc" class="page">
+    <div class="page-header">
+      <div class="page-title">PROBABILITY CALCULATOR</div>
+      <div class="page-subtitle">Compute combined & conditional probabilities</div>
+    </div>
+
+    <div class="grid-2 mb-20">
+      <div class="card">
+        <div class="card-title">Combined Probability</div>
+        <div class="field-group">
+          <label class="field-label">Event A Probability (%)</label>
+          <input type="number" id="pa" placeholder="e.g. 60" oninput="calcProb()" min="0" max="100">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Event B Probability (%)</label>
+          <input type="number" id="pb" placeholder="e.g. 45" oninput="calcProb()" min="0" max="100">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Relationship</label>
+          <select id="prob-rel" onchange="calcProb()">
+            <option value="independent">Independent events</option>
+            <option value="and">Both occur (AND)</option>
+            <option value="or">Either occurs (OR)</option>
+            <option value="not">A does NOT occur</option>
+          </select>
+        </div>
+        <div class="result-box" id="prob-result" style="display:none">
+          <div class="result-row"><span class="result-key">RESULT PROBABILITY</span><span class="result-val" id="r-prob">—</span></div>
+          <div class="result-row"><span class="result-key">AS DECIMAL ODDS</span><span class="result-val" id="r-prob-odds">—</span></div>
+          <div class="result-row"><span class="result-key">AS FRACTIONAL</span><span class="result-val" id="r-prob-frac">—</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Poisson Distribution</div>
+        <div class="field-group">
+          <label class="field-label">Average Goals / Events (λ)</label>
+          <input type="number" id="lambda" placeholder="e.g. 2.5" oninput="calcPoisson()" step="0.1" min="0">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Exact Count to Calculate (k)</label>
+          <input type="number" id="k-val" placeholder="e.g. 3" oninput="calcPoisson()" min="0">
+        </div>
+        <div class="result-box" id="poisson-result" style="display:none">
+          <div class="result-row"><span class="result-key">P(X = k)</span><span class="result-val" id="r-pk">—</span></div>
+          <div class="result-row"><span class="result-key">P(X ≤ k)</span><span class="result-val" id="r-plek">—</span></div>
+          <div class="result-row"><span class="result-key">P(X > k)</span><span class="result-val" id="r-pgtk">—</span></div>
+          <div class="result-row"><span class="result-key">FAIR ODDS (X=k)</span><span class="result-val" id="r-fairodds">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Overround / Margin Calculator</div>
+      <div style="margin-bottom:12px;font-size:13px;color:var(--text-secondary)">Enter bookmaker decimal odds for all outcomes:</div>
+      <div id="overround-inputs" class="grid-3" style="margin-bottom:16px">
+        <div class="field-group">
+          <label class="field-label">Outcome 1 Odds</label>
+          <input type="number" class="or-input" placeholder="e.g. 2.10" oninput="calcOverround()" step="0.01" min="1">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Outcome 2 Odds</label>
+          <input type="number" class="or-input" placeholder="e.g. 3.20" oninput="calcOverround()" step="0.01" min="1">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Outcome 3 Odds (optional)</label>
+          <input type="number" class="or-input" placeholder="e.g. 4.00" oninput="calcOverround()" step="0.01" min="1">
+        </div>
+      </div>
+      <div class="result-box" id="overround-result" style="display:none">
+        <div class="result-row"><span class="result-key">TOTAL IMPLIED %</span><span class="result-val" id="r-total-impl">—</span></div>
+        <div class="result-row"><span class="result-key">OVERROUND</span><span class="result-val orange" id="r-overround">—</span></div>
+        <div class="result-row"><span class="result-key">BOOKMAKER MARGIN</span><span class="result-val orange" id="r-margin">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STAKE MANAGER ── -->
+  <div id="page-stake-calc" class="page">
+    <div class="page-header">
+      <div class="page-title">STAKE MANAGER</div>
+      <div class="page-subtitle">Bankroll management · Kelly Criterion · Staking systems</div>
+    </div>
+
+    <div class="grid-2 mb-20">
+      <div class="card">
+        <div class="card-title">Kelly Criterion</div>
+        <div class="field-group">
+          <label class="field-label">Bankroll (£)</label>
+          <input type="number" id="kelly-bank" placeholder="e.g. 1000" oninput="calcKelly()" min="0">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Your Win Probability (%)</label>
+          <input type="number" id="kelly-prob" placeholder="e.g. 55" oninput="calcKelly()" min="0" max="100">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Decimal Odds</label>
+          <input type="number" id="kelly-odds" placeholder="e.g. 2.00" oninput="calcKelly()" step="0.01" min="1">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Kelly Fraction</label>
+          <select id="kelly-frac" onchange="calcKelly()">
+            <option value="1">Full Kelly (aggressive)</option>
+            <option value="0.5" selected>Half Kelly (balanced)</option>
+            <option value="0.25">Quarter Kelly (conservative)</option>
+          </select>
+        </div>
+        <div class="result-box" id="kelly-result" style="display:none">
+          <div class="result-row"><span class="result-key">KELLY %</span><span class="result-val" id="r-kelly-pct">—</span></div>
+          <div class="result-row"><span class="result-key">STAKE AMOUNT</span><span class="result-val green" id="r-kelly-stake">—</span></div>
+          <div class="result-row"><span class="result-key">EDGE</span><span class="result-val" id="r-kelly-edge">—</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Flat / Unit Staking</div>
+        <div class="field-group">
+          <label class="field-label">Bankroll (£)</label>
+          <input type="number" id="flat-bank" placeholder="e.g. 500" oninput="calcFlat()" min="0">
+        </div>
+        <div class="field-group">
+          <label class="field-label">% Per Bet</label>
+          <input type="range" id="flat-pct" min="0.5" max="10" step="0.5" value="2" oninput="calcFlat(); document.getElementById('flat-pct-val').textContent=this.value+'%'">
+          <div style="display:flex;justify-content:space-between;margin-top:4px">
+            <span style="font-size:11px;color:var(--text-muted)">0.5%</span>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--accent-cyan)" id="flat-pct-val">2%</span>
+            <span style="font-size:11px;color:var(--text-muted)">10%</span>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Number of Bets to Simulate</label>
+          <input type="number" id="flat-bets" placeholder="e.g. 100" oninput="calcFlat()" min="1">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Expected Win Rate (%)</label>
+          <input type="number" id="flat-wr" placeholder="e.g. 50" oninput="calcFlat()" min="0" max="100">
+        </div>
+        <div class="result-box" id="flat-result" style="display:none">
+          <div class="result-row"><span class="result-key">STAKE PER BET</span><span class="result-val green" id="r-flat-stake">—</span></div>
+          <div class="result-row"><span class="result-key">MAX DRAWDOWN</span><span class="result-val red" id="r-flat-dd">—</span></div>
+          <div class="result-row"><span class="result-key">BETS TO BUST (estimate)</span><span class="result-val orange" id="r-flat-bust">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BACKTESTER ── -->
+  <div id="page-backtester" class="page">
+    <div class="page-header">
+      <div class="page-title">STRATEGY BACKTESTER</div>
+      <div class="page-subtitle">Test staking systems · Analyse P&L · Measure drawdown</div>
+    </div>
+
+    <div class="card mb-20">
+      <div class="card-title">Configure Backtest</div>
+      <div class="grid-3" style="margin-bottom:16px">
+        <div class="field-group">
+          <label class="field-label">Starting Bankroll (£)</label>
+          <input type="number" id="bt-bank" placeholder="e.g. 1000" min="1">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Number of Bets</label>
+          <input type="number" id="bt-bets" placeholder="e.g. 200" min="1">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Average Odds (Decimal)</label>
+          <input type="number" id="bt-odds" placeholder="e.g. 2.00" step="0.01" min="1">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Win Rate (%)</label>
+          <input type="number" id="bt-wr" placeholder="e.g. 52" min="0" max="100">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Staking System</label>
+          <select id="bt-system">
+            <option value="flat">Flat Staking</option>
+            <option value="kelly">Kelly Criterion</option>
+            <option value="martingale">Martingale</option>
+            <option value="dalembert">D'Alembert</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Base Stake / Unit (£)</label>
+          <input type="number" id="bt-unit" placeholder="e.g. 10" min="0.01">
+        </div>
+      </div>
+      <button class="btn btn-cyan" onclick="runBacktest()">▷ RUN BACKTEST</button>
+    </div>
+
+    <div id="bt-results" style="display:none">
+      <div class="stats-grid mb-20">
+        <div class="stat-card">
+          <div class="stat-label">Final Bankroll</div>
+          <div class="stat-value" id="bt-final-bank">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Net P&L</div>
+          <div class="stat-value" id="bt-pnl">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">ROI</div>
+          <div class="stat-value" id="bt-roi">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Max Drawdown</div>
+          <div class="stat-value negative" id="bt-maxdd">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Win / Loss</div>
+          <div class="stat-value accent" id="bt-wl">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Peak Bankroll</div>
+          <div class="stat-value positive" id="bt-peak">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Bankroll Curve</div>
+        <canvas id="bt-chart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DATA COLLECTION ── -->
+  <div id="page-data-collect" class="page">
+    <div class="page-header">
+      <div class="page-title">DATA COLLECTION</div>
+      <div class="page-subtitle">Log bets · Track results · Build your dataset</div>
+    </div>
+
+    <div class="grid-2 mb-20">
+      <div class="card">
+        <div class="card-title">Log a Bet</div>
+        <div class="field-group">
+          <label class="field-label">Date</label>
+          <input type="text" id="dc-date" placeholder="e.g. 2026-03-09">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Sport / League</label>
+          <input type="text" id="dc-sport" placeholder="e.g. Premier League">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Event / Match</label>
+          <input type="text" id="dc-event" placeholder="e.g. Arsenal vs Chelsea">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Market</label>
+          <input type="text" id="dc-market" placeholder="e.g. Both Teams to Score">
+        </div>
+        <div class="grid-2">
+          <div class="field-group">
+            <label class="field-label">Odds</label>
+            <input type="number" id="dc-odds" placeholder="e.g. 1.90" step="0.01" min="1">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Stake (£)</label>
+            <input type="number" id="dc-stake" placeholder="e.g. 10" min="0">
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Result</label>
+          <select id="dc-result">
+            <option value="pending">Pending</option>
+            <option value="win">Win</option>
+            <option value="loss">Loss</option>
+            <option value="void">Void / Push</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Notes</label>
+          <textarea id="dc-notes" placeholder="Strategy notes, reasoning..."></textarea>
+        </div>
+        <button class="btn btn-green" onclick="logBet()" style="width:100%">+ SAVE BET</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Session Stats</div>
+        <div class="result-box">
+          <div class="result-row"><span class="result-key">TOTAL BETS</span><span class="result-val accent" id="dc-total">0</span></div>
+          <div class="result-row"><span class="result-key">WINS</span><span class="result-val green" id="dc-wins">0</span></div>
+          <div class="result-row"><span class="result-key">LOSSES</span><span class="result-val red" id="dc-losses">0</span></div>
+          <div class="result-row"><span class="result-key">WIN RATE</span><span class="result-val" id="dc-wr">—</span></div>
+          <div class="result-row"><span class="result-key">NET P&L</span><span class="result-val" id="dc-pnl">£0.00</span></div>
+          <div class="result-row"><span class="result-key">ROI</span><span class="result-val" id="dc-roi">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Bet History</div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Event</th>
+              <th>Market</th>
+              <th>Odds</th>
+              <th>Stake</th>
+              <th>Result</th>
+              <th>P&L</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="dc-tbody">
+            <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:40px">No bets logged yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 49JA LIVE FEED ── -->
+  <div id="page-49ja-live" class="page">
+    <div class="page-header">
+      <div class="page-title" style="display:flex;align-items:center;gap:10px">
+        <span class="live-dot"></span> 49JA LIVE FEED
+      </div>
+      <div class="page-subtitle" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        Live draw results · Bet9ja Virtual 49ja
+        <span id="feed-status">Connecting...</span>
+        <button class="btn btn-cyan btn-sm" onclick="fetch49ja()">↺ REFRESH</button>
+      </div>
+    </div>
+
+    <!-- Jackpot bar -->
+    <div class="jackpot-bar" id="jackpot-bar" style="display:none">
+      <div><div class="jackpot-label">⭐ STAR JACKPOT</div></div>
+      <div class="jackpot-val" id="jackpot-val">—</div>
+      <div style="text-align:right">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px">LATEST WINNER</div>
+        <div id="jackpot-winner" style="font-family:'Orbitron',monospace;font-size:12px;color:#ffaa00">—</div>
+      </div>
+    </div>
+
+    <!-- Main layout: table left, stats right -->
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start">
+
+      <!-- LEFT: Draw Results Table -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border-dim);display:flex;justify-content:space-between;align-items:center">
+          <span class="card-title" style="margin:0">DRAW RESULTS</span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px">NUMBERS IN ORDER DRAWN</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="draw-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Draw</th>
+                <th style="text-align:center">Hi Mid Lo</th>
+                <th style="text-align:center">Win Colour</th>
+                <th style="text-align:center">Colours</th>
+                <th style="text-align:right">Total</th>
+              </tr>
+            </thead>
+            <tbody id="draw-tbody">
+              <tr><td colspan="6" style="text-align:center;padding:50px;color:var(--text-muted);font-family:'Share Tech Mono',monospace;font-size:12px">LOADING DRAW DATA...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT: Stats -->
+      <div>
+        <!-- Winning colour tally -->
+        <div class="card mb-20">
+          <div class="card-title">WIN COLOURS · LAST 20</div>
+          <div class="colour-tally">
+            <div class="colour-tally-item">
+              <div class="colour-tally-val" style="color:#ff4466" id="ct-red">—</div>
+              <div class="colour-tally-label">RED</div>
+            </div>
+            <div class="colour-tally-item">
+              <div class="colour-tally-val" style="color:#44dd77" id="ct-green">—</div>
+              <div class="colour-tally-label">GREEN</div>
+            </div>
+            <div class="colour-tally-item">
+              <div class="colour-tally-val" style="color:#44aaff" id="ct-blue">—</div>
+              <div class="colour-tally-label">BLUE</div>
+            </div>
+            <div class="colour-tally-item">
+              <div class="colour-tally-val" style="color:#aaaaaa" id="ct-none">—</div>
+              <div class="colour-tally-label">NONE</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hot numbers -->
+        <div class="card mb-20">
+          <div class="card-title">🔥 HOT NUMBERS</div>
+          <div id="hot-numbers-container"><div style="color:var(--text-muted);font-size:12px;padding:8px 0">Loading...</div></div>
+        </div>
+
+        <!-- Late numbers -->
+        <div class="card">
+          <div class="card-title">❄️ LATE NUMBERS</div>
+          <div id="late-numbers-container"><div style="color:var(--text-muted);font-size:12px;padding:8px 0">Loading...</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer info -->
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:1px;text-align:center;padding:16px 0 4px">
+      AUTO-REFRESH: 60s &nbsp;·&nbsp; SOURCE: BET9JA VIRTUAL 49JA &nbsp;·&nbsp;
+      LAST UPDATE: <span id="last-update-time">—</span>
+    </div>
+  </div>
+
+  <!-- ── PROFILE ── -->
+  <div id="page-profile" class="page">
+    <div class="page-header">
+      <div class="page-title">PROFILE</div>
+      <div class="page-subtitle">Account settings & preferences</div>
+    </div>
+    <div class="card" style="max-width:500px">
+      <div class="card-title">System Info</div>
+      <div class="result-box">
+        <div class="result-row"><span class="result-key">MODE</span><span class="result-val accent">DEV / OPEN ACCESS</span></div>
+        <div class="result-row"><span class="result-key">AUTH</span><span class="result-val orange">DISABLED</span></div>
+        <div class="result-row"><span class="result-key">DATA STORAGE</span><span class="result-val">LOCALSTORAGE</span></div>
+        <div class="result-row"><span class="result-key">VERSION</span><span class="result-val">1.0 ALPHA</span></div>
+      </div>
+      <div style="margin-top:16px;font-size:13px;color:var(--text-muted);font-family:'Share Tech Mono',monospace;line-height:1.6">
+        // Auth & database will be wired up once all tools are finalised.
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ─── NOTIFICATION ─── -->
+<div id="notif"></div>
+
+<!-- ══════════════════════════════════════ DATA LAYER (localStorage) ══ -->
+<script>
+  // ── Simple local bet store ──
+  function getBets() {
+    try { return JSON.parse(localStorage.getItem('betlab_bets') || '[]'); } catch { return []; }
+  }
+  function saveBets(bets) {
+    localStorage.setItem('betlab_bets', JSON.stringify(bets));
+  }
+
+  window.logBet = () => {
+    const odds  = parseFloat(document.getElementById('dc-odds').value);
+    const stake = parseFloat(document.getElementById('dc-stake').value);
+    const result = document.getElementById('dc-result').value;
+    let pnl = 0;
+    if (result === 'win')  pnl = +(stake * (odds - 1)).toFixed(2);
+    else if (result === 'loss') pnl = -stake;
+
+    const bet = {
+      id: Date.now().toString(),
+      date:   document.getElementById('dc-date').value,
+      sport:  document.getElementById('dc-sport').value,
+      event:  document.getElementById('dc-event').value,
+      market: document.getElementById('dc-market').value,
+      odds, stake, result, pnl,
+      notes: document.getElementById('dc-notes').value,
+      ts: Date.now()
+    };
+
+    const bets = getBets();
+    bets.unshift(bet);
+    saveBets(bets);
+    notify('Bet saved!');
+    clearBetForm();
+    renderBets(getBets());
+  };
+
+  window.deleteBet = (id) => {
+    const bets = getBets().filter(b => b.id !== id);
+    saveBets(bets);
+    notify('Bet removed.');
+    renderBets(getBets());
+  };
+
+  function renderBets(bets) {
+    const tbody = document.getElementById('dc-tbody');
+    if (!bets.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:40px">No bets logged yet</td></tr>';
+      updateDCStats([]);
+      return;
+    }
+    tbody.innerHTML = bets.map(b => {
+      const tag = b.result === 'win' ? 'tag-green' : b.result === 'loss' ? 'tag-red' : 'tag-cyan';
+      const pnlCol = b.pnl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      return `<tr>
+        <td style="font-family:'Share Tech Mono',monospace;font-size:11px">${b.date||'—'}</td>
+        <td>${b.event||'—'}</td>
+        <td>${b.market||'—'}</td>
+        <td style="color:var(--accent-cyan)">${b.odds||'—'}</td>
+        <td>£${b.stake||0}</td>
+        <td><span class="tag ${tag}">${b.result.toUpperCase()}</span></td>
+        <td style="color:${pnlCol};font-family:'Orbitron',monospace;font-size:12px">${b.pnl >= 0 ? '+' : ''}£${(b.pnl||0).toFixed(2)}</td>
+        <td><span style="color:var(--accent-red);cursor:pointer;font-size:11px" onclick="deleteBet('${b.id}')">✕ DEL</span></td>
+      </tr>`;
+    }).join('');
+    updateDCStats(bets);
+  }
+
+  function updateDCStats(bets) {
+    const settled = bets.filter(b => b.result !== 'pending' && b.result !== 'void');
+    const wins    = bets.filter(b => b.result === 'win').length;
+    const losses  = bets.filter(b => b.result === 'loss').length;
+    const totalStake = settled.reduce((s,b) => s + (b.stake||0), 0);
+    const pnl = bets.reduce((s,b) => s + (b.pnl||0), 0);
+    const wr  = settled.length ? ((wins/settled.length)*100).toFixed(1)+'%' : '—';
+    const roi = totalStake ? ((pnl/totalStake)*100).toFixed(1)+'%' : '—';
+
+    document.getElementById('dc-total').textContent  = bets.length;
+    document.getElementById('dc-wins').textContent   = wins;
+    document.getElementById('dc-losses').textContent = losses;
+    document.getElementById('dc-wr').textContent     = wr;
+    const pnlEl = document.getElementById('dc-pnl');
+    pnlEl.textContent  = (pnl>=0?'+':'') + '£' + pnl.toFixed(2);
+    pnlEl.className    = 'result-val ' + (pnl>=0?'green':'red');
+    document.getElementById('dc-roi').textContent = roi;
+  }
+
+  function clearBetForm() {
+    ['dc-date','dc-sport','dc-event','dc-market','dc-odds','dc-stake','dc-notes']
+      .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('dc-result').value = 'pending';
+  }
+
+  // Load bets on startup
+  document.addEventListener('DOMContentLoaded', () => renderBets(getBets()));
+</script>
+
+<!-- ══════════════════════════════════════ APP LOGIC ══ -->
+<script>
+  // ── NAVIGATION ──
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('onclick')?.includes("'" + id + "'")) n.classList.add('active');
+    });
+  }
+
+  function switchAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+    document.getElementById('login-form').classList.toggle('active', tab==='login');
+    document.getElementById('register-form').classList.toggle('active', tab==='register');
+  }
+
+  // ── NOTIFICATION ──
+  function notify(msg, isError=false) {
+    const el = document.getElementById('notif');
+    el.textContent = msg;
+    el.className = 'show' + (isError ? ' error' : '');
+    setTimeout(() => el.className = '', 3000);
+  }
+
+  // ── DATE ──
+  function updateDate() {
+    const d = new Date();
+    document.getElementById('dash-date').textContent = d.toUTCString().split(' ').slice(0,4).join(' ').toUpperCase();
+  }
+  updateDate();
+  setInterval(updateDate, 60000);
+
+  // ══════════ ODDS CALCULATOR ══════════
+  function updateOddsPlaceholder() {
+    const fmt = document.getElementById('odds-format').value;
+    const placeholders = { decimal:'e.g. 2.50', fractional:'e.g. 3/2', american:'e.g. +150 or -200', percentage:'e.g. 40' };
+    document.getElementById('odds-input').placeholder = placeholders[fmt];
+    calcOdds();
+  }
+
+  function toDecimal(val, fmt) {
+    if (fmt === 'decimal') return parseFloat(val);
+    if (fmt === 'fractional') {
+      const parts = val.split('/');
+      if (parts.length !== 2) return NaN;
+      return (parseFloat(parts[0]) / parseFloat(parts[1])) + 1;
+    }
+    if (fmt === 'american') {
+      const v = parseFloat(val);
+      return v > 0 ? (v/100)+1 : (100/Math.abs(v))+1;
+    }
+    if (fmt === 'percentage') return 100/parseFloat(val);
+    return NaN;
+  }
+
+  function toFractional(dec) {
+    const frac = dec - 1;
+    const gcd = (a,b) => b ? gcd(b, a%b) : a;
+    const d = 100;
+    const n = Math.round(frac * d);
+    const g = gcd(n, d);
+    return (n/g) + '/' + (d/g);
+  }
+
+  function calcOdds() {
+    const fmt = document.getElementById('odds-format').value;
+    const raw = document.getElementById('odds-input').value;
+    const stake = parseFloat(document.getElementById('odds-stake').value) || 0;
+    const dec = toDecimal(raw, fmt);
+    if (isNaN(dec) || dec <= 1) {
+      ['r-decimal','r-fractional','r-american','r-implied','r-return','r-profit'].forEach(id => document.getElementById(id).textContent = '—');
+      return;
+    }
+    const implied = (1/dec)*100;
+    const american = dec >= 2 ? '+'+Math.round((dec-1)*100) : '-'+Math.round(100/(dec-1));
+    document.getElementById('r-decimal').textContent = dec.toFixed(2);
+    document.getElementById('r-fractional').textContent = toFractional(dec);
+    document.getElementById('r-american').textContent = american;
+    document.getElementById('r-implied').textContent = implied.toFixed(2) + '%';
+    if (stake > 0) {
+      document.getElementById('r-return').textContent = '£' + (stake * dec).toFixed(2);
+      document.getElementById('r-profit').textContent = '£' + (stake * (dec-1)).toFixed(2);
+    }
+  }
+
+  function calcValue() {
+    const trueProb = parseFloat(document.getElementById('vb-true').value)/100;
+    const odds = parseFloat(document.getElementById('vb-odds').value);
+    const stake = parseFloat(document.getElementById('vb-stake').value)||0;
+    const box = document.getElementById('value-result');
+    if (!trueProb || !odds) { box.style.display='none'; return; }
+    box.style.display='block';
+    const edge = (trueProb * odds) - 1;
+    const ev = stake ? edge * stake : 0;
+    document.getElementById('r-edge').textContent = (edge*100).toFixed(2)+'%';
+    document.getElementById('r-edge').className = 'result-val ' + (edge>0?'green':'red');
+    if (stake) { document.getElementById('r-ev').textContent = (ev>=0?'+':'')+'£'+ev.toFixed(2); document.getElementById('r-ev').className='result-val '+(ev>=0?'green':'red'); }
+    else document.getElementById('r-ev').textContent='—';
+    const verdict = document.getElementById('r-verdict');
+    if (edge > 0.05) { verdict.textContent='✓ STRONG VALUE'; verdict.className='result-val green'; }
+    else if (edge > 0) { verdict.textContent='~ MARGINAL VALUE'; verdict.className='result-val orange'; }
+    else { verdict.textContent='✗ NO VALUE'; verdict.className='result-val red'; }
+  }
+
+  // ══════════ PROBABILITY CALCULATOR ══════════
+  function calcProb() {
+    const pa = parseFloat(document.getElementById('pa').value)/100;
+    const pb = parseFloat(document.getElementById('pb').value)/100;
+    const rel = document.getElementById('prob-rel').value;
+    const box = document.getElementById('prob-result');
+    if (isNaN(pa)) { box.style.display='none'; return; }
+    let result;
+    if (rel === 'not') result = 1 - pa;
+    else if (rel === 'and' || rel === 'independent') result = pa * (isNaN(pb)?1:pb);
+    else if (rel === 'or') result = pa + (isNaN(pb)?0:pb) - (pa * (isNaN(pb)?0:pb));
+    box.style.display='block';
+    const pct = (result*100).toFixed(2);
+    document.getElementById('r-prob').textContent = pct + '%';
+    document.getElementById('r-prob-odds').textContent = (1/result).toFixed(2);
+    document.getElementById('r-prob-frac').textContent = toFractional(1/result);
+  }
+
+  function calcPoisson() {
+    const lambda = parseFloat(document.getElementById('lambda').value);
+    const k = parseInt(document.getElementById('k-val').value);
+    const box = document.getElementById('poisson-result');
+    if (isNaN(lambda)||isNaN(k)||lambda<=0||k<0) { box.style.display='none'; return; }
+    const fact = n => n<=0?1:n*fact(n-1);
+    const pk = (Math.pow(lambda,k) * Math.exp(-lambda)) / fact(k);
+    let cumul = 0;
+    for (let i=0;i<=k;i++) cumul += (Math.pow(lambda,i)*Math.exp(-lambda))/fact(i);
+    box.style.display='block';
+    document.getElementById('r-pk').textContent = (pk*100).toFixed(3)+'%';
+    document.getElementById('r-plek').textContent = (cumul*100).toFixed(3)+'%';
+    document.getElementById('r-pgtk').textContent = ((1-cumul)*100).toFixed(3)+'%';
+    document.getElementById('r-fairodds').textContent = pk>0?(1/pk).toFixed(2):'∞';
+  }
+
+  function calcOverround() {
+    const inputs = document.querySelectorAll('.or-input');
+    const vals = Array.from(inputs).map(i=>parseFloat(i.value)).filter(v=>!isNaN(v)&&v>1);
+    const box = document.getElementById('overround-result');
+    if (vals.length < 2) { box.style.display='none'; return; }
+    const totalImpl = vals.reduce((s,v)=>s+(1/v)*100,0);
+    const overround = totalImpl - 100;
+    const margin = (overround/totalImpl)*100;
+    box.style.display='block';
+    document.getElementById('r-total-impl').textContent = totalImpl.toFixed(2)+'%';
+    document.getElementById('r-overround').textContent = overround.toFixed(2)+'%';
+    document.getElementById('r-margin').textContent = margin.toFixed(2)+'%';
+  }
+
+  // ══════════ STAKE MANAGER ══════════
+  function calcKelly() {
+    const bank = parseFloat(document.getElementById('kelly-bank').value);
+    const p = parseFloat(document.getElementById('kelly-prob').value)/100;
+    const odds = parseFloat(document.getElementById('kelly-odds').value);
+    const frac = parseFloat(document.getElementById('kelly-frac').value);
+    const box = document.getElementById('kelly-result');
+    if (!bank||!p||!odds) { box.style.display='none'; return; }
+    const b = odds - 1;
+    const kelly = (b*p - (1-p)) / b;
+    const adjKelly = Math.max(0, kelly * frac);
+    const stake = bank * adjKelly;
+    const edge = (p * odds) - 1;
+    box.style.display='block';
+    document.getElementById('r-kelly-pct').textContent = (adjKelly*100).toFixed(2)+'%';
+    document.getElementById('r-kelly-pct').className = 'result-val ' + (adjKelly>0?'green':'red');
+    document.getElementById('r-kelly-stake').textContent = '£'+stake.toFixed(2);
+    document.getElementById('r-kelly-edge').textContent = (edge*100).toFixed(2)+'%';
+    document.getElementById('r-kelly-edge').className = 'result-val ' + (edge>0?'green':'red');
+  }
+
+  function calcFlat() {
+    const bank = parseFloat(document.getElementById('flat-bank').value);
+    const pct = parseFloat(document.getElementById('flat-pct').value)/100;
+    const bets = parseInt(document.getElementById('flat-bets').value);
+    const wr = parseFloat(document.getElementById('flat-wr').value)/100;
+    const box = document.getElementById('flat-result');
+    if (!bank||!bets) { box.style.display='none'; return; }
+    const stake = bank * pct;
+    const expectedLosses = bets * (1-wr);
+    const maxDD = stake * Math.ceil(expectedLosses * 0.5);
+    const bustBets = pct > 0 ? Math.floor(1/pct) : 999;
+    box.style.display='block';
+    document.getElementById('r-flat-stake').textContent = '£'+stake.toFixed(2);
+    document.getElementById('r-flat-dd').textContent = '£'+maxDD.toFixed(2);
+    document.getElementById('r-flat-bust').textContent = '~'+bustBets+' consecutive losses';
+  }
+
+  // ══════════ BACKTESTER ══════════
+  function runBacktest() {
+    const bank = parseFloat(document.getElementById('bt-bank').value)||1000;
+    const numBets = parseInt(document.getElementById('bt-bets').value)||100;
+    const odds = parseFloat(document.getElementById('bt-odds').value)||2.00;
+    const wr = parseFloat(document.getElementById('bt-wr').value)/100||0.5;
+    const system = document.getElementById('bt-system').value;
+    const unit = parseFloat(document.getElementById('bt-unit').value)||10;
+
+    let bankroll = bank;
+    let stake = unit;
+    let peak = bank;
+    let maxDD = 0;
+    let wins = 0;
+    let losses = 0;
+    let totalStaked = 0;
+    const curve = [bank];
+
+    for (let i=0;i<numBets;i++) {
+      if (bankroll <= 0) break;
+      stake = Math.min(stake, bankroll);
+      const win = Math.random() < wr;
+      totalStaked += stake;
+      if (win) {
+        bankroll += stake * (odds - 1);
+        wins++;
+        if (system==='martingale') stake = unit;
+        if (system==='dalembert') stake = Math.max(unit, stake - unit);
+      } else {
+        bankroll -= stake;
+        losses++;
+        if (system==='martingale') stake *= 2;
+        if (system==='dalembert') stake += unit;
+      }
+      if (bankroll > peak) peak = bankroll;
+      const dd = peak - bankroll;
+      if (dd > maxDD) maxDD = dd;
+      curve.push(Math.max(0, bankroll));
+    }
+
+    const pnl = bankroll - bank;
+    const roi = totalStaked > 0 ? (pnl/totalStaked)*100 : 0;
+
+    document.getElementById('bt-results').style.display='block';
+    const finalEl = document.getElementById('bt-final-bank');
+    finalEl.textContent = '£'+bankroll.toFixed(2);
+    finalEl.className = 'stat-value ' + (bankroll>=bank?'positive':'negative');
+    const pnlEl = document.getElementById('bt-pnl');
+    pnlEl.textContent = (pnl>=0?'+':'')+'£'+pnl.toFixed(2);
+    pnlEl.className = 'stat-value ' + (pnl>=0?'positive':'negative');
+    const roiEl = document.getElementById('bt-roi');
+    roiEl.textContent = (roi>=0?'+':'')+roi.toFixed(2)+'%';
+    roiEl.className = 'stat-value ' + (roi>=0?'positive':'negative');
+    document.getElementById('bt-maxdd').textContent = '-£'+maxDD.toFixed(2);
+    document.getElementById('bt-wl').textContent = wins+' / '+losses;
+    document.getElementById('bt-peak').textContent = '£'+peak.toFixed(2);
+
+    drawBtChart(curve, bank);
+  }
+
+  function drawBtChart(curve, startBank) {
+    const canvas = document.getElementById('bt-chart');
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth || 800;
+    canvas.height = 200;
+    const W = canvas.width, H = canvas.height;
+    const pad = 40;
+
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#050d15';
+    ctx.fillRect(0,0,W,H);
+
+    const minV = Math.min(...curve);
+    const maxV = Math.max(...curve);
+    const range = maxV - minV || 1;
+
+    const x = i => pad + (i / (curve.length-1)) * (W - pad*2);
+    const y = v => H - pad - ((v - minV) / range) * (H - pad*2);
+
+    // baseline
+    ctx.strokeStyle = 'rgba(0,245,255,0.15)';
+    ctx.setLineDash([4,4]);
+    ctx.beginPath();
+    ctx.moveTo(pad, y(startBank));
+    ctx.lineTo(W-pad, y(startBank));
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // gradient fill
+    const grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0, 'rgba(0,245,255,0.2)');
+    grad.addColorStop(1, 'rgba(0,245,255,0)');
+    ctx.beginPath();
+    ctx.moveTo(x(0), y(curve[0]));
+    curve.forEach((v,i) => ctx.lineTo(x(i), y(v)));
+    ctx.lineTo(x(curve.length-1), H-pad);
+    ctx.lineTo(x(0), H-pad);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // line
+    ctx.strokeStyle = '#00f5ff';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#00f5ff';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    curve.forEach((v,i) => i===0 ? ctx.moveTo(x(i),y(v)) : ctx.lineTo(x(i),y(v)));
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // labels
+    ctx.fillStyle = '#3a5a7a';
+    ctx.font = '10px Share Tech Mono, monospace';
+    ctx.fillText('£'+maxV.toFixed(0), pad, pad-5);
+    ctx.fillText('£'+minV.toFixed(0), pad, H-pad+14);
+    ctx.fillText('0', pad, H-pad+14);
+    ctx.fillText(curve.length+' bets', W-pad-40, H-pad+14);
+  }
+</script>
+<!-- ══════════════════════════════════════ 49JA LIVE LOGIC ══ -->
+<script>
+  // ── Ball colour assignment (1-49) matching Bet9ja's scheme ──
+  // Red: 1-9 (low), Blue: 10-29 (mid), Green: 30-49 (high), Yellow: bonus when indicated
+  function ballColour(n) {
+    const num = parseInt(n);
+    if (num >= 1  && num <= 9)  return 'b-red';
+    if (num >= 10 && num <= 29) return 'b-blue';
+    if (num >= 30 && num <= 49) return 'b-green';
+    return 'b-blue';
+  }
+
+  // ── Hi / Mid / Lo: based on sum of all 6 numbers ──
+  // Low total = more low numbers (down arrow), High total = more high numbers (up arrow)
+  function getHML(numbers) {
+    const redCount   = numbers.filter(n => parseInt(n) <= 9).length;
+    const greenCount = numbers.filter(n => parseInt(n) >= 30).length;
+    const blueCount  = numbers.filter(n => parseInt(n) >= 10 && parseInt(n) <= 29).length;
+    if (greenCount > redCount && greenCount >= blueCount) return 'up';
+    if (redCount > greenCount && redCount >= blueCount)   return 'down';
+    return 'mid';
+  }
+
+  // ── Count red/blue/green per draw ──
+  function countColours(numbers) {
+    let r = 0, g = 0, b = 0;
+    numbers.forEach(n => {
+      const num = parseInt(n);
+      if (num >= 1  && num <= 9)  r++;
+      else if (num >= 10 && num <= 29) b++;
+      else if (num >= 30 && num <= 49) g++;
+    });
+    return { r, g, b };
+  }
+
+  // ── Win colour → which colour had the most balls ──
+  function deriveWinColour(numbers) {
+    const { r, g, b } = countColours(numbers);
+    const max = Math.max(r, g, b);
+    // If tied → none
+    const winners = [r===max&&'red', g===max&&'green', b===max&&'blue'].filter(Boolean);
+    if (winners.length > 1) return 'none';
+    return winners[0] || 'none';
+  }
+
+  // ── Fetch via CORS proxy ──
+  async function fetch49ja() {
+    document.getElementById('feed-status').textContent = 'Fetching...';
+    document.getElementById('feed-status').style.color = 'var(--text-muted)';
+    const PROXY  = 'https://api.allorigins.win/get?url=';
+    const TARGET = encodeURIComponent('https://49ja.bet9ja.com/Tv');
+    try {
+      const res  = await fetch(PROXY + TARGET);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      parse49jaHTML(json.contents);
+      document.getElementById('feed-status').textContent = '● LIVE';
+      document.getElementById('feed-status').style.color = 'var(--accent-green)';
+      document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString();
+    } catch(err) {
+      document.getElementById('feed-status').textContent = '✗ ' + err.message;
+      document.getElementById('feed-status').style.color = 'var(--accent-red)';
+    }
+  }
+
+  function parse49jaHTML(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    // ── Parse result rows from the table ──
+    const draws = [];
+    doc.querySelectorAll('table tr').forEach(row => {
+      const cells = Array.from(row.querySelectorAll('td'));
+      if (cells.length < 7) return;
+      const id = cells[0]?.textContent?.trim();
+      if (!id || isNaN(parseInt(id))) return;
+      const numbers = [];
+      for (let i = 1; i <= 6; i++) {
+        const v = cells[i]?.textContent?.trim();
+        if (v && !isNaN(parseInt(v))) numbers.push(v);
+      }
+      if (numbers.length < 6) return;
+      // Winning colour from site (cells[8] or derived)
+      const siteColour = (cells[8]?.textContent?.trim() || cells[7]?.textContent?.trim() || '').toLowerCase();
+      draws.push({ id, numbers, siteColour });
+    });
+
+    // ── Parse hot numbers from <li> ──
+    const allLi = Array.from(doc.querySelectorAll('li'));
+    const hotItems = [], lateItems = [];
+    allLi.forEach(li => {
+      const parts = li.textContent.trim().split(/\s+/);
+      if (parts.length >= 2 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
+        const num = parseInt(parts[0]), count = parseInt(parts[1]);
+        if (count > 10) lateItems.push({ num, count }); // late = large delay
+        else             hotItems.push({ num, count });
+      }
+    });
+
+    // ── Win colour tally from draws ──
+    const colourTally = { red: 0, green: 0, blue: 0, none: 0 };
+    draws.forEach(d => {
+      const wc = d.siteColour || deriveWinColour(d.numbers);
+      if (colourTally.hasOwnProperty(wc)) colourTally[wc]++;
+      else colourTally.none++;
+    });
+
+    // ── Jackpot ──
+    const amtMatch = html.match(/STAR JACKPOT[\s\S]{0,60}?([\d,]+)\s*₦/);
+    if (amtMatch) {
+      document.getElementById('jackpot-val').textContent = '₦' + amtMatch[1];
+      document.getElementById('jackpot-bar').style.display = 'flex';
+    }
+
+    renderDrawTable(draws);
+    renderHotNumbers(hotItems.slice(0, 7));
+    renderLateNumbers(lateItems.slice(0, 7));
+    renderColourTally(colourTally);
+  }
+
+  // ── Render draws table ──
+  function renderDrawTable(draws) {
+    const tbody = document.getElementById('draw-tbody');
+    if (!draws.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);font-family:\'Share Tech Mono\',monospace">NO DATA AVAILABLE</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = draws.map((d, idx) => {
+      const nums = d.numbers;
+      const { r, g, b } = countColours(nums);
+      const total = nums.reduce((s, n) => s + parseInt(n), 0);
+      const hml   = getHML(nums);
+      const wc    = d.siteColour || deriveWinColour(nums);
+
+      // Balls HTML
+      const ballsHtml = nums.map(n => {
+        const cls = ballColour(n);
+        return `<div class="ball49 ${cls}">${n}</div>`;
+      }).join('');
+
+      // Hi/Mid/Lo arrow
+      const arrowHtml = hml === 'up'
+        ? `<div class="hml-arrow hml-up"></div>`
+        : hml === 'down'
+          ? `<div class="hml-arrow hml-down"></div>`
+          : `<div class="hml-mid"></div>`;
+
+      // Win colour box
+      const wcBgMap = { red: '#cc0022', green: '#007733', blue: '#0055cc', none: '' };
+      const winColHtml = wc !== 'none' && wcBgMap[wc]
+        ? `<div class="win-colour-box" style="background:${wcBgMap[wc]}"></div>`
+        : `<span class="win-none">none</span>`;
+
+      // Colour count boxes
+      const ccHtml = `<div class="colour-counts">
+        <div class="cc-box cc-red">${r}</div>
+        <div class="cc-box cc-green">${g}</div>
+        <div class="cc-box cc-blue">${b}</div>
+      </div>`;
+
+      const isLatest = idx === 0;
+      return `<tr style="${isLatest ? 'background:rgba(0,245,255,0.04)' : ''}">
+        <td class="draw-id-cell">${d.id}${isLatest ? ' <span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:var(--accent-cyan);letter-spacing:1px">NEW</span>' : ''}</td>
+        <td><div class="balls-cell">${ballsHtml}</div></td>
+        <td class="hml-cell">${arrowHtml}</td>
+        <td style="text-align:center">${winColHtml}</td>
+        <td>${ccHtml}</td>
+        <td class="total-cell">${total}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderHotNumbers(items) {
+    const el = document.getElementById('hot-numbers-container');
+    if (!items.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No data</div>'; return; }
+    const max = Math.max(...items.map(i => i.count), 1);
+    el.innerHTML = items.map(i => `
+      <div class="hot-bar">
+        <div class="hot-num">${i.num}</div>
+        <div class="hot-fill"><div class="hot-fill-inner" style="width:${Math.round(i.count/max*100)}%"></div></div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent-orange);width:28px;text-align:right">${i.count}×</div>
+      </div>`).join('');
+  }
+
+  function renderLateNumbers(items) {
+    const el = document.getElementById('late-numbers-container');
+    if (!items.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No data</div>'; return; }
+    const max = Math.max(...items.map(i => i.count), 1);
+    el.innerHTML = items.map(i => `
+      <div class="hot-bar">
+        <div class="hot-num cold-num">${i.num}</div>
+        <div class="hot-fill"><div class="hot-fill-inner cold-fill-inner" style="width:${Math.round(i.count/max*100)}%"></div></div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent-cyan);width:40px;text-align:right">${i.count}d</div>
+      </div>`).join('');
+  }
+
+  function renderColourTally(t) {
+    document.getElementById('ct-red').textContent   = t.red   || 0;
+    document.getElementById('ct-green').textContent = t.green || 0;
+    document.getElementById('ct-blue').textContent  = t.blue  || 0;
+    document.getElementById('ct-none').textContent  = t.none  || 0;
+  }
+
+  // ── Auto-refresh lifecycle ──
+  let _49jaTimer = null;
+  function start49jaFeed() { fetch49ja(); _49jaTimer = setInterval(fetch49ja, 60000); }
+  function stop49jaFeed()  { if (_49jaTimer) { clearInterval(_49jaTimer); _49jaTimer = null; } }
+
+  const _origShowPage = window.showPage;
+  window.showPage = function(id) {
+    _origShowPage(id);
+    if (id === '49ja-live') start49jaFeed();
+    else stop49jaFeed();
+  };
+</script>
+</body>
+</html>
