@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BetLab Pro — Trader's Arsenal</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
   :root {
@@ -103,6 +104,43 @@
     align-items: center;
     gap: 16px;
   }
+
+  /* ── Language selector ── */
+  #lang-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+  }
+  #lang-wrap .lang-icon {
+    font-size: 13px;
+    opacity: 0.7;
+  }
+  #lang-select {
+    background: rgba(0,245,255,0.06);
+    border: 1px solid rgba(0,245,255,0.2);
+    color: var(--accent-cyan);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 4px 8px;
+    cursor: pointer;
+    outline: none;
+    letter-spacing: 1px;
+    max-width: 130px;
+  }
+  #lang-select:hover { border-color: var(--accent-cyan); }
+  #lang-select option { background: #0a1628; color: #ccc; }
+
+  /* Translation loading indicator */
+  #translate-status {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--accent-cyan);
+    opacity: 0;
+    transition: opacity 0.3s;
+    letter-spacing: 1px;
+  }
+  #translate-status.visible { opacity: 1; }
 
   #user-display {
     font-family: 'Share Tech Mono', monospace;
@@ -766,6 +804,7 @@
   .b-blue   { background: radial-gradient(circle at 35% 35%, #55aaff, #0055cc); border: 1px solid #0077ff; }
   .b-green  { background: radial-gradient(circle at 35% 35%, #44ee88, #007733); border: 1px solid #00cc44; }
   .b-yellow { background: radial-gradient(circle at 35% 35%, #ffe066, #cc8800); border: 1px solid #ffcc00; color: #333; text-shadow: none; }
+  .b-gold   { background: radial-gradient(circle at 30% 30%, #ffe566, #ffaa00, #cc6600); border: 2px solid #ffdd00; color: #3a1a00; text-shadow: 0 1px 0 rgba(255,255,255,0.3); box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3), 0 2px 8px rgba(255,180,0,0.5), 0 0 10px rgba(255,200,0,0.3); }
 
   /* ── Hi/Mid/Lo ── */
   .hml-cell {
@@ -974,6 +1013,133 @@
   .hml-badge-mid { background: rgba(255,255,255,0.05); color: #aaa; }
   .hml-badge-lo  { background: rgba(255,100,100,0.1); color: #ff8888; }
 
+  /* ── Statistics page ── */
+  .stats-tab {
+    padding: 7px 16px;
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .stats-tab:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+  .stats-tab.active { background: rgba(0,245,255,0.1); border-color: var(--accent-cyan); color: var(--accent-cyan); }
+
+  .stats-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+  .stats-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 20px; }
+  @media(max-width:900px) { .stats-grid-3 { grid-template-columns: 1fr; } }
+  @media(max-width:700px) { .stats-grid-2 { grid-template-columns: 1fr; } }
+  @media(max-width:860px) { #page-martingale-calc > div { grid-template-columns: 1fr !important; } }
+  @media(max-width:860px) { #page-backbet-calc > div { grid-template-columns: 1fr !important; } }
+  @media(max-width:860px) { #page-arbitrary-calc > div { grid-template-columns: 1fr !important; } }
+
+  /* Arbitrary calc — odds pill chips */
+  .arb-odd-chip {
+    display: flex; align-items: center; gap: 0;
+    border: 2px solid rgba(0,204,255,0.35); margin-bottom: 10px;
+    background: var(--bg-deep);
+  }
+  .arb-odd-chip .chip-label {
+    padding: 10px 12px; background: rgba(0,204,255,0.08);
+    font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700;
+    color: #00ccff; letter-spacing: 1px; white-space: nowrap; min-width: 52px; text-align: center;
+  }
+  .arb-odd-chip input {
+    flex: 1; padding: 10px 12px; background: transparent;
+    border: none; outline: none;
+    color: #66ddff; font-family: 'Orbitron', monospace; font-size: 17px; font-weight: 700;
+  }
+  .arb-odd-chip .chip-remove {
+    padding: 10px 12px; background: none; border: none;
+    color: rgba(255,68,102,0.5); font-size: 14px; cursor: pointer; line-height: 1;
+  }
+  .arb-odd-chip .chip-remove:hover { color: #ff4466; }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    padding: 20px 22px;
+    min-height: unset;
+  }
+  .stat-card-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--accent-cyan);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0,245,255,0.15);
+  }
+
+  .streak-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    gap: 8px;
+  }
+  .streak-label { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text-secondary); }
+  .streak-val   { font-family: 'Orbitron', monospace; font-size: 15px; font-weight: 700; }
+  .streak-hot   { color: #ff4466; }
+  .streak-warm  { color: #ffaa00; }
+  .streak-cool  { color: var(--accent-green); }
+
+  .gap-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .gap-label { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--text-muted); width: 70px; flex-shrink: 0; }
+  .gap-box {
+    padding: 5px 10px;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid var(--border-dim);
+    min-width: 34px;
+    text-align: center;
+  }
+  .gap-box.gap-recent { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+  .gap-box.gap-old    { color: var(--text-muted); }
+
+  .predict-block {
+    padding: 14px 16px;
+    background: rgba(0,245,255,0.03);
+    border: 1px solid rgba(0,245,255,0.12);
+    margin-bottom: 12px;
+  }
+  .predict-outcome {
+    font-family: 'Orbitron', monospace;
+    font-size: 15px;
+    font-weight: 900;
+    color: var(--accent-cyan);
+    margin-bottom: 6px;
+  }
+  .predict-conf {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .conf-bar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; }
+  .conf-fill { height: 4px; border-radius: 2px; transition: width 0.5s; }
+
+  .predict-reason {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-top: 8px;
+  }
+
   /* ── Market tools tabs ── */
   .market-tabs {
     display: flex;
@@ -1092,8 +1258,47 @@
 <div id="topbar">
   <div class="logo">BET<span>LAB</span> PRO</div>
   <div class="topbar-right">
+    <div id="lang-wrap">
+      <span class="lang-icon">🌐</span>
+      <select id="lang-select" onchange="applyTranslation(this.value)" title="Translate page">
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+        <option value="pt">Português</option>
+        <option value="de">Deutsch</option>
+        <option value="it">Italiano</option>
+        <option value="ru">Русский</option>
+        <option value="ar">العربية</option>
+        <option value="zh-CN">中文(简体)</option>
+        <option value="zh-TW">中文(繁體)</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+        <option value="hi">हिन्दी</option>
+        <option value="sw">Kiswahili</option>
+        <option value="yo">Yorùbá</option>
+        <option value="ig">Igbo</option>
+        <option value="ha">Hausa</option>
+        <option value="tpi">Tok Pisin</option>
+        <option value="id">Bahasa Indonesia</option>
+        <option value="tr">Türkçe</option>
+        <option value="pl">Polski</option>
+        <option value="nl">Nederlands</option>
+        <option value="sv">Svenska</option>
+        <option value="vi">Tiếng Việt</option>
+        <option value="th">ไทย</option>
+      </select>
+    </div>
     <div id="user-display">// DEV MODE — NO AUTH //</div>
   </div>
+</div>
+<!-- Google Translate hidden element -->
+<!-- Translation status bar -->
+<div id="translate-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(5,13,21,0.95);border-top:1px solid rgba(0,245,255,0.2);padding:8px 20px;display:none;align-items:center;gap:12px">
+  <span id="translate-status" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent-cyan);letter-spacing:1px"></span>
+  <div id="translate-progress-bar" style="flex:1;height:3px;background:rgba(255,255,255,0.08);border-radius:2px">
+    <div id="translate-progress-fill" style="height:3px;border-radius:2px;background:var(--accent-cyan);width:0%;transition:width 0.3s"></div>
+  </div>
+  <button onclick="revertTranslation()" style="background:none;border:1px solid rgba(255,255,255,0.15);color:#888;font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 8px;cursor:pointer">✕</button>
 </div>
 
 <!-- ══════════════════════════════════════ SIDEBAR ══ -->
@@ -1118,6 +1323,15 @@
     <div class="nav-item" onclick="showPage('stake-calc')">
       <span class="nav-icon">◈</span> Stake Manager
     </div>
+    <div class="nav-item" onclick="showPage('martingale-calc')">
+      <span class="nav-icon">◈</span> Martingale Calc
+    </div>
+    <div class="nav-item" onclick="showPage('backbet-calc')">
+      <span class="nav-icon">◈</span> Back Bet Calc
+    </div>
+    <div class="nav-item" onclick="showPage('arbitrary-calc')">
+      <span class="nav-icon">◈</span> Arbitrary Calc
+    </div>
   </div>
 
   <div class="nav-divider"></div>
@@ -1126,6 +1340,9 @@
     <div class="nav-label">Live Data</div>
     <div class="nav-item" onclick="showPage('49ja-live')">
       <span class="nav-icon">🔴</span> 49ja Live Feed
+    </div>
+    <div class="nav-item" onclick="showPage('49ja-stats')">
+      <span class="nav-icon">📊</span> 49ja Statistics
     </div>
   </div>
 
@@ -1215,6 +1432,24 @@
           <div class="tool-name">Stake Manager</div>
           <div class="tool-desc">Kelly Criterion, flat staking, unit-based bankroll management.</div>
           <div class="tool-status" style="color:var(--accent-orange)">● ACTIVE</div>
+        </div>
+        <div class="tool-card" style="--tc-border:#ff4466;--tc-glow:rgba(255,68,102,0.08)" onclick="showPage('martingale-calc')">
+          <span class="tool-icon">📈</span>
+          <div class="tool-name">Martingale Calc</div>
+          <div class="tool-desc">Plan your Martingale sequence — bets, profits & cumulative risk table.</div>
+          <div class="tool-status" style="color:#ff4466">● ACTIVE</div>
+        </div>
+        <div class="tool-card" style="--tc-border:#bf00ff;--tc-glow:rgba(191,0,255,0.10)" onclick="showPage('backbet-calc')">
+          <span class="tool-icon">🛡</span>
+          <div class="tool-name">Back Bet Calc</div>
+          <div class="tool-desc">Dual-bet recovery system — Recovery Bet targets profit, Back Bet protects your stake.</div>
+          <div class="tool-status" style="color:#bf00ff">● ACTIVE</div>
+        </div>
+        <div class="tool-card" style="--tc-border:#00ccff;--tc-glow:rgba(0,204,255,0.10)" onclick="showPage('arbitrary-calc')">
+          <span class="tool-icon">🎲</span>
+          <div class="tool-name">Arbitrary Calc</div>
+          <div class="tool-desc">Multi-odd recovery — bet on 2–6 odds simultaneously, equal profit whichever wins.</div>
+          <div class="tool-status" style="color:#00ccff">● ACTIVE</div>
         </div>
         <div class="tool-card" style="--tc-border:#00f5ff;--tc-glow:rgba(0,245,255,0.08)" onclick="showPage('backtester')">
           <span class="tool-icon">⏪</span>
@@ -1452,6 +1687,716 @@
           <div class="result-row"><span class="result-key">STAKE PER BET</span><span class="result-val green" id="r-flat-stake">—</span></div>
           <div class="result-row"><span class="result-key">MAX DRAWDOWN</span><span class="result-val red" id="r-flat-dd">—</span></div>
           <div class="result-row"><span class="result-key">BETS TO BUST (estimate)</span><span class="result-val orange" id="r-flat-bust">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Martingale Calculator -->
+    <div class="card">
+      <div class="card-title">Martingale Calculator</div>
+      <div class="grid-2" style="margin-bottom:16px">
+        <div>
+          <div class="field-group">
+            <label class="field-label">Base Stake (£)</label>
+            <input type="number" id="mg-base" placeholder="e.g. 1" oninput="calcMartingale()" min="0.01" step="0.01">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Decimal Odds</label>
+            <input type="number" id="mg-odds" placeholder="e.g. 2.00" oninput="calcMartingale()" step="0.01" min="1.01" value="2">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Multiplier per Loss</label>
+            <input type="number" id="mg-mult" placeholder="e.g. 2" oninput="calcMartingale()" step="0.1" min="1.1" value="2">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Max Consecutive Losses to Plan For</label>
+            <input type="number" id="mg-losses" placeholder="e.g. 8" oninput="calcMartingale()" min="1" max="20" value="8">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Available Bankroll (£)</label>
+            <input type="number" id="mg-bank" placeholder="e.g. 500" oninput="calcMartingale()" min="0">
+          </div>
+        </div>
+
+        <div>
+          <div class="result-box" id="mg-result" style="display:none;margin-top:0">
+            <div class="result-row"><span class="result-key">TARGET PROFIT PER WIN</span><span class="result-val green" id="r-mg-profit">—</span></div>
+            <div class="result-row"><span class="result-key">MAX STAKE (at loss limit)</span><span class="result-val red" id="r-mg-maxstake">—</span></div>
+            <div class="result-row"><span class="result-key">TOTAL EXPOSURE</span><span class="result-val red" id="r-mg-exposure">—</span></div>
+            <div class="result-row"><span class="result-key">BANKROLL COVERS</span><span class="result-val orange" id="r-mg-covers">—</span></div>
+            <div class="result-row"><span class="result-key">BUST RISK</span><span class="result-val" id="r-mg-risk">—</span></div>
+          </div>
+          <div id="mg-sequence-wrap" style="display:none;margin-top:12px">
+            <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--accent-cyan);letter-spacing:1px;margin-bottom:8px">STAKE SEQUENCE</div>
+            <div id="mg-sequence" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Warning bar -->
+      <div id="mg-warning" style="display:none;background:rgba(255,34,68,0.08);border:1px solid rgba(255,34,68,0.3);padding:10px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;color:#ff6677;margin-top:4px">
+        ⚠ BANKROLL INSUFFICIENT — your bankroll will be exhausted before reaching loss #<span id="mg-bust-at">?</span>. Reduce base stake or increase bankroll.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── MARTINGALE CALCULATOR ── -->
+  <div id="page-martingale-calc" class="page">
+    <div class="page-header">
+      <div class="page-title" style="display:flex;align-items:center;gap:10px">
+        <span style="color:#ff4466">📈</span> MARTINGALE CALCULATOR
+      </div>
+      <div class="page-subtitle">Plan your full bet sequence · Track cumulative exposure · Know your exact limits</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:380px 1fr;gap:28px;align-items:start" id="mgt-layout">
+
+      <!-- ══════════ INPUT PANEL ══════════ -->
+      <div class="card" style="border-color:rgba(255,68,102,0.35);padding:24px">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#ff4466;letter-spacing:2px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid rgba(255,68,102,0.25)">
+          ⚙ SETUP YOUR SEQUENCE
+        </div>
+
+        <!-- CURRENCY -->
+        <div style="margin-bottom:22px">
+          <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--accent-cyan);letter-spacing:1px;margin-bottom:8px">CURRENCY</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:8px">Select the currency for your bet amounts</div>
+          <select id="mgt-currency" onchange="runMartingale()"
+            style="width:100%;padding:11px 14px;background:var(--bg-deep);border:1px solid rgba(0,245,255,0.3);color:var(--accent-cyan);font-family:'Share Tech Mono',monospace;font-size:13px;cursor:pointer">
+            <option value="NGN|₦">🇳🇬 Nigerian Naira — ₦</option>
+            <option value="USD|$">🇺🇸 US Dollar — $</option>
+            <option value="EUR|€">🇪🇺 Euro — €</option>
+            <option value="GBP|£">🇬🇧 British Pound — £</option>
+            <option value="GHS|GH₵">🇬🇭 Ghanaian Cedi — GH₵</option>
+            <option value="KES|KSh">🇰🇪 Kenyan Shilling — KSh</option>
+            <option value="ZAR|R">🇿🇦 South African Rand — R</option>
+            <option value="UGX|USh">🇺🇬 Ugandan Shilling — USh</option>
+            <option value="TZS|TSh">🇹🇿 Tanzanian Shilling — TSh</option>
+            <option value="XOF|CFA">🌍 West African CFA — CFA</option>
+            <option value="EGP|E£">🇪🇬 Egyptian Pound — E£</option>
+            <option value="MAD|DH">🇲🇦 Moroccan Dirham — DH</option>
+            <option value="INR|₹">🇮🇳 Indian Rupee — ₹</option>
+            <option value="PKR|₨">🇵🇰 Pakistani Rupee — ₨</option>
+            <option value="BRL|R$">🇧🇷 Brazilian Real — R$</option>
+            <option value="CAD|CA$">🇨🇦 Canadian Dollar — CA$</option>
+            <option value="AUD|A$">🇦🇺 Australian Dollar — A$</option>
+            <option value="JPY|¥">🇯🇵 Japanese Yen — ¥</option>
+            <option value="CNY|¥">🇨🇳 Chinese Yuan — ¥</option>
+            <option value="PHP|₱">🇵🇭 Philippine Peso — ₱</option>
+            <option value="IDR|Rp">🇮🇩 Indonesian Rupiah — Rp</option>
+            <option value="BTC|₿">₿ Bitcoin — ₿</option>
+          </select>
+        </div>
+
+        <!-- ODD -->
+        <div style="margin-bottom:22px">
+          <div style="font-family:'Orbitron',monospace;font-size:10px;color:#ff9999;letter-spacing:1px;margin-bottom:4px">ODD</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:8px">Decimal multiplier paid when your bet wins &nbsp;<span style="color:#ff4466">e.g. 2.00 means bet ×2 payout</span></div>
+          <input type="number" id="mgt-odds" value="2.00" min="1.01" step="0.01"
+            style="width:100%;padding:13px;background:var(--bg-deep);border:2px solid rgba(255,100,100,0.4);color:#ff9999;font-family:'Orbitron',monospace;font-size:20px;font-weight:700;text-align:center;box-sizing:border-box"
+            oninput="runMartingale()">
+        </div>
+
+        <!-- BASE BET -->
+        <div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <div style="font-family:'Orbitron',monospace;font-size:10px;color:#ff9999;letter-spacing:1px">BASE BET</div>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#ff4466;border:1px solid #ff4466;padding:2px 6px;border-radius:2px;letter-spacing:1px">MINIMUM BET</span>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:8px">Your starting stake — the sequence always resets to this amount after a win</div>
+          <div style="display:flex;align-items:stretch">
+            <div id="mgt-sym-base" style="padding:13px 14px;background:rgba(255,68,102,0.12);border:2px solid rgba(255,100,100,0.4);border-right:none;font-family:'Orbitron',monospace;font-size:14px;color:#ff4466;font-weight:700;display:flex;align-items:center">₦</div>
+            <input type="number" id="mgt-base" value="100" min="0.01" step="1"
+              style="flex:1;padding:13px;background:var(--bg-deep);border:2px solid rgba(255,100,100,0.4);border-left:none;color:#ff9999;font-family:'Orbitron',monospace;font-size:20px;font-weight:700"
+              oninput="runMartingale()">
+          </div>
+        </div>
+
+        <!-- AVR. PROFIT -->
+        <div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <div style="font-family:'Orbitron',monospace;font-size:10px;color:#ffcc66;letter-spacing:1px">AVR. PROFIT</div>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#ffaa00;border:1px solid #ffaa00;padding:2px 6px;border-radius:2px;letter-spacing:1px">MIN. PROFIT</span>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:8px">Minimum profit you want guaranteed every time any bet in the sequence wins</div>
+          <div style="display:flex;align-items:stretch">
+            <div id="mgt-sym-profit" style="padding:13px 14px;background:rgba(255,170,0,0.10);border:2px solid rgba(255,170,0,0.4);border-right:none;font-family:'Orbitron',monospace;font-size:14px;color:#ffaa00;font-weight:700;display:flex;align-items:center">₦</div>
+            <input type="number" id="mgt-profit" value="100" min="1" step="1"
+              style="flex:1;padding:13px;background:var(--bg-deep);border:2px solid rgba(255,170,0,0.4);border-left:none;color:#ffcc66;font-family:'Orbitron',monospace;font-size:20px;font-weight:700"
+              oninput="runMartingale()">
+          </div>
+        </div>
+
+        <!-- TRADING POWER -->
+        <div style="margin-bottom:28px">
+          <div style="font-family:'Orbitron',monospace;font-size:10px;color:#00f5ff;letter-spacing:1px;margin-bottom:4px">TRADING POWER</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:12px">How many rounds the sequence runs before you stop — the length of your calculation</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+            <input type="range" id="mgt-steps-range" min="1" max="20" value="8"
+              style="flex:1;accent-color:#ff4466;height:6px;cursor:pointer"
+              oninput="document.getElementById('mgt-steps').value=this.value;runMartingale()">
+            <input type="number" id="mgt-steps" value="8" min="1" max="20"
+              style="width:70px;padding:11px;background:var(--bg-deep);border:2px solid rgba(0,245,255,0.3);color:var(--accent-cyan);font-family:'Orbitron',monospace;font-size:18px;font-weight:700;text-align:center"
+              oninput="this.value=Math.min(20,Math.max(1,parseInt(this.value)||1));document.getElementById('mgt-steps-range').value=this.value;runMartingale()">
+          </div>
+          <!-- Power gauge -->
+          <div style="display:flex;gap:3px;margin-top:8px" id="mgt-power-gauge"></div>
+          <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:4px">
+            <span>1 round</span><span style="color:#ffaa00">SAFE ◄─── AGGRESSIVE</span><span>20 rounds</span>
+          </div>
+        </div>
+
+        <!-- CALCULATE BUTTON -->
+        <button onclick="runMartingale()"
+          style="width:100%;padding:16px;background:linear-gradient(135deg,rgba(255,68,102,0.2),rgba(255,100,50,0.15));border:2px solid #ff4466;color:#ff4466;font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:3px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden"
+          onmouseover="this.style.background='linear-gradient(135deg,rgba(255,68,102,0.35),rgba(255,100,50,0.25))';this.style.color='#ff8899'"
+          onmouseout="this.style.background='linear-gradient(135deg,rgba(255,68,102,0.2),rgba(255,100,50,0.15))';this.style.color='#ff4466'">
+          ▶ &nbsp; CALCULATE
+        </button>
+      </div>
+
+      <!-- ══════════ RESULT PANEL ══════════ -->
+      <div>
+
+        <!-- Empty state -->
+        <div id="mgt-empty" style="background:var(--bg-card);border:1px solid var(--border-dim);padding:60px 40px;text-align:center;border-radius:2px">
+          <div style="font-size:48px;margin-bottom:18px;opacity:0.5">📈</div>
+          <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">Ready to calculate your sequence</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);opacity:0.6">Fill in the fields on the left and your full bet sequence table will appear here</div>
+        </div>
+
+        <!-- Results (hidden until calculated) -->
+        <div id="mgt-results" style="display:none">
+
+          <!-- 4 summary cards -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+            <div style="background:var(--bg-card);border:1px solid rgba(0,245,255,0.25);padding:18px;text-align:center">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">ROUNDS</div>
+              <div id="mgt-s-steps" style="font-family:'Orbitron',monospace;font-size:26px;font-weight:700;color:var(--accent-cyan)"></div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid rgba(0,255,136,0.25);padding:18px;text-align:center">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">MIN. PROFIT / WIN</div>
+              <div id="mgt-s-profit" style="font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:#00ff88"></div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid rgba(255,68,102,0.35);padding:18px;text-align:center">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">TOTAL EXPOSURE</div>
+              <div id="mgt-s-exposure" style="font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:#ff4466"></div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid rgba(255,170,0,0.3);padding:18px;text-align:center">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">FINAL ROUND BET</div>
+              <div id="mgt-s-maxstake" style="font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:#ffaa00"></div>
+            </div>
+          </div>
+
+          <!-- How it works note -->
+          <div id="mgt-strategy-note" style="background:rgba(0,245,255,0.03);border:1px solid rgba(0,245,255,0.12);padding:14px 18px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary);line-height:1.9;margin-bottom:20px"></div>
+
+          <!-- Table title bar -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:rgba(255,68,102,0.10);border:1px solid rgba(255,68,102,0.3);border-bottom:none">
+            <div style="font-family:'Orbitron',monospace;font-size:11px;color:#ff4466;letter-spacing:2px;font-weight:700">📋 &nbsp;FULL BET SEQUENCE</div>
+            <div id="mgt-currency-label" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted)"></div>
+          </div>
+
+          <!-- Sequence table -->
+          <div style="overflow-x:auto;border:1px solid rgba(255,68,102,0.3)">
+            <table style="width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;min-width:620px">
+              <thead>
+                <tr style="background:rgba(255,68,102,0.08)">
+                  <th style="padding:12px 14px;text-align:center;font-family:'Orbitron',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;border-bottom:2px solid rgba(255,68,102,0.3);border-right:1px solid rgba(255,68,102,0.15);width:44px">#</th>
+                  <th style="padding:12px 14px;text-align:left;font-family:'Orbitron',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;border-bottom:2px solid rgba(255,68,102,0.3);border-right:1px solid rgba(255,68,102,0.15)">SITUATION</th>
+                  <th style="padding:12px 16px;text-align:right;font-family:'Orbitron',monospace;font-size:9px;color:#ff9999;letter-spacing:1px;border-bottom:2px solid rgba(255,68,102,0.3);border-right:1px solid rgba(255,68,102,0.15)">BET AMOUNT</th>
+                  <th style="padding:12px 16px;text-align:right;font-family:'Orbitron',monospace;font-size:9px;color:#cc6677;letter-spacing:1px;border-bottom:2px solid rgba(255,68,102,0.3);border-right:1px solid rgba(255,68,102,0.15)">TOTAL STAKED<br><span style="color:var(--text-muted);font-size:8px">(sum if lost every round)</span></th>
+                  <th style="padding:12px 16px;text-align:right;font-family:'Orbitron',monospace;font-size:9px;color:#ffcc44;letter-spacing:1px;border-bottom:2px solid rgba(255,68,102,0.3);border-right:1px solid rgba(255,68,102,0.15)">PROFIT IF WIN</th>
+                  <th style="padding:12px 14px;text-align:center;font-family:'Orbitron',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;border-bottom:2px solid rgba(255,68,102,0.3)">RISK</th>
+                </tr>
+              </thead>
+              <tbody id="mgt-tbody"></tbody>
+              <!-- Grand total footer -->
+              <tfoot>
+                <tr style="background:rgba(255,68,102,0.14);border-top:2px solid #ff4466">
+                  <td colspan="2" style="padding:14px 18px;font-family:'Orbitron',monospace;font-size:10px;color:#ff4466;letter-spacing:1px;border-right:1px solid rgba(255,68,102,0.2)">TOTAL EXPOSURE &nbsp;—&nbsp; IF ALL ROUNDS LOSE</td>
+                  <td style="padding:14px 16px;text-align:right;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#ff6677;border-right:1px solid rgba(255,68,102,0.2)" id="mgt-foot-total-bet"></td>
+                  <td style="padding:14px 16px;text-align:right;font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#ff4466;border-right:1px solid rgba(255,68,102,0.2)" id="mgt-foot-cum"></td>
+                  <td colspan="2" style="padding:14px 16px;text-align:right;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted)">Win at any step to keep profit</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- Win-at-step explainer -->
+          <div style="margin-top:16px;background:rgba(0,255,136,0.04);border:1px solid rgba(0,255,136,0.15);padding:14px 18px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary);line-height:1.8">
+            <span style="color:#00ff88;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px">✓ HOW TO USE:</span>&nbsp;
+            Place Round 1 first. If it wins, collect your profit and restart from Round 1.
+            If it loses, move to Round 2 — the bet is already sized to recover Round 1's loss <em>plus</em> still deliver your target profit.
+            Continue down the table until you win. <b style="color:#ffcc44">Every single row is profitable when it wins.</b>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BACK BET CALCULATOR ── -->
+  <div id="page-backbet-calc" class="page">
+    <div class="page-header">
+      <div class="page-title" style="display:flex;align-items:center;gap:10px">
+        <span style="color:#bf00ff">🛡</span> BACK BET CALCULATOR
+      </div>
+      <div class="page-subtitle">Dual-bet recovery system · Recovery Bet chases profit · Back Bet protects your money</div>
+    </div>
+
+    <!-- HOW IT WORKS banner -->
+    <div style="background:rgba(191,0,255,0.06);border:1px solid rgba(191,0,255,0.25);padding:16px 20px;margin-bottom:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,255,136,0.15);border:1px solid #00ff88;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#00ff88;flex-shrink:0">✓</div>
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:9px;color:#00ff88;letter-spacing:1px;margin-bottom:4px">RECOVERY BET WINS</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-secondary);line-height:1.6">Covers all previous round losses + both current bets + your target profit. Full recovery with guaranteed profit.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,170,0,0.15);border:1px solid #ffaa00;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#ffaa00;flex-shrink:0">↔</div>
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:9px;color:#ffaa00;letter-spacing:1px;margin-bottom:4px">BACK BET WINS</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-secondary);line-height:1.6">Returns exactly the total staked in this round only (Recovery + Back Bet). No profit, but no cumulative loss either.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,68,102,0.15);border:1px solid #ff4466;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#ff4466;flex-shrink:0">✗</div>
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:9px;color:#ff4466;letter-spacing:1px;margin-bottom:4px">BOTH LOSE</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-secondary);line-height:1.6">Both bets lost. Move to the next round — the new Recovery Bet is already sized to recover everything including this round.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:390px 1fr;gap:28px;align-items:start" id="bbc-layout">
+
+      <!-- ══════════ INPUT PANEL ══════════ -->
+      <div style="background:var(--bg-card);border:1px solid rgba(191,0,255,0.3);padding:24px">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#bf00ff;letter-spacing:2px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid rgba(191,0,255,0.2)">
+          ⚙ SETUP YOUR DUAL-BET SEQUENCE
+        </div>
+
+        <!-- CURRENCY -->
+        <div style="margin-bottom:22px">
+          <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--accent-cyan);letter-spacing:1px;margin-bottom:6px">CURRENCY</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:8px">All bet amounts will be shown in this currency</div>
+          <select id="bbc-currency" onchange="runBackBet()"
+            style="width:100%;padding:11px 14px;background:var(--bg-deep);border:1px solid rgba(191,0,255,0.35);color:#d966ff;font-family:'Share Tech Mono',monospace;font-size:13px;cursor:pointer">
+            <option value="NGN|₦">🇳🇬 Nigerian Naira — ₦</option>
+            <option value="USD|$">🇺🇸 US Dollar — $</option>
+            <option value="EUR|€">🇪🇺 Euro — €</option>
+            <option value="GBP|£">🇬🇧 British Pound — £</option>
+            <option value="GHS|GH₵">🇬🇭 Ghanaian Cedi — GH₵</option>
+            <option value="KES|KSh">🇰🇪 Kenyan Shilling — KSh</option>
+            <option value="ZAR|R">🇿🇦 South African Rand — R</option>
+            <option value="UGX|USh">🇺🇬 Ugandan Shilling — USh</option>
+            <option value="TZS|TSh">🇹🇿 Tanzanian Shilling — TSh</option>
+            <option value="XOF|CFA">🌍 West African CFA — CFA</option>
+            <option value="EGP|E£">🇪🇬 Egyptian Pound — E£</option>
+            <option value="MAD|DH">🇲🇦 Moroccan Dirham — DH</option>
+            <option value="INR|₹">🇮🇳 Indian Rupee — ₹</option>
+            <option value="PKR|₨">🇵🇰 Pakistani Rupee — ₨</option>
+            <option value="BRL|R$">🇧🇷 Brazilian Real — R$</option>
+            <option value="CAD|CA$">🇨🇦 Canadian Dollar — CA$</option>
+            <option value="AUD|A$">🇦🇺 Australian Dollar — A$</option>
+            <option value="JPY|¥">🇯🇵 Japanese Yen — ¥</option>
+            <option value="CNY|¥">🇨🇳 Chinese Yuan — ¥</option>
+            <option value="PHP|₱">🇵🇭 Philippine Peso — ₱</option>
+            <option value="IDR|Rp">🇮🇩 Indonesian Rupiah — Rp</option>
+            <option value="BTC|₿">₿ Bitcoin — ₿</option>
+          </select>
+        </div>
+
+        <!-- 2-column odds row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px">
+          <!-- Recovery Bet Odd -->
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:10px;color:#00ff88;letter-spacing:1px;margin-bottom:4px">RECOVERY BET ODD</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:8px;line-height:1.5">Odd for the bet that wins you profit + recovers losses</div>
+            <input type="number" id="bbc-rec-odd" value="3.00" min="1.01" step="0.01"
+              style="width:100%;padding:12px;background:var(--bg-deep);border:2px solid rgba(0,255,136,0.4);color:#00ff88;font-family:'Orbitron',monospace;font-size:18px;font-weight:700;text-align:center;box-sizing:border-box"
+              oninput="runBackBet()">
+          </div>
+          <!-- Back Bet Odd -->
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:10px;color:#ffaa00;letter-spacing:1px;margin-bottom:4px">BACK BET ODD</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:8px;line-height:1.5">Odd for the backup bet that returns your round stake only</div>
+            <input type="number" id="bbc-back-odd" value="2.00" min="1.01" step="0.01"
+              style="width:100%;padding:12px;background:var(--bg-deep);border:2px solid rgba(255,170,0,0.4);color:#ffaa00;font-family:'Orbitron',monospace;font-size:18px;font-weight:700;text-align:center;box-sizing:border-box"
+              oninput="runBackBet()">
+          </div>
+        </div>
+
+        <!-- Base Bet -->
+        <div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <div style="font-family:'Orbitron',monospace;font-size:10px;color:#ff9999;letter-spacing:1px">BASE BET</div>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#ff4466;border:1px solid #ff4466;padding:2px 6px;border-radius:2px;letter-spacing:1px">MINIMUM BET</span>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:8px">Starting Recovery Bet amount — the sequence resets to this after any win</div>
+          <div style="display:flex;align-items:stretch">
+            <div id="bbc-sym-base" style="padding:12px 14px;background:rgba(191,0,255,0.10);border:2px solid rgba(191,0,255,0.35);border-right:none;font-family:'Orbitron',monospace;font-size:14px;color:#bf00ff;font-weight:700;display:flex;align-items:center">₦</div>
+            <input type="number" id="bbc-base" value="100" min="0.01" step="1"
+              style="flex:1;padding:12px;background:var(--bg-deep);border:2px solid rgba(191,0,255,0.35);border-left:none;color:#d966ff;font-family:'Orbitron',monospace;font-size:18px;font-weight:700;box-sizing:border-box"
+              oninput="runBackBet()">
+          </div>
+        </div>
+
+        <!-- Avr. Profit -->
+        <div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <div style="font-family:'Orbitron',monospace;font-size:10px;color:#ffcc66;letter-spacing:1px">AVR. PROFIT</div>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#ffaa00;border:1px solid #ffaa00;padding:2px 6px;border-radius:2px;letter-spacing:1px">MIN. PROFIT</span>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:8px">Minimum net profit you receive whenever the Recovery Bet wins</div>
+          <div style="display:flex;align-items:stretch">
+            <div id="bbc-sym-profit" style="padding:12px 14px;background:rgba(255,170,0,0.08);border:2px solid rgba(255,170,0,0.4);border-right:none;font-family:'Orbitron',monospace;font-size:14px;color:#ffaa00;font-weight:700;display:flex;align-items:center">₦</div>
+            <input type="number" id="bbc-profit" value="100" min="1" step="1"
+              style="flex:1;padding:12px;background:var(--bg-deep);border:2px solid rgba(255,170,0,0.4);border-left:none;color:#ffcc66;font-family:'Orbitron',monospace;font-size:18px;font-weight:700;box-sizing:border-box"
+              oninput="runBackBet()">
+          </div>
+        </div>
+
+        <!-- Trading Power -->
+        <div style="margin-bottom:28px">
+          <div style="font-family:'Orbitron',monospace;font-size:10px;color:#00f5ff;letter-spacing:1px;margin-bottom:4px">TRADING POWER</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:12px">Number of rounds in the calculation — how far the sequence extends</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+            <input type="range" id="bbc-steps-range" min="1" max="15" value="6"
+              style="flex:1;accent-color:#bf00ff;height:6px;cursor:pointer"
+              oninput="document.getElementById('bbc-steps').value=this.value;runBackBet()">
+            <input type="number" id="bbc-steps" value="6" min="1" max="15"
+              style="width:70px;padding:11px;background:var(--bg-deep);border:2px solid rgba(0,245,255,0.3);color:var(--accent-cyan);font-family:'Orbitron',monospace;font-size:18px;font-weight:700;text-align:center"
+              oninput="this.value=Math.min(15,Math.max(1,parseInt(this.value)||1));document.getElementById('bbc-steps-range').value=this.value;runBackBet()">
+          </div>
+          <div id="bbc-power-gauge" style="display:flex;gap:3px;margin-top:8px"></div>
+          <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:4px">
+            <span>1 round</span><span style="color:#ffaa00">SAFE ◄── AGGRESSIVE</span><span>15 rounds</span>
+          </div>
+        </div>
+
+        <button onclick="runBackBet()"
+          style="width:100%;padding:16px;background:linear-gradient(135deg,rgba(191,0,255,0.18),rgba(130,0,200,0.12));border:2px solid #bf00ff;color:#bf00ff;font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:3px;cursor:pointer;transition:all 0.2s"
+          onmouseover="this.style.background='linear-gradient(135deg,rgba(191,0,255,0.32),rgba(130,0,200,0.24))';this.style.color='#d966ff'"
+          onmouseout="this.style.background='linear-gradient(135deg,rgba(191,0,255,0.18),rgba(130,0,200,0.12))';this.style.color='#bf00ff'">
+          ▶ &nbsp; CALCULATE
+        </button>
+      </div>
+
+      <!-- ══════════ RESULT PANEL ══════════ -->
+      <div>
+
+        <!-- Empty state -->
+        <div id="bbc-empty" style="background:var(--bg-card);border:1px solid var(--border-dim);padding:60px 40px;text-align:center">
+          <div style="font-size:48px;margin-bottom:18px;opacity:0.5">🛡</div>
+          <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">Ready to calculate your dual-bet sequence</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);opacity:0.6">Fill in the fields on the left — your full round-by-round table will appear here</div>
+        </div>
+
+        <!-- Results -->
+        <div id="bbc-results" style="display:none">
+
+          <!-- 5 summary cards -->
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px">
+            <div style="background:var(--bg-card);border:1px solid rgba(0,245,255,0.2);padding:14px;text-align:center">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">ROUNDS</div>
+              <div id="bbc-s-rounds" style="font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:var(--accent-cyan)"></div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid rgba(0,255,136,0.25);padding:14px;text-align:center">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">PROFIT / WIN</div>
+              <div id="bbc-s-profit" style="font-family:'Orbitron',monospace;font-size:17px;font-weight:700;color:#00ff88"></div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid rgba(255,170,0,0.25);padding:14px;text-align:center">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">BACK BET WIN</div>
+              <div id="bbc-s-backwin" style="font-family:'Orbitron',monospace;font-size:17px;font-weight:700;color:#ffaa00"></div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid rgba(255,68,102,0.3);padding:14px;text-align:center">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">MAX EXPOSURE</div>
+              <div id="bbc-s-exposure" style="font-family:'Orbitron',monospace;font-size:17px;font-weight:700;color:#ff4466"></div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid rgba(191,0,255,0.3);padding:14px;text-align:center">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">FINAL REC. BET</div>
+              <div id="bbc-s-maxrec" style="font-family:'Orbitron',monospace;font-size:17px;font-weight:700;color:#bf00ff"></div>
+            </div>
+          </div>
+
+          <!-- Strategy note -->
+          <div id="bbc-strategy-note" style="background:rgba(191,0,255,0.04);border:1px solid rgba(191,0,255,0.18);padding:14px 18px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary);line-height:1.9;margin-bottom:20px"></div>
+
+          <!-- TABLE TITLE BAR -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:rgba(191,0,255,0.10);border:1px solid rgba(191,0,255,0.3);border-bottom:none">
+            <div style="font-family:'Orbitron',monospace;font-size:11px;color:#bf00ff;letter-spacing:2px;font-weight:700">📋 &nbsp;ROUND-BY-ROUND BET SEQUENCE</div>
+            <div id="bbc-currency-label" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted)"></div>
+          </div>
+
+          <!-- TABLE -->
+          <div style="overflow-x:auto;border:1px solid rgba(191,0,255,0.3)">
+            <table style="width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;min-width:780px">
+              <thead>
+                <tr style="background:rgba(191,0,255,0.08)">
+                  <th rowspan="2" style="padding:10px 12px;text-align:center;font-family:'Orbitron',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;border-bottom:2px solid rgba(191,0,255,0.3);border-right:1px solid rgba(191,0,255,0.2);vertical-align:middle">#</th>
+                  <th rowspan="2" style="padding:10px 12px;text-align:left;font-family:'Orbitron',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;border-bottom:2px solid rgba(191,0,255,0.3);border-right:1px solid rgba(191,0,255,0.2);vertical-align:middle">SITUATION</th>
+                  <!-- Recovery Bet group -->
+                  <th colspan="2" style="padding:8px 12px;text-align:center;font-family:'Orbitron',monospace;font-size:8px;color:#00ff88;letter-spacing:1px;border-bottom:1px solid rgba(0,255,136,0.2);border-right:1px solid rgba(191,0,255,0.2)">🎯 RECOVERY BET</th>
+                  <!-- Back Bet group -->
+                  <th colspan="2" style="padding:8px 12px;text-align:center;font-family:'Orbitron',monospace;font-size:8px;color:#ffaa00;letter-spacing:1px;border-bottom:1px solid rgba(255,170,0,0.2);border-right:1px solid rgba(191,0,255,0.2)">🛡 BACK BET</th>
+                  <!-- Round totals -->
+                  <th colspan="2" style="padding:8px 12px;text-align:center;font-family:'Orbitron',monospace;font-size:8px;color:var(--accent-cyan);letter-spacing:1px;border-bottom:1px solid rgba(0,245,255,0.2)">📊 ROUND TOTALS</th>
+                </tr>
+                <tr style="background:rgba(191,0,255,0.04)">
+                  <th style="padding:8px 14px;text-align:right;font-family:'Orbitron',monospace;font-size:8px;color:#00ff88;letter-spacing:1px;border-bottom:1px solid rgba(191,0,255,0.3);border-right:1px solid rgba(191,0,255,0.12);white-space:nowrap">BET</th>
+                  <th style="padding:8px 14px;text-align:right;font-family:'Orbitron',monospace;font-size:8px;color:#44dd88;letter-spacing:1px;border-bottom:1px solid rgba(191,0,255,0.3);border-right:1px solid rgba(191,0,255,0.2);white-space:nowrap">IF WIN: PROFIT</th>
+                  <th style="padding:8px 14px;text-align:right;font-family:'Orbitron',monospace;font-size:8px;color:#ffaa00;letter-spacing:1px;border-bottom:1px solid rgba(191,0,255,0.3);border-right:1px solid rgba(191,0,255,0.12);white-space:nowrap">BET</th>
+                  <th style="padding:8px 14px;text-align:right;font-family:'Orbitron',monospace;font-size:8px;color:#ffcc66;letter-spacing:1px;border-bottom:1px solid rgba(191,0,255,0.3);border-right:1px solid rgba(191,0,255,0.2);white-space:nowrap">IF WIN: RETURN</th>
+                  <th style="padding:8px 14px;text-align:right;font-family:'Orbitron',monospace;font-size:8px;color:var(--accent-cyan);letter-spacing:1px;border-bottom:1px solid rgba(191,0,255,0.3);border-right:1px solid rgba(191,0,255,0.12);white-space:nowrap">ROUND STAKE</th>
+                  <th style="padding:8px 14px;text-align:right;font-family:'Orbitron',monospace;font-size:8px;color:#cc88ff;letter-spacing:1px;border-bottom:1px solid rgba(191,0,255,0.3);white-space:nowrap">TOTAL STAKED<br><span style="color:var(--text-muted);font-size:7px">(if both lose every round)</span></th>
+                </tr>
+              </thead>
+              <tbody id="bbc-tbody"></tbody>
+              <tfoot>
+                <tr style="background:rgba(191,0,255,0.12);border-top:2px solid #bf00ff">
+                  <td colspan="2" style="padding:13px 16px;font-family:'Orbitron',monospace;font-size:9px;color:#bf00ff;letter-spacing:1px;border-right:1px solid rgba(191,0,255,0.2)">WORST CASE — ALL ROUNDS LOSE</td>
+                  <td style="padding:13px 14px;text-align:right;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:#00ff88;border-right:1px solid rgba(191,0,255,0.12)" id="bbc-foot-rec"></td>
+                  <td style="border-right:1px solid rgba(191,0,255,0.2)"></td>
+                  <td style="padding:13px 14px;text-align:right;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:#ffaa00;border-right:1px solid rgba(191,0,255,0.12)" id="bbc-foot-back"></td>
+                  <td style="border-right:1px solid rgba(191,0,255,0.2)"></td>
+                  <td style="padding:13px 14px;text-align:right;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--accent-cyan);border-right:1px solid rgba(191,0,255,0.12)" id="bbc-foot-round"></td>
+                  <td style="padding:13px 14px;text-align:right;font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#ff4466" id="bbc-foot-total"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- Bottom tip -->
+          <div style="margin-top:16px;background:rgba(191,0,255,0.04);border:1px solid rgba(191,0,255,0.15);padding:14px 18px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary);line-height:1.8">
+            <span style="color:#bf00ff;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px">💡 STRATEGY TIP:</span>&nbsp;
+            Place <b style="color:#00ff88">Recovery Bet</b> and <b style="color:#ffaa00">Back Bet</b> simultaneously each round.
+            If the Recovery Bet wins → collect profit and restart from Round 1.
+            If the Back Bet wins → you get back exactly what you staked this round, no profit but losses don't carry forward.
+            Only if <em>both</em> lose do you move to the next round with the larger stakes.
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ARBITRARY CALCULATOR ── -->
+  <div id="page-arbitrary-calc" class="page">
+    <div class="page-header">
+      <div class="page-title" style="display:flex;align-items:center;gap:10px">
+        <span style="color:#00ccff">🎲</span> ARBITRARY CALCULATOR
+      </div>
+      <div class="page-subtitle">Multi-odd recovery system · Bet on 2–6 odds simultaneously · Equal profit whichever odd wins</div>
+    </div>
+
+    <!-- HOW IT WORKS banner -->
+    <div style="background:rgba(0,204,255,0.05);border:1px solid rgba(0,204,255,0.2);padding:16px 20px;margin-bottom:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,255,136,0.12);border:1px solid #00ff88;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🎯</div>
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:9px;color:#00ff88;letter-spacing:1px;margin-bottom:4px">ANY ODD WINS</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-secondary);line-height:1.6">Whichever of your selected odds wins, the payout is sized to return all previous losses plus your exact target profit.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,204,255,0.12);border:1px solid #00ccff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">⚖</div>
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:9px;color:#00ccff;letter-spacing:1px;margin-bottom:4px">EQUAL PROFIT</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-secondary);line-height:1.6">Each odd gets a different stake — higher odds need less money, lower odds need more — but all deliver the same profit.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,68,102,0.12);border:1px solid #ff4466;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🔄</div>
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:9px;color:#ff4466;letter-spacing:1px;margin-bottom:4px">ALL LOSE → NEXT ROUND</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-secondary);line-height:1.6">If every odd loses, the next round's bets are recalculated to recover the full combined loss plus profit.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:400px 1fr;gap:28px;align-items:start" id="arb-layout">
+
+      <!-- ══════════ INPUT PANEL ══════════ -->
+      <div style="background:var(--bg-card);border:1px solid rgba(0,204,255,0.3);padding:24px">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#00ccff;letter-spacing:2px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid rgba(0,204,255,0.2)">
+          ⚙ SETUP YOUR MULTI-ODD SEQUENCE
+        </div>
+
+        <!-- CURRENCY -->
+        <div style="margin-bottom:22px">
+          <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--accent-cyan);letter-spacing:1px;margin-bottom:6px">CURRENCY</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:8px">All bet amounts shown in this currency</div>
+          <select id="arb-currency" onchange="runArbitrary()"
+            style="width:100%;padding:11px 14px;background:var(--bg-deep);border:1px solid rgba(0,204,255,0.3);color:#00ccff;font-family:'Share Tech Mono',monospace;font-size:13px;cursor:pointer">
+            <option value="NGN|₦">🇳🇬 Nigerian Naira — ₦</option>
+            <option value="USD|$">🇺🇸 US Dollar — $</option>
+            <option value="EUR|€">🇪🇺 Euro — €</option>
+            <option value="GBP|£">🇬🇧 British Pound — £</option>
+            <option value="GHS|GH₵">🇬🇭 Ghanaian Cedi — GH₵</option>
+            <option value="KES|KSh">🇰🇪 Kenyan Shilling — KSh</option>
+            <option value="ZAR|R">🇿🇦 South African Rand — R</option>
+            <option value="UGX|USh">🇺🇬 Ugandan Shilling — USh</option>
+            <option value="TZS|TSh">🇹🇿 Tanzanian Shilling — TSh</option>
+            <option value="XOF|CFA">🌍 West African CFA — CFA</option>
+            <option value="EGP|E£">🇪🇬 Egyptian Pound — E£</option>
+            <option value="MAD|DH">🇲🇦 Moroccan Dirham — DH</option>
+            <option value="INR|₹">🇮🇳 Indian Rupee — ₹</option>
+            <option value="PKR|₨">🇵🇰 Pakistani Rupee — ₨</option>
+            <option value="BRL|R$">🇧🇷 Brazilian Real — R$</option>
+            <option value="CAD|CA$">🇨🇦 Canadian Dollar — CA$</option>
+            <option value="AUD|A$">🇦🇺 Australian Dollar — A$</option>
+            <option value="JPY|¥">🇯🇵 Japanese Yen — ¥</option>
+            <option value="CNY|¥">🇨🇳 Chinese Yuan — ¥</option>
+            <option value="PHP|₱">🇵🇭 Philippine Peso — ₱</option>
+            <option value="IDR|Rp">🇮🇩 Indonesian Rupiah — Rp</option>
+            <option value="BTC|₿">₿ Bitcoin — ₿</option>
+          </select>
+        </div>
+
+        <!-- ODDS INPUT SECTION -->
+        <div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div>
+              <div style="font-family:'Orbitron',monospace;font-size:10px;color:#00ccff;letter-spacing:1px">ODDS</div>
+              <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:3px">Add 2 to 6 decimal odds — each will get its own stake</div>
+            </div>
+            <div id="arb-odd-count-badge" style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#00ccff;background:rgba(0,204,255,0.1);border:1px solid rgba(0,204,255,0.3);padding:4px 10px">2 ODDS</div>
+          </div>
+
+          <!-- Odds chips container -->
+          <div id="arb-odds-container" style="margin-bottom:10px"></div>
+
+          <!-- Add odd button -->
+          <button id="arb-add-btn" onclick="arbAddOdd()"
+            style="width:100%;padding:10px;background:rgba(0,204,255,0.06);border:1px dashed rgba(0,204,255,0.4);color:#00ccff;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all 0.2s"
+            onmouseover="this.style.background='rgba(0,204,255,0.14)'"
+            onmouseout="this.style.background='rgba(0,204,255,0.06)'">
+            + ADD ODD &nbsp;<span style="font-size:9px;opacity:0.6">(max 6)</span>
+          </button>
+
+          <!-- Overround warning -->
+          <div id="arb-overround-warn" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.3);font-family:'Share Tech Mono',monospace;font-size:10px;color:#ffaa00;line-height:1.6"></div>
+        </div>
+
+        <!-- BASE BET -->
+        <div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <div style="font-family:'Orbitron',monospace;font-size:10px;color:#ff9999;letter-spacing:1px">BASE BET</div>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#ff4466;border:1px solid #ff4466;padding:2px 6px;border-radius:2px;letter-spacing:1px">MIN. TOTAL STAKE</span>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:8px">Minimum combined stake across ALL odds in a round — each odd scales proportionally</div>
+          <div style="display:flex;align-items:stretch">
+            <div id="arb-sym-base" style="padding:12px 14px;background:rgba(0,204,255,0.08);border:2px solid rgba(0,204,255,0.35);border-right:none;font-family:'Orbitron',monospace;font-size:14px;color:#00ccff;font-weight:700;display:flex;align-items:center">₦</div>
+            <input type="number" id="arb-base" value="100" min="0.01" step="1"
+              style="flex:1;padding:12px;background:var(--bg-deep);border:2px solid rgba(0,204,255,0.35);border-left:none;color:#66ddff;font-family:'Orbitron',monospace;font-size:18px;font-weight:700;box-sizing:border-box"
+              oninput="runArbitrary()">
+          </div>
+        </div>
+
+        <!-- AVR. PROFIT -->
+        <div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <div style="font-family:'Orbitron',monospace;font-size:10px;color:#ffcc66;letter-spacing:1px">AVR. PROFIT</div>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#ffaa00;border:1px solid #ffaa00;padding:2px 6px;border-radius:2px;letter-spacing:1px">MIN. PROFIT</span>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:8px">The profit you receive whichever odd wins — same amount for all</div>
+          <div style="display:flex;align-items:stretch">
+            <div id="arb-sym-profit" style="padding:12px 14px;background:rgba(255,170,0,0.08);border:2px solid rgba(255,170,0,0.4);border-right:none;font-family:'Orbitron',monospace;font-size:14px;color:#ffaa00;font-weight:700;display:flex;align-items:center">₦</div>
+            <input type="number" id="arb-profit" value="100" min="1" step="1"
+              style="flex:1;padding:12px;background:var(--bg-deep);border:2px solid rgba(255,170,0,0.4);border-left:none;color:#ffcc66;font-family:'Orbitron',monospace;font-size:18px;font-weight:700;box-sizing:border-box"
+              oninput="runArbitrary()">
+          </div>
+        </div>
+
+        <!-- TRADING POWER -->
+        <div style="margin-bottom:28px">
+          <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--accent-cyan);letter-spacing:1px;margin-bottom:4px">TRADING POWER</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:12px">Number of rounds in the calculation — how far the sequence extends</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+            <input type="range" id="arb-steps-range" min="1" max="15" value="6"
+              style="flex:1;accent-color:#00ccff;height:6px;cursor:pointer"
+              oninput="document.getElementById('arb-steps').value=this.value;runArbitrary()">
+            <input type="number" id="arb-steps" value="6" min="1" max="15"
+              style="width:70px;padding:11px;background:var(--bg-deep);border:2px solid rgba(0,204,255,0.3);color:#00ccff;font-family:'Orbitron',monospace;font-size:18px;font-weight:700;text-align:center"
+              oninput="this.value=Math.min(15,Math.max(1,parseInt(this.value)||1));document.getElementById('arb-steps-range').value=this.value;runArbitrary()">
+          </div>
+          <div id="arb-power-gauge" style="display:flex;gap:3px;margin-top:8px"></div>
+          <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:4px">
+            <span>1 round</span><span style="color:#ffaa00">SAFE ◄── AGGRESSIVE</span><span>15 rounds</span>
+          </div>
+        </div>
+
+        <button onclick="runArbitrary()"
+          style="width:100%;padding:16px;background:linear-gradient(135deg,rgba(0,204,255,0.15),rgba(0,150,220,0.10));border:2px solid #00ccff;color:#00ccff;font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:3px;cursor:pointer;transition:all 0.2s"
+          onmouseover="this.style.background='linear-gradient(135deg,rgba(0,204,255,0.28),rgba(0,150,220,0.20))';this.style.color='#66eeff'"
+          onmouseout="this.style.background='linear-gradient(135deg,rgba(0,204,255,0.15),rgba(0,150,220,0.10))';this.style.color='#00ccff'">
+          ▶ &nbsp; CALCULATE
+        </button>
+      </div>
+
+      <!-- ══════════ RESULT PANEL ══════════ -->
+      <div>
+
+        <!-- Empty state -->
+        <div id="arb-empty" style="background:var(--bg-card);border:1px solid var(--border-dim);padding:60px 40px;text-align:center">
+          <div style="font-size:48px;margin-bottom:18px;opacity:0.5">🎲</div>
+          <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">Ready to calculate your multi-odd sequence</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);opacity:0.6">Add your odds and fill in the fields — the full round-by-round table will appear here</div>
+        </div>
+
+        <!-- Results -->
+        <div id="arb-results" style="display:none">
+
+          <!-- Summary cards -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+            <div style="background:var(--bg-card);border:1px solid rgba(0,204,255,0.2);padding:14px;text-align:center">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">ROUNDS</div>
+              <div id="arb-s-rounds" style="font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:#00ccff"></div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid rgba(0,255,136,0.2);padding:14px;text-align:center">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">PROFIT / WIN</div>
+              <div id="arb-s-profit" style="font-family:'Orbitron',monospace;font-size:19px;font-weight:700;color:#00ff88"></div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid rgba(255,68,102,0.3);padding:14px;text-align:center">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">MAX EXPOSURE</div>
+              <div id="arb-s-exposure" style="font-family:'Orbitron',monospace;font-size:19px;font-weight:700;color:#ff4466"></div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid rgba(0,204,255,0.2);padding:14px;text-align:center">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">ODDS IN PLAY</div>
+              <div id="arb-s-odds" style="font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:#00ccff"></div>
+            </div>
+          </div>
+
+          <!-- Strategy note -->
+          <div id="arb-strategy-note" style="background:rgba(0,204,255,0.03);border:1px solid rgba(0,204,255,0.15);padding:14px 18px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary);line-height:1.9;margin-bottom:20px"></div>
+
+          <!-- Table title -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:rgba(0,204,255,0.08);border:1px solid rgba(0,204,255,0.3);border-bottom:none">
+            <div style="font-family:'Orbitron',monospace;font-size:11px;color:#00ccff;letter-spacing:2px;font-weight:700">📋 &nbsp;ROUND-BY-ROUND BET SEQUENCE</div>
+            <div id="arb-currency-label" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted)"></div>
+          </div>
+
+          <!-- Table -->
+          <div style="overflow-x:auto;border:1px solid rgba(0,204,255,0.3)">
+            <table id="arb-table" style="width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace">
+              <thead id="arb-thead"></thead>
+              <tbody id="arb-tbody"></tbody>
+              <tfoot id="arb-tfoot"></tfoot>
+            </table>
+          </div>
+
+          <!-- Bottom tip -->
+          <div style="margin-top:16px;background:rgba(0,204,255,0.03);border:1px solid rgba(0,204,255,0.15);padding:14px 18px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary);line-height:1.8">
+            <span style="color:#00ccff;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px">💡 STRATEGY TIP:</span>&nbsp;
+            Place all bets simultaneously each round. <b style="color:#00ff88">Any single win</b> gives you your target profit and resets the sequence to Round 1.
+            Each odd has a different stake — <b style="color:#66ddff">higher odds need a smaller bet</b>, lower odds need a larger one — but
+            all pay the <b style="color:#ffcc44">same profit</b> when they win.
+            Only when every odd in a round loses do you advance to the next round.
+          </div>
         </div>
       </div>
     </div>
@@ -1711,6 +2656,12 @@
               </tbody>
             </table>
           </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid var(--border-dim)">
+            <span id="draw-table-count" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted)"></span>
+            <button id="draw-show-more" onclick="showMoreDraws()" style="display:none;background:rgba(0,245,255,0.06);border:1px solid rgba(0,245,255,0.25);color:var(--accent-cyan);font-family:'Orbitron',monospace;font-size:10px;font-weight:700;padding:6px 14px;cursor:pointer;letter-spacing:1px">
+              ▼ SHOW MORE
+            </button>
+          </div>
         </div>
 
         <!-- MARKET TOOLS -->
@@ -1951,10 +2902,109 @@
       </div>
     </div>
 
+    <!-- Archive panel -->
+    <div style="margin-top:16px">
+      <div id="archive-panel" style="background:var(--bg-card);border:1px solid var(--border-dim);padding:16px;border-radius:4px">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);padding:8px 0">Loading archive status...</div>
+      </div>
+    </div>
+
     <!-- Footer -->
     <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:1px;text-align:center;padding:16px 0 4px">
-      AUTO-REFRESH: 10s &nbsp;·&nbsp; SOURCE: BET9JA VIRTUAL 49JA &nbsp;·&nbsp;
+      AUTO-REFRESH: 15s &nbsp;·&nbsp; SOURCE: BET9JA VIRTUAL 49JA &nbsp;·&nbsp;
       LAST UPDATE: <span id="last-update-time">—</span>
+    </div>
+  </div>
+
+  <!-- ── 49JA STATISTICS ── -->
+  <div id="page-49ja-stats" class="page">
+    <div class="page-header">
+      <div class="page-title" style="display:flex;align-items:center;gap:10px">
+        <span style="color:var(--accent-cyan)">📊</span> 49JA STATISTICS
+      </div>
+      <div class="page-subtitle" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        Pattern analysis · Streak tracking · AI predictions
+        <span id="stats-draw-count" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent-green)"></span>
+        <button class="btn btn-cyan btn-sm" onclick="computeStats()">↺ REFRESH</button>
+      </div>
+    </div>
+
+    <!-- Market tabs -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <button class="stats-tab active" onclick="switchStatsTab('hilo')">HI LO</button>
+      <button class="stats-tab" onclick="switchStatsTab('colour')">TOTAL COLOUR</button>
+      <button class="stats-tab" onclick="switchStatsTab('bet49')">BET49 NUMBERS</button>
+      <button class="stats-tab" onclick="switchStatsTab('rainbow')">RAINBOW</button>
+      <button class="stats-tab" onclick="switchStatsTab('dragon')">DRAGON</button>
+    </div>
+
+    <!-- HI LO panel -->
+    <div id="stab-hilo" class="stats-panel">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div class="stat-card" id="sc-hilo-streak"></div>
+        <div class="stats-grid-2">
+          <div class="stat-card" id="sc-hilo-gaps"></div>
+          <div class="stat-card" id="sc-hilo-predict"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOTAL COLOUR panel -->
+    <div id="stab-colour" class="stats-panel" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div class="stat-card" id="sc-colour-streak"></div>
+        <div class="stats-grid-2">
+          <div class="stat-card" id="sc-colour-gaps"></div>
+          <div class="stat-card" id="sc-colour-predict"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BET49 NUMBERS panel -->
+    <div id="stab-bet49" class="stats-panel" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div class="stats-grid-2">
+          <div class="stat-card" id="sc-bet49-streak"></div>
+          <div class="stat-card" id="sc-bet49-predict"></div>
+        </div>
+        <div class="stat-card" id="sc-bet49-gaps"></div>
+      </div>
+    </div>
+
+    <!-- RAINBOW panel -->
+    <div id="stab-rainbow" class="stats-panel" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div class="stat-card" id="sc-rainbow-streak"></div>
+        <div class="stats-grid-3">
+          <div class="stat-card" id="sc-rainbow-red"></div>
+          <div class="stat-card" id="sc-rainbow-green"></div>
+          <div class="stat-card" id="sc-rainbow-blue"></div>
+        </div>
+        <div class="stats-grid-2">
+          <div class="stat-card" id="sc-rainbow-gaps"></div>
+          <div class="stat-card" id="sc-rainbow-predict"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DRAGON panel -->
+    <div id="stab-dragon" class="stats-panel" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div class="stats-grid-2">
+          <div class="stat-card" id="sc-dragon-streak"></div>
+          <div class="stat-card" id="sc-dragon-dist"></div>
+        </div>
+        <div class="stats-grid-2">
+          <div class="stat-card" id="sc-dragon-gaps"></div>
+          <div class="stat-card" id="sc-dragon-predict"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pattern insight bar -->
+    <div id="stats-insight-bar" style="margin-top:16px;background:rgba(0,245,255,0.04);border:1px solid rgba(0,245,255,0.15);padding:14px 16px;display:none">
+      <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--accent-cyan);letter-spacing:1px;margin-bottom:8px">🧠 PATTERN ENGINE INSIGHTS</div>
+      <div id="stats-insight-content" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary);line-height:1.8"></div>
     </div>
   </div>
 
@@ -2266,7 +3316,698 @@
     document.getElementById('r-flat-bust').textContent = '~'+bustBets+' consecutive losses';
   }
 
-  // ══════════ BACKTESTER ══════════
+  // ══════════ MARTINGALE CALCULATOR (standalone page) ══════════
+  function runMartingale() {
+    const odds  = parseFloat(document.getElementById('mgt-odds').value)   || 0;
+    const base  = parseFloat(document.getElementById('mgt-base').value)   || 0;
+    const minP  = parseFloat(document.getElementById('mgt-profit').value) || 0;
+    const steps = parseInt(document.getElementById('mgt-steps').value)    || 0;
+
+    // ── Currency ──
+    const currSel  = document.getElementById('mgt-currency');
+    const currVal  = currSel ? currSel.value : 'NGN|₦';
+    const [currCode, sym] = currVal.split('|');
+
+    // Update currency symbols on inputs
+    const symBase   = document.getElementById('mgt-sym-base');
+    const symProfit = document.getElementById('mgt-sym-profit');
+    if (symBase)   symBase.textContent   = sym;
+    if (symProfit) symProfit.textContent = sym;
+
+    // Update currency label in table header
+    const currLabel = document.getElementById('mgt-currency-label');
+    if (currLabel) currLabel.textContent = `All amounts in ${currCode} (${sym})`;
+
+    // ── Power gauge ──
+    const gauge = document.getElementById('mgt-power-gauge');
+    if (gauge) {
+      gauge.innerHTML = Array.from({length:20}, (_,i) => {
+        const active = i < steps;
+        const col    = i < 4 ? '#00ff88' : i < 8 ? '#ffaa00' : i < 12 ? '#ff6b00' : '#ff4466';
+        return `<div style="flex:1;height:8px;border-radius:1px;background:${active ? col : 'rgba(255,255,255,0.07)'}"></div>`;
+      }).join('');
+    }
+
+    const empty   = document.getElementById('mgt-empty');
+    const results = document.getElementById('mgt-results');
+    const tbody   = document.getElementById('mgt-tbody');
+
+    if (!odds || odds <= 1 || !base || !steps) {
+      if (empty)   empty.style.display   = 'block';
+      if (results) results.style.display = 'none';
+      return;
+    }
+
+    // ── Format helper ──
+    // For currencies with no decimals (JPY, IDR, UGX, TZS, XOF), show 0dp
+    const noDecCurrencies = new Set(['JPY','IDR','UGX','TZS','XOF']);
+    const dp = noDecCurrencies.has(currCode) ? 0 : 2;
+    const fmt = v => sym + v.toLocaleString('en', { minimumFractionDigits:dp, maximumFractionDigits:dp });
+
+    // ── Build sequence ──
+    // Each bet is sized so that a win at that step recovers all prior losses
+    // AND still delivers exactly minP net profit.
+    // Formula: bet[i] = (cumLoss + minP) / (odds - 1), clamped to >= base
+    const rows = [];
+    let cumLoss = 0;
+
+    for (let i = 1; i <= steps; i++) {
+      let bet = Math.max(base, Math.ceil(((cumLoss + minP) / (odds - 1)) * 100) / 100);
+      const winPayout = bet * odds;
+      const netProfit = winPayout - cumLoss - bet; // net after recovering all losses
+      const riskLevel  = i === 1 ? 'SAFE'  : i <= 3 ? 'LOW' : i <= 6 ? 'MEDIUM' : i <= 9 ? 'HIGH' : 'EXTREME';
+      const riskColour = i === 1 ? '#00ff88': i <= 3 ? '#44dd88': i <= 6 ? '#ffaa00': i <= 9 ? '#ff6b00': '#ff4466';
+      cumLoss += bet;
+      rows.push({ step:i, bet, cumLoss, netProfit, riskLevel, riskColour });
+    }
+
+    const totalExposure = rows[rows.length - 1].cumLoss;
+    const maxStake      = rows[rows.length - 1].bet;
+    const minProfit     = Math.min(...rows.map(r => r.netProfit));
+
+    // ── Summary cards ──
+    document.getElementById('mgt-s-steps').textContent    = steps;
+    document.getElementById('mgt-s-profit').textContent   = fmt(minProfit);
+    document.getElementById('mgt-s-exposure').textContent = fmt(totalExposure);
+    document.getElementById('mgt-s-maxstake').textContent = fmt(maxStake);
+
+    // ── Strategy note ──
+    document.getElementById('mgt-strategy-note').innerHTML =
+      `<b style="color:var(--accent-cyan)">HOW IT WORKS:</b>&nbsp; Start with <b style="color:#ff9999">${fmt(base)}</b> (Round 1).
+      If you lose, each next bet is already calculated so that a single win — at <em>any</em> round —
+      recovers all previous losses and still pays you at least <b style="color:#ffcc66">${fmt(minP || minProfit)}</b> net profit.
+      Your worst-case exposure across all ${steps} rounds is <b style="color:#ff4466">${fmt(totalExposure)}</b>.
+      After any win, restart from Round 1.`;
+
+    // ── Table body ──
+    tbody.innerHTML = rows.map((r, idx) => {
+      const isFirst = idx === 0;
+      const rowBg   = idx % 2 === 0 ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.15)';
+      // Risk bar (visual width proportional to step)
+      const barWidth = Math.round((r.step / steps) * 100);
+      return `<tr style="background:${rowBg}">
+        <!-- # -->
+        <td style="padding:13px 14px;text-align:center;border-right:1px solid rgba(255,68,102,0.12);border-bottom:1px solid rgba(255,68,102,0.08)">
+          <span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:${r.riskColour}">${r.step}</span>
+        </td>
+        <!-- Situation -->
+        <td style="padding:13px 16px;border-right:1px solid rgba(255,68,102,0.12);border-bottom:1px solid rgba(255,68,102,0.08);min-width:160px">
+          ${isFirst
+            ? `<span style="font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:#00ff88;letter-spacing:1px">▶ FIRST BET</span>
+               <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:3px">Start here every run</div>`
+            : `<span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary)">After <b style="color:${r.riskColour};font-size:13px">${r.step-1}</b> loss${r.step>2?'es':''}</span>
+               <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:5px;width:${barWidth}%">
+                 <div style="height:3px;border-radius:2px;background:${r.riskColour};width:100%"></div>
+               </div>`
+          }
+        </td>
+        <!-- Bet Amount -->
+        <td style="padding:13px 18px;text-align:right;border-right:1px solid rgba(255,68,102,0.12);border-bottom:1px solid rgba(255,68,102,0.08);white-space:nowrap">
+          <span style="font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:#ff9999">${fmt(r.bet)}</span>
+        </td>
+        <!-- Total Staked so far (cumulative) -->
+        <td style="padding:13px 18px;text-align:right;border-right:1px solid rgba(255,68,102,0.12);border-bottom:1px solid rgba(255,68,102,0.08);white-space:nowrap">
+          <span style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#cc6677">${fmt(r.cumLoss)}</span>
+        </td>
+        <!-- Profit if win -->
+        <td style="padding:13px 18px;text-align:right;border-right:1px solid rgba(255,68,102,0.12);border-bottom:1px solid rgba(255,68,102,0.08);white-space:nowrap">
+          <span style="font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:#ffcc44">+${fmt(r.netProfit)}</span>
+        </td>
+        <!-- Risk badge -->
+        <td style="padding:13px 14px;text-align:center;border-bottom:1px solid rgba(255,68,102,0.08)">
+          <span style="font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:${r.riskColour};border:1px solid ${r.riskColour};padding:4px 8px;letter-spacing:1px;white-space:nowrap">${r.riskLevel}</span>
+        </td>
+      </tr>`;
+    }).join('');
+
+    // ── Footer totals ──
+    const lastRow = rows[rows.length - 1];
+    document.getElementById('mgt-foot-total-bet').textContent = fmt(lastRow.bet);
+    document.getElementById('mgt-foot-cum').textContent       = fmt(totalExposure);
+
+    // ── Show results ──
+    if (empty)   empty.style.display   = 'none';
+    if (results) results.style.display = 'block';
+  }
+
+  // ══════════ BACK BET CALCULATOR ══════════
+  function runBackBet() {
+    const recOdd  = parseFloat(document.getElementById('bbc-rec-odd').value)  || 0;
+    const backOdd = parseFloat(document.getElementById('bbc-back-odd').value) || 0;
+    const base    = parseFloat(document.getElementById('bbc-base').value)     || 0;
+    const minP    = parseFloat(document.getElementById('bbc-profit').value)   || 0;
+    const steps   = parseInt(document.getElementById('bbc-steps').value)      || 0;
+
+    // ── Currency ──
+    const currSel = document.getElementById('bbc-currency');
+    const [currCode, sym] = (currSel ? currSel.value : 'NGN|₦').split('|');
+    const sbBase   = document.getElementById('bbc-sym-base');
+    const sbProfit = document.getElementById('bbc-sym-profit');
+    if (sbBase)   sbBase.textContent   = sym;
+    if (sbProfit) sbProfit.textContent = sym;
+    const currLabel = document.getElementById('bbc-currency-label');
+    if (currLabel) currLabel.textContent = `All amounts in ${currCode} (${sym})`;
+
+    // ── Power gauge ──
+    const gauge = document.getElementById('bbc-power-gauge');
+    if (gauge) {
+      gauge.innerHTML = Array.from({length:15}, (_,i) => {
+        const active = i < steps;
+        const col    = i < 3 ? '#00ff88' : i < 6 ? '#ffaa00' : i < 10 ? '#ff6b00' : '#ff4466';
+        return `<div style="flex:1;height:8px;border-radius:1px;background:${active ? col : 'rgba(255,255,255,0.07)'}"></div>`;
+      }).join('');
+    }
+
+    const empty   = document.getElementById('bbc-empty');
+    const results = document.getElementById('bbc-results');
+    const tbody   = document.getElementById('bbc-tbody');
+
+    if (!recOdd || recOdd <= 1 || !backOdd || backOdd <= 1 || !base || !steps) {
+      empty.style.display   = 'block';
+      results.style.display = 'none';
+      return;
+    }
+
+    // ── Format helper ──
+    const noDecC = new Set(['JPY','IDR','UGX','TZS','XOF']);
+    const dp  = noDecC.has(currCode) ? 0 : 2;
+    const fmt = v => sym + v.toLocaleString('en', { minimumFractionDigits:dp, maximumFractionDigits:dp });
+
+    // ══════════════════════════════════════════════════════
+    // CALCULATION LOGIC
+    //
+    // Each round we place two bets simultaneously:
+    //
+    //  Recovery Bet (RB):
+    //    Must satisfy: RB × recOdd = cumLoss_prev + RB + BB + minP
+    //    Where cumLoss_prev = sum of all (RB + BB) from previous rounds
+    //    Rearranging: RB × (recOdd - 1) = cumLoss_prev + BB + minP
+    //    But BB depends on RB, so substitute BB formula below first.
+    //
+    //  Back Bet (BB):
+    //    Must satisfy: BB × backOdd = RB + BB  (returns exactly this round's total stake)
+    //    Rearranging: BB × (backOdd - 1) = RB
+    //    Therefore:   BB = RB / (backOdd - 1)
+    //
+    //  Substituting BB into RB equation:
+    //    RB × (recOdd - 1) = cumLoss_prev + RB/(backOdd-1) + minP
+    //    RB × (recOdd - 1) - RB/(backOdd-1) = cumLoss_prev + minP
+    //    RB × [(recOdd-1) - 1/(backOdd-1)] = cumLoss_prev + minP
+    //    RB = (cumLoss_prev + minP) / [(recOdd-1) - 1/(backOdd-1)]
+    //
+    //  Clamp RB >= base, then recalculate BB from final RB.
+    // ══════════════════════════════════════════════════════
+
+    const recFactor = (recOdd - 1) - 1 / (backOdd - 1);
+
+    // Safety: if recFactor <= 0 the odds combination is mathematically impossible
+    if (recFactor <= 0) {
+      empty.innerHTML = `<div style="font-size:40px;margin-bottom:16px;opacity:0.5">⚠️</div>
+        <div style="font-family:'Orbitron',monospace;font-size:12px;color:#ff4466;letter-spacing:1px;margin-bottom:8px">IMPOSSIBLE ODD COMBINATION</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted)">
+          The Back Bet Odd is too low relative to the Recovery Bet Odd.<br>
+          For this system to work: <b style="color:#ffaa00">(Recovery Odd − 1)</b> must be greater than <b style="color:#ffaa00">1 ÷ (BackBet Odd − 1)</b>.<br><br>
+          Try increasing the Recovery Bet Odd or decreasing the Back Bet Odd.
+        </div>`;
+      empty.style.display   = 'block';
+      results.style.display = 'none';
+      return;
+    }
+
+    empty.innerHTML = `<div style="font-size:48px;margin-bottom:18px;opacity:0.5">🛡</div>
+      <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">Ready to calculate your dual-bet sequence</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);opacity:0.6">Fill in the fields on the left — your full round-by-round table will appear here</div>`;
+
+    const rows = [];
+    let cumLoss = 0; // total staked across all previous rounds (both bets)
+
+    for (let i = 1; i <= steps; i++) {
+      // Calculate Recovery Bet
+      let rb = (cumLoss + minP) / recFactor;
+      rb = Math.max(base, Math.ceil(rb * 100) / 100);
+
+      // Calculate Back Bet from Recovery Bet
+      let bb = rb / (backOdd - 1);
+      bb = Math.ceil(bb * 100) / 100;
+
+      // Round stake = both bets
+      const roundStake = rb + bb;
+
+      // Verify: if RB wins → payout = rb × recOdd
+      const rbPayout  = rb * recOdd;
+      const rbProfit  = rbPayout - cumLoss - roundStake; // net after recovering everything
+
+      // Verify: if BB wins → payout = bb × backOdd (should ≈ roundStake)
+      const bbPayout  = bb * backOdd; // this round's break-even return
+
+      cumLoss += roundStake;
+
+      const riskLevel  = i === 1 ? 'SAFE' : i <= 3 ? 'LOW' : i <= 6 ? 'MEDIUM' : i <= 9 ? 'HIGH' : 'EXTREME';
+      const riskColour = i === 1 ? '#00ff88' : i <= 3 ? '#44dd88' : i <= 6 ? '#ffaa00' : i <= 9 ? '#ff6b00' : '#ff4466';
+
+      rows.push({ step:i, rb, bb, roundStake, cumLoss, rbProfit, bbPayout, riskLevel, riskColour });
+    }
+
+    const totalExposure = rows[rows.length - 1].cumLoss;
+    const totalRec  = rows.reduce((s,r) => s + r.rb, 0);
+    const totalBack = rows.reduce((s,r) => s + r.bb, 0);
+    const minProfit = Math.min(...rows.map(r => r.rbProfit));
+
+    // ── Summary cards ──
+    document.getElementById('bbc-s-rounds').textContent   = steps;
+    document.getElementById('bbc-s-profit').textContent   = fmt(minProfit);
+    document.getElementById('bbc-s-backwin').textContent  = 'Break even';
+    document.getElementById('bbc-s-exposure').textContent = fmt(totalExposure);
+    document.getElementById('bbc-s-maxrec').textContent   = fmt(rows[rows.length-1].rb);
+
+    // ── Strategy note ──
+    document.getElementById('bbc-strategy-note').innerHTML =
+      `<b style="color:var(--accent-cyan)">HOW IT WORKS:</b>&nbsp;
+      Every round you place two bets at once.
+      The <b style="color:#00ff88">Recovery Bet</b> (${fmt(rows[0].rb)} in Round 1) wins you back everything lost so far
+      plus at least <b style="color:#ffcc66">${fmt(minP)}</b> net profit.
+      The <b style="color:#ffaa00">Back Bet</b> (${fmt(rows[0].bb)} in Round 1) is your insurance — if it wins,
+      you get back exactly what you staked this round (Recovery + Back Bet combined: ${fmt(rows[0].roundStake)}),
+      no profit but your cumulative loss does <em>not</em> increase.
+      Only when <em>both</em> bets lose does the sequence advance to the next round.`;
+
+    // ── Table body ──
+    tbody.innerHTML = rows.map((r, idx) => {
+      const isFirst = idx === 0;
+      const rowBg   = idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.15)';
+      const barW    = Math.round((r.step / steps) * 100);
+      return `<tr style="background:${rowBg}">
+        <!-- # -->
+        <td style="padding:12px;text-align:center;border-right:1px solid rgba(191,0,255,0.12);border-bottom:1px solid rgba(191,0,255,0.07)">
+          <span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:${r.riskColour}">${r.step}</span>
+        </td>
+        <!-- Situation -->
+        <td style="padding:12px 14px;border-right:1px solid rgba(191,0,255,0.12);border-bottom:1px solid rgba(191,0,255,0.07);min-width:140px">
+          ${isFirst
+            ? `<span style="font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:#00ff88;letter-spacing:1px">▶ FIRST ROUND</span>
+               <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:3px">Start here every run</div>`
+            : `<span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-secondary)">After <b style="color:${r.riskColour};font-size:12px">${r.step-1}</b> round${r.step>2?'s':''} lost</span>
+               <div style="height:3px;background:rgba(255,255,255,0.05);border-radius:2px;margin-top:5px">
+                 <div style="height:3px;border-radius:2px;background:${r.riskColour};width:${barW}%"></div>
+               </div>`
+          }
+        </td>
+        <!-- Recovery Bet -->
+        <td style="padding:12px 14px;text-align:right;border-right:1px solid rgba(191,0,255,0.08);border-bottom:1px solid rgba(191,0,255,0.07);white-space:nowrap">
+          <span style="font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#00ff88">${fmt(r.rb)}</span>
+        </td>
+        <!-- If Recovery wins: profit -->
+        <td style="padding:12px 14px;text-align:right;border-right:1px solid rgba(191,0,255,0.2);border-bottom:1px solid rgba(191,0,255,0.07);white-space:nowrap">
+          <span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#44dd88">+${fmt(r.rbProfit)}</span>
+        </td>
+        <!-- Back Bet -->
+        <td style="padding:12px 14px;text-align:right;border-right:1px solid rgba(191,0,255,0.08);border-bottom:1px solid rgba(191,0,255,0.07);white-space:nowrap">
+          <span style="font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#ffaa00">${fmt(r.bb)}</span>
+        </td>
+        <!-- If Back Bet wins: return -->
+        <td style="padding:12px 14px;text-align:right;border-right:1px solid rgba(191,0,255,0.2);border-bottom:1px solid rgba(191,0,255,0.07);white-space:nowrap">
+          <div style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#ffcc44">↔ ${fmt(r.bbPayout)}</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:2px">break even</div>
+        </td>
+        <!-- Round stake -->
+        <td style="padding:12px 14px;text-align:right;border-right:1px solid rgba(191,0,255,0.08);border-bottom:1px solid rgba(191,0,255,0.07);white-space:nowrap">
+          <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--accent-cyan)">${fmt(r.roundStake)}</span>
+        </td>
+        <!-- Total staked if all lost -->
+        <td style="padding:12px 14px;text-align:right;border-bottom:1px solid rgba(191,0,255,0.07);white-space:nowrap">
+          <span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:${r.riskColour}">${fmt(r.cumLoss)}</span>
+          <span style="display:inline-block;margin-left:6px;font-family:'Orbitron',monospace;font-size:8px;color:${r.riskColour};border:1px solid ${r.riskColour};padding:2px 6px;letter-spacing:1px;vertical-align:middle">${r.riskLevel}</span>
+        </td>
+      </tr>`;
+    }).join('');
+
+    // ── Footer ──
+    document.getElementById('bbc-foot-rec').textContent   = fmt(totalRec);
+    document.getElementById('bbc-foot-back').textContent  = fmt(totalBack);
+    document.getElementById('bbc-foot-round').textContent = fmt(rows[rows.length-1].roundStake);
+    document.getElementById('bbc-foot-total').textContent = fmt(totalExposure);
+
+    empty.style.display   = 'none';
+    results.style.display = 'block';
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // ARBITRARY CALCULATOR
+  // Multi-odd martingale: 2–6 odds placed simultaneously.
+  // Each bet bi is sized so: bi × oi = S + cumLoss + minP
+  //   where S = Σbi (total round stake), T = cumLoss + minP
+  // Solving: S = T × Σ(1/oi) / (1 − Σ(1/oi))
+  //          bi = (S + T) / oi
+  // Requires: Σ(1/oi) < 1 (otherwise mathematically impossible)
+  // Base Bet = minimum TOTAL combined stake across all odds per round — all bets scale proportionally.
+  // ══════════════════════════════════════════════════════════
+
+  let _arbOdds = [null, null]; // tracks current odds inputs (min 2, max 6)
+
+  function arbInitOdds() {
+    _arbOdds = [2.00, 3.00];
+    arbRenderChips();
+  }
+
+  function arbRenderChips() {
+    const container = document.getElementById('arb-odds-container');
+    if (!container) return;
+    const colours = ['#00ff88','#ffaa00','#00ccff','#ff9966','#cc88ff','#ff4466'];
+    container.innerHTML = _arbOdds.map((val, idx) => `
+      <div class="arb-odd-chip" style="border-color:${colours[idx]}40">
+        <div class="chip-label" style="color:${colours[idx]};background:${colours[idx]}14">ODD ${idx+1}</div>
+        <input type="number" value="${val}" min="1.01" step="0.01" placeholder="e.g. 2.50"
+          style="color:${colours[idx]}"
+          oninput="_arbOdds[${idx}]=parseFloat(this.value)||0;runArbitrary()">
+        ${_arbOdds.length > 2
+          ? `<button class="chip-remove" onclick="arbRemoveOdd(${idx})" title="Remove">✕</button>`
+          : `<div style="width:36px"></div>`}
+      </div>`).join('');
+
+    // Update badge + add button state
+    const badge = document.getElementById('arb-odd-count-badge');
+    const addBtn = document.getElementById('arb-add-btn');
+    if (badge)  badge.textContent = `${_arbOdds.length} ODD${_arbOdds.length > 1 ? 'S' : ''}`;
+    if (addBtn) {
+      const maxed = _arbOdds.length >= 6;
+      addBtn.disabled = maxed;
+      addBtn.style.opacity = maxed ? '0.35' : '1';
+      addBtn.style.cursor  = maxed ? 'not-allowed' : 'pointer';
+    }
+    runArbitrary();
+  }
+
+  function arbAddOdd() {
+    if (_arbOdds.length >= 6) return;
+    const defaults = [2.00, 3.00, 4.00, 5.00, 6.00, 7.00];
+    _arbOdds.push(defaults[_arbOdds.length] || 2.00);
+    arbRenderChips();
+  }
+
+  function arbRemoveOdd(idx) {
+    if (_arbOdds.length <= 2) return;
+    _arbOdds.splice(idx, 1);
+    arbRenderChips();
+  }
+
+  function runArbitrary() {
+    // ── Inputs ──
+    const odds  = _arbOdds.map(v => parseFloat(v) || 0);
+    const base  = parseFloat(document.getElementById('arb-base')?.value)   || 0;
+    const minP  = parseFloat(document.getElementById('arb-profit')?.value) || 0;
+    const steps = parseInt(document.getElementById('arb-steps')?.value)    || 0;
+
+    // ── Currency ──
+    const currSel = document.getElementById('arb-currency');
+    const [currCode, sym] = (currSel ? currSel.value : 'NGN|₦').split('|');
+    const sbBase   = document.getElementById('arb-sym-base');
+    const sbProfit = document.getElementById('arb-sym-profit');
+    if (sbBase)   sbBase.textContent   = sym;
+    if (sbProfit) sbProfit.textContent = sym;
+    const currLabel = document.getElementById('arb-currency-label');
+    if (currLabel) currLabel.textContent = `All amounts in ${currCode} (${sym})`;
+
+    // ── Power gauge ──
+    const gauge = document.getElementById('arb-power-gauge');
+    if (gauge) {
+      gauge.innerHTML = Array.from({length:15}, (_,i) => {
+        const on  = i < steps;
+        const col = i < 3 ? '#00ff88' : i < 6 ? '#ffaa00' : i < 10 ? '#ff6b00' : '#ff4466';
+        return `<div style="flex:1;height:8px;border-radius:1px;background:${on ? col : 'rgba(255,255,255,0.07)'}"></div>`;
+      }).join('');
+    }
+
+    const empty   = document.getElementById('arb-empty');
+    const results = document.getElementById('arb-results');
+
+    // ── Validation ──
+    const validOdds = odds.filter(o => o > 1);
+
+    // Overround check: Σ(1/oi) must be < 1
+    const invSum = validOdds.reduce((s, o) => s + 1/o, 0);
+    const warnEl = document.getElementById('arb-overround-warn');
+
+    if (validOdds.length < 2 || !base || !minP || !steps) {
+      if (warnEl) warnEl.style.display = 'none';
+      if (empty)   empty.style.display   = 'block';
+      if (results) results.style.display = 'none';
+      return;
+    }
+
+    if (invSum >= 1) {
+      if (warnEl) {
+        warnEl.style.display = 'block';
+        warnEl.innerHTML = `⚠ <b>Impossible combination:</b> The sum of (1÷each odd) = <b>${invSum.toFixed(3)}</b> which is ≥ 1.
+          This means the total payout can never exceed the total staked — no profit is mathematically possible.<br>
+          <span style="color:var(--text-muted)">Fix: increase at least one odd, or remove a low odd. Target sum &lt; 1.000</span>`;
+      }
+      if (empty)   empty.style.display   = 'block';
+      if (results) results.style.display = 'none';
+      return;
+    }
+    if (warnEl) {
+      warnEl.style.display = 'block';
+      const margin = ((1 - invSum) * 100).toFixed(1);
+      warnEl.style.background    = 'rgba(0,255,136,0.05)';
+      warnEl.style.borderColor   = 'rgba(0,255,136,0.25)';
+      warnEl.style.color         = '#00cc88';
+      warnEl.innerHTML = `✓ Valid combination — book margin: <b>${margin}%</b> profit margin available &nbsp;
+        <span style="color:var(--text-muted)">(Σ 1/odd = ${invSum.toFixed(3)} &lt; 1.000)</span>`;
+    }
+
+    // ── Format ──
+    const noDecC = new Set(['JPY','IDR','UGX','TZS','XOF']);
+    const dp  = noDecC.has(currCode) ? 0 : 2;
+    const fmt = v => sym + v.toLocaleString('en', {minimumFractionDigits:dp, maximumFractionDigits:dp});
+
+    // ── Build sequence ──
+    const colours = ['#00ff88','#ffaa00','#00ccff','#ff9966','#cc88ff','#ff4466'];
+    const n = validOdds.length;
+    const allRows = [];
+    let cumLoss = 0;
+
+    for (let round = 1; round <= steps; round++) {
+      const T = cumLoss + minP;
+      // S = T × Σ(1/oi) / (1 - Σ(1/oi))
+      const S_raw = T * invSum / (1 - invSum);
+
+      // bi = (S + T) / oi
+      let bets_raw = validOdds.map(o => (S_raw + T) / o);
+
+      // Enforce: total round stake (S) >= Base Bet
+      // If S_raw < base, scale all bets up proportionally so S = base exactly
+      const S_check = bets_raw.reduce((s, b) => s + b, 0);
+      const scale   = S_check < base ? base / S_check : 1;
+      const bets    = bets_raw.map(b => Math.ceil(b * scale * 100) / 100);
+
+      const roundStake = bets.reduce((s, b) => s + b, 0);
+
+      // profit if any bet wins: bi × oi - cumLoss - roundStake
+      const profits = bets.map((b, i) => b * validOdds[i] - cumLoss - roundStake);
+      const minProfit = Math.min(...profits);
+
+      const riskLevel  = round === 1 ? 'SAFE' : round <= 3 ? 'LOW' : round <= 6 ? 'MEDIUM' : round <= 9 ? 'HIGH' : 'EXTREME';
+      const riskColour = round === 1 ? '#00ff88' : round <= 3 ? '#44dd88' : round <= 6 ? '#ffaa00' : round <= 9 ? '#ff6b00' : '#ff4466';
+
+      cumLoss += roundStake;
+      allRows.push({round, bets, roundStake, profits, minProfit, cumLoss, riskLevel, riskColour});
+    }
+
+    const totalExposure = allRows[allRows.length - 1].cumLoss;
+    const overallMinProfit = Math.min(...allRows.map(r => r.minProfit));
+
+    // ── Summary cards ──
+    document.getElementById('arb-s-rounds').textContent   = steps;
+    document.getElementById('arb-s-profit').textContent   = fmt(overallMinProfit);
+    document.getElementById('arb-s-exposure').textContent = fmt(totalExposure);
+    document.getElementById('arb-s-odds').textContent     = n;
+
+    // ── Strategy note ──
+    const oddsList = validOdds.map((o,i) => `<b style="color:${colours[i]}">Odd ${i+1} (${o}×)</b>`).join(' · ');
+    document.getElementById('arb-strategy-note').innerHTML =
+      `<b style="color:var(--accent-cyan)">HOW IT WORKS:</b>&nbsp;
+      Each round you place <b>${n} bets simultaneously</b> — one on each odd: ${oddsList}.
+      Each bet is sized differently so that <em>whichever odd wins</em>, you receive
+      exactly <b style="color:#ffcc66">${fmt(minP)}</b> net profit after recovering all previous losses.
+      Your worst-case exposure across all ${steps} rounds is <b style="color:#ff4466">${fmt(totalExposure)}</b>.
+      After any win, restart from Round 1.`;
+
+    // ── Build dynamic table ──
+    const thead = document.getElementById('arb-thead');
+    const tbody = document.getElementById('arb-tbody');
+    const tfoot = document.getElementById('arb-tfoot');
+
+    // Header: #, Situation, [ODD N BET + PROFIT cols], Round Stake, Total Staked
+    const oddHeaders = validOdds.map((o, i) =>
+      `<th colspan="2" style="padding:8px 12px;text-align:center;font-family:'Orbitron',monospace;font-size:8px;color:${colours[i]};letter-spacing:1px;border-bottom:1px solid ${colours[i]}33;border-right:1px solid rgba(0,204,255,0.15)">
+        ODD ${i+1} &nbsp;<span style="opacity:0.7">(×${o})</span>
+      </th>`).join('');
+
+    const subHeaders = validOdds.map((o, i) =>
+      `<th style="padding:8px 12px;text-align:right;font-family:'Orbitron',monospace;font-size:8px;color:${colours[i]};letter-spacing:1px;border-bottom:1px solid rgba(0,204,255,0.3);border-right:1px solid rgba(0,204,255,0.08);white-space:nowrap">STAKE</th>
+       <th style="padding:8px 12px;text-align:right;font-family:'Orbitron',monospace;font-size:8px;color:${colours[i]}99;letter-spacing:1px;border-bottom:1px solid rgba(0,204,255,0.3);border-right:1px solid rgba(0,204,255,0.2);white-space:nowrap">IF WIN</th>`
+    ).join('');
+
+    thead.innerHTML = `
+      <tr style="background:rgba(0,204,255,0.08)">
+        <th rowspan="2" style="padding:10px 12px;text-align:center;font-family:'Orbitron',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;border-bottom:2px solid rgba(0,204,255,0.3);border-right:1px solid rgba(0,204,255,0.2);vertical-align:middle">#</th>
+        <th rowspan="2" style="padding:10px 12px;text-align:left;font-family:'Orbitron',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;border-bottom:2px solid rgba(0,204,255,0.3);border-right:1px solid rgba(0,204,255,0.2);vertical-align:middle">SITUATION</th>
+        ${oddHeaders}
+        <th rowspan="2" style="padding:10px 12px;text-align:right;font-family:'Orbitron',monospace;font-size:8px;color:var(--accent-cyan);letter-spacing:1px;border-bottom:2px solid rgba(0,204,255,0.3);border-right:1px solid rgba(0,204,255,0.12);vertical-align:middle;white-space:nowrap">ROUND<br>STAKE</th>
+        <th rowspan="2" style="padding:10px 12px;text-align:right;font-family:'Orbitron',monospace;font-size:8px;color:#cc88ff;letter-spacing:1px;border-bottom:2px solid rgba(0,204,255,0.3);vertical-align:middle;white-space:nowrap">TOTAL STAKED<br><span style="color:var(--text-muted);font-size:7px">(if all rounds lose)</span></th>
+      </tr>
+      <tr style="background:rgba(0,204,255,0.03)">${subHeaders}</tr>`;
+
+    // Body rows
+    tbody.innerHTML = allRows.map((r, idx) => {
+      const isFirst = idx === 0;
+      const rowBg   = idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.15)';
+      const barW    = Math.round((r.round / steps) * 100);
+      const betCells = r.bets.map((b, i) =>
+        `<td style="padding:11px 12px;text-align:right;border-right:1px solid rgba(0,204,255,0.08);border-bottom:1px solid rgba(0,204,255,0.07);white-space:nowrap">
+          <span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:${colours[i]}">${fmt(b)}</span>
+        </td>
+        <td style="padding:11px 12px;text-align:right;border-right:1px solid rgba(0,204,255,0.18);border-bottom:1px solid rgba(0,204,255,0.07);white-space:nowrap">
+          <span style="font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:${colours[i]}aa">+${fmt(r.profits[i])}</span>
+        </td>`
+      ).join('');
+
+      return `<tr style="background:${rowBg}">
+        <td style="padding:11px 12px;text-align:center;border-right:1px solid rgba(0,204,255,0.12);border-bottom:1px solid rgba(0,204,255,0.07)">
+          <span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:${r.riskColour}">${r.round}</span>
+        </td>
+        <td style="padding:11px 14px;border-right:1px solid rgba(0,204,255,0.12);border-bottom:1px solid rgba(0,204,255,0.07);min-width:140px">
+          ${isFirst
+            ? `<span style="font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:#00ff88;letter-spacing:1px">▶ FIRST ROUND</span>
+               <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:3px">Start here every run</div>`
+            : `<span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-secondary)">After <b style="color:${r.riskColour};font-size:12px">${r.round-1}</b> round${r.round>2?'s':''} lost</span>
+               <div style="height:3px;background:rgba(255,255,255,0.05);border-radius:2px;margin-top:5px">
+                 <div style="height:3px;border-radius:2px;background:${r.riskColour};width:${barW}%"></div>
+               </div>`
+          }
+        </td>
+        ${betCells}
+        <td style="padding:11px 12px;text-align:right;border-right:1px solid rgba(0,204,255,0.12);border-bottom:1px solid rgba(0,204,255,0.07);white-space:nowrap">
+          <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--accent-cyan)">${fmt(r.roundStake)}</span>
+        </td>
+        <td style="padding:11px 12px;text-align:right;border-bottom:1px solid rgba(0,204,255,0.07);white-space:nowrap">
+          <span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:${r.riskColour}">${fmt(r.cumLoss)}</span>
+          <span style="display:inline-block;margin-left:6px;font-family:'Orbitron',monospace;font-size:7px;color:${r.riskColour};border:1px solid ${r.riskColour};padding:2px 5px;letter-spacing:1px;vertical-align:middle">${r.riskLevel}</span>
+        </td>
+      </tr>`;
+    }).join('');
+
+    // Footer totals
+    const footBetCells = validOdds.map((o, i) => {
+      const totalStake = allRows.reduce((s, r) => s + r.bets[i], 0);
+      return `<td style="padding:12px;text-align:right;border-right:1px solid rgba(0,204,255,0.08);font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:${colours[i]}">
+                ${fmt(totalStake)}</td>
+              <td style="border-right:1px solid rgba(0,204,255,0.18)"></td>`;
+    }).join('');
+
+    tfoot.innerHTML = `
+      <tr style="background:rgba(0,204,255,0.08);border-top:2px solid #00ccff">
+        <td colspan="2" style="padding:13px 16px;font-family:'Orbitron',monospace;font-size:9px;color:#00ccff;letter-spacing:1px;border-right:1px solid rgba(0,204,255,0.2)">
+          WORST CASE — ALL ROUNDS LOSE
+        </td>
+        ${footBetCells}
+        <td style="padding:13px 12px;text-align:right;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent-cyan);border-right:1px solid rgba(0,204,255,0.12)">
+          ${fmt(allRows[allRows.length-1].roundStake)}
+        </td>
+        <td style="padding:13px 12px;text-align:right;font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#ff4466">
+          ${fmt(totalExposure)}
+        </td>
+      </tr>`;
+
+    if (empty)   empty.style.display   = 'none';
+    if (results) results.style.display = 'block';
+  }
+
+  // Called once when arbitrary page is first shown — sets up default 2 odds
+  const _arbPageInit = (() => {
+    let done = false;
+    return () => { if (!done) { done = true; arbInitOdds(); } };
+  })();
+
+
+  // ── Old Stake Manager martingale (kept for backward compat) ──
+  function calcMartingale() {
+    const base   = parseFloat(document.getElementById('mg-base').value);
+    const odds   = parseFloat(document.getElementById('mg-odds').value);
+    const mult   = parseFloat(document.getElementById('mg-mult').value);
+    const losses = parseInt(document.getElementById('mg-losses').value);
+    const bank   = parseFloat(document.getElementById('mg-bank').value) || 0;
+
+    const result    = document.getElementById('mg-result');
+    const seqWrap   = document.getElementById('mg-sequence-wrap');
+    const seqEl     = document.getElementById('mg-sequence');
+    const warnEl    = document.getElementById('mg-warning');
+
+    if (!base || !odds || !mult || !losses) {
+      result.style.display = 'none';
+      seqWrap.style.display = 'none';
+      warnEl.style.display = 'none';
+      return;
+    }
+
+    // Build stake sequence for each step 0..losses
+    const sequence = [];
+    let stake = base;
+    let totalExposure = 0;
+    let bustAt = null;
+    let runningTotal = 0;
+
+    for (let i = 0; i <= losses; i++) {
+      sequence.push(stake);
+      runningTotal += stake;
+      if (bank > 0 && bustAt === null && runningTotal > bank) {
+        bustAt = i; // bankroll runs out on this loss
+      }
+      stake = stake * mult;
+    }
+
+    const maxStake    = sequence[losses];
+    const totalExp    = sequence.reduce((s, v) => s + v, 0);
+    const profit      = (sequence[0] * (odds - 1)).toFixed(2); // profit if first bet wins
+    const bankCovers  = bank > 0 ? sequence.filter((_,i) => sequence.slice(0,i+1).reduce((s,v)=>s+v,0) <= bank).length : '—';
+
+    // Bust risk (simple geometric: probability of losing `losses` in a row assuming 50/50)
+    // We don't have win prob input here, just show total exposure and coverage
+    const bustsNow = bustAt !== null;
+
+    result.style.display = 'block';
+    seqWrap.style.display = 'block';
+
+    document.getElementById('r-mg-profit').textContent   = '£' + profit;
+    document.getElementById('r-mg-maxstake').textContent = '£' + maxStake.toFixed(2);
+    document.getElementById('r-mg-exposure').textContent = '£' + totalExp.toFixed(2);
+    document.getElementById('r-mg-covers').textContent   = bank > 0 ? bankCovers + ' consecutive loss(es)' : 'Enter bankroll';
+    document.getElementById('r-mg-risk').textContent     = bustsNow
+      ? `❌ Busts at loss #${bustAt}`
+      : bank > 0 ? `✓ Safe for ${losses} losses` : '—';
+
+    // Render sequence boxes
+    seqEl.innerHTML = sequence.map((s, i) => {
+      const cumulative = sequence.slice(0, i+1).reduce((a,b)=>a+b, 0);
+      const busted     = bank > 0 && cumulative > bank;
+      const colour     = busted ? '#ff4466' : i === 0 ? 'var(--accent-green)' : i <= 2 ? 'var(--accent-cyan)' : i <= 5 ? '#ffaa00' : '#ff4466';
+      return `<div title="Loss #${i}: stake £${s.toFixed(2)}, cumulative £${cumulative.toFixed(2)}"
+        style="padding:4px 8px;border:1px solid ${colour};font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:${colour};min-width:44px;text-align:center;position:relative">
+        ${busted ? '💀' : ''}£${s.toFixed(2)}
+        <div style="font-size:8px;font-family:'Share Tech Mono',monospace;color:${colour};opacity:0.7">#${i}</div>
+      </div>`;
+    }).join('');
+
+    // Warning
+    if (bustsNow) {
+      document.getElementById('mg-bust-at').textContent = bustAt;
+      warnEl.style.display = 'block';
+    } else {
+      warnEl.style.display = 'none';
+    }
+  }
+
+
   function runBacktest() {
     const bank = parseFloat(document.getElementById('bt-bank').value)||1000;
     const numBets = parseInt(document.getElementById('bt-bets').value)||100;
@@ -2390,6 +4131,7 @@
 <script>
   // ── Ball colour: R→B→G cycle every 3 (verified from official ball image) ──
   function ballColour(n) {
+    if (parseInt(n) === 49) return 'b-gold';
     const m = parseInt(n) % 3;
     if (m === 1) return 'b-red';
     if (m === 2) return 'b-blue';
@@ -2592,7 +4334,69 @@
     u => `https://thingproxy.freeboard.io/fetch/${u}`,
   ];
 
-  const POST_BODY = () => JSON.stringify({ pff: 1, gameId: 11000, tmp: new Date().toISOString() });
+  const POST_BODY = () => JSON.stringify({ pff: 1, gameId: 11000, tmp: new Date().toISOString(), count: 200 });
+
+  // ── 3-day draw store ──
+  // Draws run every ~45s = ~1920/day, ~5760/3days
+  const STORE_KEY   = '49ja_draws';
+  const ARCHIVE_KEY = '49ja_archives';
+  const THREE_DAYS  = 3 * 24 * 60 * 60 * 1000;
+
+  function loadStore() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{"draws":[],"startTs":null}'); }
+    catch(_) { return { draws: [], startTs: null }; }
+  }
+  function saveStore(store) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch(_) {}
+  }
+  function loadArchives() {
+    try { return JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]'); }
+    catch(_) { return []; }
+  }
+  function saveArchives(arr) {
+    try { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(arr)); } catch(_) {}
+  }
+
+  function mergeDraws(existing, incoming) {
+    // Merge by draw ID, keep newest, sort descending by ID
+    const map = {};
+    existing.forEach(d => { map[d.id] = d; });
+    incoming.forEach(d => { map[d.id] = d; });
+    return Object.values(map).sort((a,b) => parseInt(b.id) - parseInt(a.id));
+  }
+
+  function checkArchiveRotation(store) {
+    if (!store.startTs || !store.draws.length) return store;
+    const age = Date.now() - store.startTs;
+    if (age < THREE_DAYS) return store;
+
+    // Time to archive — save current 3 days
+    const archives = loadArchives();
+    const from = new Date(store.startTs);
+    const to   = new Date();
+    archives.push({
+      from: from.toISOString(),
+      to:   to.toISOString(),
+      label: `${fmtDate(from)} — ${fmtDate(to)}`,
+      draws: store.draws,
+    });
+    // Keep only last 10 archives
+    if (archives.length > 10) archives.splice(0, archives.length - 10);
+    saveArchives(archives);
+
+    // Trigger PDF download for just-archived period
+    setTimeout(() => exportArchivePDF(archives[archives.length - 1]), 500);
+
+    // Reset store
+    return { draws: [], startTs: Date.now() };
+  }
+
+  function fmtDate(d) {
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  }
+  function fmtTs(d) {
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
 
   async function fetchJSON(url) {
     const body = POST_BODY();
@@ -2679,18 +4483,16 @@
 
     const parsed = draws.map(row => {
       const id = String(row.id ?? '');
-      // "dr" = comma-separated ball numbers e.g. "9,29,1,47,13,15"
       const numbers = String(row.dr ?? '').split(',')
         .map(n => parseInt(n.trim()))
         .filter(n => n >= 1 && n <= 49)
         .slice(0, 6);
       if (!id || numbers.length < 6) return null;
 
-      const colR = numbers.filter(n => n % 3 === 1).length;
+      const colR = numbers.filter(n => n % 3 === 1 && n !== 49).length;
       const colG = numbers.filter(n => n % 3 === 0).length;
       const colB = numbers.filter(n => n % 3 === 2).length;
 
-      // Use API win colour if present, else compute from majority
       let winCol = String(row.winColour ?? row.winColor ?? row.wc ?? row.colour ?? row.color ?? '').toLowerCase();
       if (!winCol || !['red','blue','yellow','none','draw'].includes(winCol)) {
         const max = Math.max(colR, colG, colB);
@@ -2703,23 +4505,149 @@
 
     if (!parsed.length) return false;
 
-    // Compute hot/cold from the draw history
+    // ── Accumulate in 3-day store ──
+    let store = loadStore();
+    if (!store.startTs) store.startTs = Date.now();
+    store = checkArchiveRotation(store);
+    store.draws = mergeDraws(store.draws, parsed);
+    saveStore(store);
+    renderArchivePanel();
+
+    // Use all stored draws for stats/table
+    const allDraws = store.draws;
+
     const freq = {};
-    parsed.forEach(d => d.numbers.forEach(n => { freq[n] = (freq[n]||0)+1; }));
+    allDraws.forEach(d => d.numbers.forEach(n => { freq[n] = (freq[n]||0)+1; }));
     const sorted = Object.entries(freq).sort((a,b) => b[1]-a[1]);
     const hotItems  = sorted.slice(0,7).map(([n,c]) => ({ num:parseInt(n), count:c }));
-    const lateItems = sorted.slice(-7).reverse().map(([n,c]) => ({ num:parseInt(n), count:parsed.length-c }));
+    const lateItems = sorted.slice(-7).reverse().map(([n,c]) => ({ num:parseInt(n), count:allDraws.length-c }));
 
     const tally = { red:0, blue:0, yellow:0, draw:0 };
-    parsed.slice(0,20).forEach(d => { if (tally.hasOwnProperty(d.winCol)) tally[d.winCol]++; });
+    allDraws.slice(0,20).forEach(d => { if (tally.hasOwnProperty(d.winCol)) tally[d.winCol]++; });
 
-    renderLiveBall(parsed[0]);
-    renderDrawTable(parsed);
+    renderLiveBall(allDraws[0]);
+    renderDrawTable(allDraws);
     renderHotNumbers(hotItems);
     renderLateNumbers(lateItems);
-    renderDrawSummary(parsed.slice(0,10));
+    renderDrawSummary(allDraws.slice(0,10));
     renderColourTally(tally);
+    updateDrawCount(allDraws.length, store.startTs);
+    // Keep statistics page in sync with every fetch
+    if (document.getElementById('page-49ja-stats').classList.contains('active')) computeStats();
     return true;
+  }
+
+  function updateDrawCount(count, startTs) {
+    const el = document.getElementById('draw-count-info');
+    if (!el) return;
+    const from = startTs ? fmtTs(new Date(startTs)) : '—';
+    const remaining = startTs ? Math.max(0, Math.round((THREE_DAYS - (Date.now() - startTs)) / 3600000)) : '—';
+    el.textContent = `${count.toLocaleString()} draws stored · Period started: ${from} · ~${remaining}h until archive`;
+  }
+
+  // ── PDF export using jsPDF ──
+  function exportArchivePDF(archive) {
+    if (!window.jspdf) { alert('jsPDF not loaded yet, try again in a moment'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    const W = 297, margin = 10;
+    let y = margin;
+
+    // Title
+    doc.setFillColor(10, 20, 40);
+    doc.rect(0, 0, W, 20, 'F');
+    doc.setTextColor(0, 245, 255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BetLab Pro — 49ja Draw History', margin, 13);
+    doc.setTextColor(180, 180, 180);
+    doc.setFontSize(9);
+    doc.text(`Period: ${archive.label}   |   Total Draws: ${archive.draws.length.toLocaleString()}`, W - margin, 13, { align: 'right' });
+    y = 26;
+
+    // Table header
+    const cols = ['Draw ID', 'Balls (in order drawn)', 'HI/MID/LO', 'Win Colour', 'R', 'G', 'B', 'Total'];
+    const colW = [22, 100, 20, 24, 8, 8, 8, 16];
+    let x = margin;
+    doc.setFillColor(20, 40, 70);
+    doc.rect(margin, y - 4, W - margin*2, 7, 'F');
+    doc.setTextColor(0, 245, 255);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    cols.forEach((col, i) => { doc.text(col, x + 1, y); x += colW[i]; });
+    y += 5;
+
+    const wcColours = { red:[204,17,34], blue:[17,85,204], yellow:[34,136,51], draw:[80,80,100] };
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+
+    archive.draws.forEach((d, idx) => {
+      if (y > 195) { doc.addPage(); y = margin + 5; }
+      const total = d.numbers.reduce((s,n) => s + parseInt(n), 0);
+      const hml = getHML(d.numbers);
+
+      if (idx % 2 === 0) { doc.setFillColor(18, 28, 48); doc.rect(margin, y-3, W-margin*2, 5.5, 'F'); }
+
+      doc.setTextColor(200, 200, 220);
+      x = margin;
+      const row = [
+        d.id,
+        d.numbers.join('  '),
+        hmlLabel(hml),
+        (d.winCol || 'draw').toUpperCase(),
+        String(d.colR), String(d.colG), String(d.colB),
+        String(total),
+      ];
+      // Colour the win colour cell
+      const [r,g,b] = wcColours[d.winCol] || wcColours.draw;
+      row.forEach((val, i) => {
+        if (i === 3) doc.setTextColor(r, g, b);
+        else doc.setTextColor(200, 200, 220);
+        doc.text(val, x + 1, y); x += colW[i];
+      });
+      y += 5.5;
+    });
+
+    const filename = `49ja_draws_${archive.label.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    doc.save(filename);
+  }
+
+  function renderArchivePanel() {
+    const el = document.getElementById('archive-panel');
+    if (!el) return;
+    const archives = loadArchives();
+    const store = loadStore();
+    const pct = store.startTs ? Math.min(100, Math.round((Date.now() - store.startTs) / THREE_DAYS * 100)) : 0;
+
+    el.innerHTML = `
+      <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--accent-cyan);letter-spacing:1px;margin-bottom:8px">
+        📦 3-DAY ARCHIVE STATUS
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:4px">
+          <span>Current period progress</span><span>${pct}%</span>
+        </div>
+        <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px">
+          <div style="height:4px;width:${pct}%;background:linear-gradient(90deg,var(--accent-cyan),var(--accent-green));border-radius:2px;transition:width 0.5s"></div>
+        </div>
+        <div id="draw-count-info" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:4px"></div>
+      </div>
+      ${archives.length ? `
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:6px">PAST ARCHIVES:</div>
+        ${archives.slice().reverse().map((a,i) => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(255,255,255,0.03);border:1px solid var(--border-dim);margin-bottom:4px">
+            <div>
+              <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-primary)">${a.label}</div>
+              <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted)">${a.draws.length.toLocaleString()} draws</div>
+            </div>
+            <button class="btn btn-cyan btn-sm" style="font-size:9px;padding:4px 10px" onclick="exportArchivePDF(window._archives[${archives.length-1-i}])">⬇ PDF</button>
+          </div>`).join('')}
+      ` : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--text-muted)">No archives yet — first PDF exports after 3 days</div>'}
+    `;
+    window._archives = archives;
+    // Update count info after rendering
+    if (store.startTs) updateDrawCount(store.draws.length, store.startTs);
   }
 
   // ── Live draw bar ──
@@ -2740,14 +4668,23 @@
   }
 
   // ── Draw table ──
+  let _drawTableLimit = 10;  // how many rows currently shown
+
+  function showMoreDraws() {
+    _drawTableLimit += 20;
+    const draws = getStoredDraws();
+    renderDrawTable(draws);
+  }
+
   function renderDrawTable(draws) {
     const tbody = document.getElementById('draw-tbody');
     if (!draws.length) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);font-family:\'Share Tech Mono\',monospace">NO DATA RECEIVED</td></tr>';
       return;
     }
+    const visible = draws.slice(0, _drawTableLimit);
     const wcBg = { red:'#cc1122', blue:'#1155cc', yellow:'#228833', draw:'#555' };
-    tbody.innerHTML = draws.map((d, idx) => {
+    tbody.innerHTML = visible.map((d, idx) => {
       const total = d.numbers.reduce((s, n) => s + parseInt(n), 0);
       const hml = getHML(d.numbers);
       const ballsHtml = d.numbers.map(n => `<div class="ball49 ${ballColour(n)}">${n}</div>`).join('');
@@ -2769,6 +4706,11 @@
         <td>${ccHtml}</td>
         <td class="total-cell">${total}</td></tr>`;
     }).join('');
+    // Update count label and show-more button
+    const countEl = document.getElementById('draw-table-count');
+    const moreBtn = document.getElementById('draw-show-more');
+    if (countEl) countEl.textContent = `Showing ${visible.length} of ${draws.length} draws`;
+    if (moreBtn) moreBtn.style.display = draws.length > _drawTableLimit ? 'block' : 'none';
   }
 
   // ── Draw summary mini squares ──
@@ -2789,6 +4731,7 @@
 
   // ── Hot/cold numbers ──
   function ballBg(n) {
+    if (parseInt(n) === 49) return 'linear-gradient(135deg, #ffaa00, #cc6600)';
     const m = parseInt(n) % 3;
     return m===1 ? '#cc0022' : m===2 ? '#0055cc' : '#007733';
   }
@@ -2899,11 +4842,12 @@ export default {
 
   function start49jaFeed() {
     initWorkerInput();
+    renderArchivePanel();
     buildBallPicker('bp-bet49', 4);
     buildBallPicker('bp-dragon', 15);
     buildBallPicker('bp-betzero', 4);
     fetch49ja();
-    _49jaTimer = setInterval(fetch49ja, 15000);       // full results refresh every 15s
+    _49jaTimer = setInterval(fetch49ja, 5000);        // full results refresh every 5s
     _countdownTimer = setInterval(pollTimeLeft, 1000); // countdown every 1s
   }
   function stop49jaFeed() {
@@ -2913,12 +4857,992 @@ export default {
     if (el) el.style.display = 'none';
   }
 
+  // ══════════════════════════════════════════════════
+  // 49JA STATISTICS ENGINE
+  // ══════════════════════════════════════════════════
+
+  let _statsTab = 'hilo';
+
+  function switchStatsTab(tab) {
+    _statsTab = tab;
+    document.querySelectorAll('.stats-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.stats-panel').forEach(p => p.style.display = 'none');
+    event.target.classList.add('active');
+    document.getElementById('stab-' + tab).style.display = 'block';
+    computeStats();
+  }
+
+  function getStoredDraws() {
+    try {
+      const store = JSON.parse(localStorage.getItem('49ja_draws') || '{"draws":[]}');
+      return store.draws || [];
+    } catch(_) { return []; }
+  }
+
+  // ══════════════════════════════════════════════════
+  // SYMBOL RENDERERS — visual icons per market outcome
+  // ══════════════════════════════════════════════════
+
+  // ── Market-specific colour scheme for prediction cards ──
+  function marketColours(market, outcome) {
+    if (market === 'hilo') {
+      if (outcome === 'up')   return { bg:'rgba(0,255,136,0.10)', border:'#00ff88', text:'#00ff88', label:'#00ff88' };
+      if (outcome === 'down') return { bg:'rgba(255,68,102,0.10)', border:'#ff4466', text:'#ff4466', label:'#ff4466' };
+      return                         { bg:'rgba(180,180,180,0.07)', border:'#aaaaaa', text:'#cccccc', label:'#cccccc' };
+    }
+    if (market === 'colour') {
+      if (outcome === 'red')    return { bg:'rgba(204,17,34,0.12)',  border:'#cc1122', text:'#ff4466', label:'#ff4466' };
+      if (outcome === 'yellow') return { bg:'rgba(34,170,68,0.12)',  border:'#22aa44', text:'#44ee88', label:'#44ee88' };
+      if (outcome === 'blue')   return { bg:'rgba(17,85,204,0.14)',  border:'#2266cc', text:'#55aaff', label:'#55aaff' };
+      return                           { bg:'rgba(100,100,100,0.08)', border:'#555',   text:'#888',    label:'#888'    };
+    }
+    if (market === 'dragon') {
+      if (outcome === 'LOW-DOM')  return { bg:'rgba(0,255,136,0.10)', border:'#00ff88', text:'#00ff88', label:'#00ff88' };
+      if (outcome === 'HIGH-DOM') return { bg:'rgba(255,107,0,0.10)', border:'#ff6b00', text:'#ff8833', label:'#ff8833' };
+      return                             { bg:'rgba(180,180,180,0.07)', border:'#aaa',  text:'#ccc',    label:'#ccc'    };
+    }
+    if (market === 'rainbow') {
+      // Use the dominant colour in the outcome string
+      const r = parseInt((outcome.match(/R(\d+)/) || ['','0'])[1]);
+      const g = parseInt((outcome.match(/G(\d+)/) || ['','0'])[1]);
+      const b = parseInt((outcome.match(/B(\d+)/) || ['','0'])[1]);
+      const dom = r >= g && r >= b ? 'r' : g >= b ? 'g' : 'b';
+      if (dom === 'r') return { bg:'rgba(204,34,51,0.12)',  border:'#cc2233', text:'#ff4466', label:'#ff4466' };
+      if (dom === 'g') return { bg:'rgba(34,170,68,0.12)',  border:'#22aa44', text:'#44ee88', label:'#44ee88' };
+      return                  { bg:'rgba(34,85,204,0.14)',  border:'#2255cc', text:'#55aaff', label:'#55aaff' };
+    }
+    // hilo fallback
+    return { bg:'rgba(0,245,255,0.08)', border:'#00f5ff', text:'#00f5ff', label:'#00f5ff' };
+  }
+
+  // ── Human-readable outcome label per market ──
+  function outcomeReadable(market, outcome, labelMap) {
+    if (market === 'rainbow') {
+      // Parse e.g. "R2+-G3+-B2+" → "2+ Red · 3+ Green · 2+ Blue"
+      const rMatch = outcome.match(/R([^-]+)/);
+      const gMatch = outcome.match(/G([^-]+)/);
+      const bMatch = outcome.match(/B([^-]+)/);
+      const rv = rMatch ? rMatch[1] : '?';
+      const gv = gMatch ? gMatch[1] : '?';
+      const bv = bMatch ? bMatch[1] : '?';
+      return `<span style="color:#ff4466">${rv} Red</span> &nbsp;·&nbsp; <span style="color:#44ee88">${gv} Green</span> &nbsp;·&nbsp; <span style="color:#55aaff">${bv} Blue</span>`;
+    }
+    return labelMap[outcome] || outcome;
+  }
+
+  // ── Big visual symbol for prediction header ──
+  function outcomeBigSymbol(market, outcome) {
+    if (market === 'hilo') {
+      if (outcome === 'up')   return `<svg width="36" height="36" viewBox="0 0 36 36"><polygon points="18,4 34,32 2,32" fill="#00ff88"/></svg>`;
+      if (outcome === 'down') return `<svg width="36" height="36" viewBox="0 0 36 36"><polygon points="18,32 34,4 2,4" fill="#ff4466"/></svg>`;
+      return `<svg width="36" height="14" viewBox="0 0 36 14"><rect x="0" y="3" width="36" height="8" rx="2" fill="#aaaaaa"/></svg>`;
+    }
+    if (market === 'colour') {
+      const bg  = { red:'#cc1122', yellow:'#22aa44', blue:'#2266cc', draw:'#555' };
+      const lbl = { red:'RED', yellow:'GREEN', blue:'BLUE', draw:'NONE' };
+      return `<div style="width:52px;height:32px;background:${bg[outcome]||'#444'};border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:10px;font-weight:900;color:#fff;letter-spacing:1px">${lbl[outcome]||'?'}</div>`;
+    }
+    if (market === 'dragon') {
+      if (outcome === 'LOW-DOM')  return `<svg width="36" height="36" viewBox="0 0 36 36"><polygon points="18,4 34,32 2,32" fill="#00ff88"/></svg>`;
+      if (outcome === 'HIGH-DOM') return `<svg width="36" height="36" viewBox="0 0 36 36"><polygon points="18,32 34,4 2,4" fill="#ff6b00"/></svg>`;
+      return `<svg width="36" height="14" viewBox="0 0 36 14"><rect x="0" y="3" width="36" height="8" rx="2" fill="#aaaaaa"/></svg>`;
+    }
+    if (market === 'rainbow') {
+      const rMatch = outcome.match(/R([^-]+)/);
+      const gMatch = outcome.match(/G([^-]+)/);
+      const bMatch = outcome.match(/B([^-]+)/);
+      const rv = rMatch ? parseInt(rMatch[1]) || 0 : 0;
+      const gv = gMatch ? parseInt(gMatch[1]) || 0 : 0;
+      const bv = bMatch ? parseInt(bMatch[1]) || 0 : 0;
+      const maxV = Math.max(rv, gv, bv, 1);
+      // Mini bar chart: R / G / B proportional bars
+      const bar = (v, col) => `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div style="width:14px;height:${Math.round(v/maxV*28)+6}px;background:${col};border-radius:2px;transition:height 0.3s"></div>
+        <span style="font-family:'Orbitron',monospace;font-size:8px;color:${col}">${rMatch&&gMatch&&bMatch?['R','G','B'][[rv,gv,bv].indexOf(v)||0]:'?'}</span>
+      </div>`;
+      return `<div style="display:flex;align-items:flex-end;gap:4px;height:44px">
+        ${bar(rv,'#ff4466')}${bar(gv,'#44ee88')}${bar(bv,'#55aaff')}
+      </div>`;
+    }
+    return '';
+  }
+
+  // ── Strength description ──
+  function strengthText(pct, matchLen) {
+    const sig = pct > 60 ? 'STRONG signal' : pct > 35 ? 'MODERATE signal' : 'WEAK signal';
+    return `${sig} · pattern depth: ${matchLen||1}`;
+  }
+
+  function outcomeSymbol(market, outcome) {
+    if (market === 'hilo') {
+      if (outcome === 'up')   return `<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,2 17,16 1,16" fill="#00ff88" stroke="none"/></svg>`;
+      if (outcome === 'down') return `<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,16 17,2 1,2" fill="#ff4466" stroke="none"/></svg>`;
+      if (outcome === 'mid')  return `<svg width="18" height="10" viewBox="0 0 18 10"><rect x="0" y="2" width="18" height="6" rx="1" fill="#aaaaaa"/></svg>`;
+    }
+    if (market === 'colour') {
+      const bg = { red:'#cc1122', yellow:'#22aa44', blue:'#1155cc', draw:'#555' };
+      const lbl = { red:'R', yellow:'G', blue:'B', draw:'—' };
+      return `<span style="display:inline-block;width:22px;height:16px;background:${bg[outcome]||'#444'};border-radius:2px;vertical-align:middle;line-height:16px;text-align:center;font-size:9px;font-weight:700;color:#fff;font-family:'Orbitron',monospace">${lbl[outcome]||'?'}</span>`;
+    }
+    if (market === 'dragon') {
+      if (outcome === 'LOW-DOM')  return `<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,2 17,16 1,16" fill="#00ff88"/></svg>`;
+      if (outcome === 'HIGH-DOM') return `<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,16 17,2 1,2" fill="#ff6b00"/></svg>`;
+      if (outcome === 'MIXED')    return `<svg width="18" height="10" viewBox="0 0 18 10"><rect x="0" y="2" width="18" height="6" rx="1" fill="#aaaaaa"/></svg>`;
+    }
+    if (market === 'rainbow') {
+      const [rp, gp, bp] = outcome.split('-');
+      const rn = parseInt((rp||'').replace('R',''))||0;
+      const gn = parseInt((gp||'').replace('G',''))||0;
+      const bn = parseInt((bp||'').replace('B',''))||0;
+      const boxes = [
+        ...Array(Math.min(rn,3)).fill(`<span style="display:inline-block;width:8px;height:12px;background:#cc1122;margin:0 1px;border-radius:1px;vertical-align:middle"></span>`),
+        ...Array(Math.min(gn,3)).fill(`<span style="display:inline-block;width:8px;height:12px;background:#22aa44;margin:0 1px;border-radius:1px;vertical-align:middle"></span>`),
+        ...Array(Math.min(bn,3)).fill(`<span style="display:inline-block;width:8px;height:12px;background:#1155cc;margin:0 1px;border-radius:1px;vertical-align:middle"></span>`),
+      ].join('');
+      return `<span style="display:inline-flex;align-items:center">${boxes}</span>`;
+    }
+    return '';
+  }
+
+  function renderPredictCard(elId, predictions, labelMap, market) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (!predictions || !predictions.length) {
+      el.innerHTML = `<div class="stat-card-title">🧠 PATTERN PREDICTION</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-muted);padding:24px 0;line-height:1.8">
+          Insufficient repeating patterns detected.<br>Keep collecting draws to enable predictions.
+        </div>`;
+      return;
+    }
+
+    const top3 = predictions.slice(0, 3);
+
+    // Market-specific action guidance
+    const actionHint = {
+      hilo:    { up:'Bet HI',    down:'Bet LO',      mid:'Bet MID'   },
+      colour:  { red:'Bet RED',  yellow:'Bet GREEN',  blue:'Bet BLUE', draw:'Bet NO COLOUR' },
+      dragon:  { 'LOW-DOM':'Pick numbers 1–24', 'HIGH-DOM':'Pick numbers 25–49', 'MIXED':'Mix low & high numbers' },
+      rainbow: {},
+    };
+
+    const blocks = top3.map((p, rank) => {
+      const mc  = marketColours(market, p.outcome);
+      const sym = outcomeBigSymbol(market, p.outcome);
+      const readableLabel = outcomeReadable(market, p.outcome, labelMap);
+      const hint = actionHint[market]?.[p.outcome] || '';
+      const rankLabel = rank === 0 ? '▶ TOP PICK' : rank === 1 ? '2ND' : '3RD';
+      const rankCol   = rank === 0 ? mc.text : rank === 1 ? '#888' : '#555';
+      const sText = strengthText(p.pct, p.matchLen);
+      const isTop = rank === 0;
+
+      return `<div style="
+          background:${mc.bg};
+          border:${isTop ? '2px' : '1px'} solid ${mc.border};
+          border-radius:2px;
+          padding:${isTop ? '18px' : '14px'} 18px;
+          margin-bottom:14px;
+          position:relative;
+        ">
+        <!-- Rank badge -->
+        <div style="position:absolute;top:10px;right:14px;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:${rankCol};letter-spacing:1px">${rankLabel}</div>
+
+        <!-- Symbol + outcome label row -->
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:${isTop?'12px':'8px'}">
+          <div style="flex-shrink:0">${sym}</div>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:${isTop?'17px':'13px'};font-weight:900;color:${mc.label};line-height:1.2;margin-bottom:4px">${readableLabel}</div>
+            ${hint ? `<div style="font-family:'Share Tech Mono',monospace;font-size:${isTop?'11px':'10px'};color:${mc.text};opacity:0.85;letter-spacing:1px">→ ${hint}</div>` : ''}
+          </div>
+        </div>
+
+        <!-- Confidence bar -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <div style="flex:1;height:${isTop?'6px':'4px'};background:rgba(255,255,255,0.07);border-radius:3px">
+            <div style="height:100%;border-radius:3px;background:${mc.border};width:${p.pct}%;transition:width 0.6s"></div>
+          </div>
+          <span style="font-family:'Orbitron',monospace;font-size:${isTop?'14px':'11px'};font-weight:700;color:${mc.text};min-width:38px;text-align:right">${p.pct}%</span>
+        </div>
+
+        <!-- Signal description -->
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:${mc.text};opacity:0.6">${sText}</div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `<div class="stat-card-title">🧠 PATTERN PREDICTION</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:16px;line-height:1.6">
+        Based on repeating sequences in draw history
+      </div>
+      ${blocks}`;
+  }
+
+  // Returns scored predictions based purely on repeating sequence patterns.
+  // No frequency blending — only "after this sequence appeared before, what came next?"
+  function patternEngine(sequence, lookback = 6) {
+    if (sequence.length < 10) return null;
+    const scores = {};
+    let totalWeight = 0;
+
+    // Scan all pattern lengths from longest (most specific) to shortest
+    for (let len = Math.min(lookback, sequence.length - 1); len >= 1; len--) {
+      const tail = sequence.slice(-len).join('|');
+      const weight = len * len; // longer match = much stronger signal
+      for (let i = 0; i <= sequence.length - len - 1; i++) {
+        if (sequence.slice(i, i + len).join('|') === tail) {
+          const next = sequence[i + len];
+          scores[next] = (scores[next] || 0) + weight;
+          totalWeight += weight;
+        }
+      }
+    }
+
+    if (!totalWeight) return null;
+    const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
+    return sorted.map(([outcome, score]) => ({
+      outcome,
+      score,
+      pct: Math.round(score / totalWeight * 100),
+      // Longest matching pattern length for this outcome
+      matchLen: (() => {
+        for (let len = Math.min(lookback, sequence.length-1); len >= 1; len--) {
+          const tail = sequence.slice(-len).join('|');
+          for (let i = 0; i <= sequence.length - len - 1; i++) {
+            if (sequence.slice(i, i+len).join('|') === tail && sequence[i+len] === outcome) return len;
+          }
+        }
+        return 1;
+      })()
+    }));
+  }
+
+  // Bet49-specific: predict 4 individual numbers based on repeating 6-ball set patterns
+  // Finds the last few draws' ball sets and scores numbers that repeatedly follow the current sequence
+  function patternEngineBalls(draws, topN = 4) {
+    if (draws.length < 15) return null;
+    // Use last 5 draw sets as "tail"
+    const tailLen = Math.min(5, draws.length - 1);
+    const tail = draws.slice(-tailLen).map(d => d.numbers.slice().sort().join(','));
+    const scores = {};
+
+    for (let len = tailLen; len >= 1; len--) {
+      const t = tail.slice(-len).join('|');
+      const w = len * len;
+      for (let i = 0; i <= draws.length - len - 1; i++) {
+        const window = draws.slice(i, i+len).map(d => d.numbers.slice().sort().join(',')).join('|');
+        if (window === t) {
+          // Score each ball in the NEXT draw
+          const nextBalls = draws[i+len].numbers;
+          nextBalls.forEach(n => { scores[n] = (scores[n]||0) + w; });
+        }
+      }
+    }
+
+    if (!Object.keys(scores).length) return null;
+    return Object.entries(scores)
+      .sort((a,b) => b[1]-a[1])
+      .slice(0, topN)
+      .map(([n, score]) => ({ n: parseInt(n), score }));
+  }
+
+  // ── Streak analysis — both losing and winning streaks ──
+  // sequence[0]=oldest, sequence[last]=most recent
+  function streakAnalysis(sequence, outcomes) {
+    const result = {};
+    outcomes.forEach(o => {
+      // Losing streak: walk back until we hit outcome o
+      let losing = 0;
+      for (let i = sequence.length - 1; i >= 0; i--) {
+        if (sequence[i] === o) break;
+        losing++;
+      }
+      // Winning streak: consecutive hits at the tail ending right now
+      // (only non-zero if the most recent draw IS this outcome)
+      let winning = 0;
+      if (sequence[sequence.length - 1] === o) {
+        for (let i = sequence.length - 1; i >= 0; i--) {
+          if (sequence[i] !== o) break;
+          winning++;
+        }
+      }
+      result[o] = { losing, winning };
+    });
+    return result;
+  }
+
+  // ── Gap analysis: gaps between last 4 hits, reading backwards from most recent ──
+  function gapAnalysis(sequence, outcomes) {
+    const result = {};
+    outcomes.forEach(o => {
+      const positions = [];
+      for (let i = 0; i < sequence.length; i++) {
+        if (sequence[i] === o) positions.push(i);
+      }
+      const last5 = positions.slice(-5);
+      const gaps = [];
+      for (let i = last5.length - 1; i >= 1; i--) {
+        gaps.push(last5[i] - last5[i-1]);
+        if (gaps.length === 4) break;
+      }
+      const lastHitIdx = last5[last5.length-1];
+      const currentStreak = lastHitIdx !== undefined ? (sequence.length - 1 - lastHitIdx) : sequence.length;
+      result[o] = { gaps, currentStreak, totalHits: positions.length };
+    });
+    return result;
+  }
+
+  // ══════════════════════════════════════════════════
+  // RENDER HELPERS
+  // ══════════════════════════════════════════════════
+
+  function loseColour(n) { return n >= 10 ? '#ff4466' : n >= 5 ? '#ffaa00' : '#888'; }
+  function winColour(n)  { return n >= 5  ? '#00ff88' : n >= 2  ? '#00cc66' : '#559955'; }
+
+  function renderStreakCard(elId, streaks, labelMap, market) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const rows = Object.entries(streaks)
+      .sort((a,b) => b[1].losing - a[1].losing)
+      .map(([o, {losing, winning}]) => {
+        const sym = outcomeSymbol(market, o);
+        const loseVal = losing === 0
+          ? `<span style="color:#00ff88;font-size:10px">✓ JUST HIT</span>`
+          : `<span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:${loseColour(losing)}">${losing}</span>`;
+        const winVal = winning > 0
+          ? `<span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:${winColour(winning)}">+${winning}</span>`
+          : `<span style="font-size:10px;color:#444">—</span>`;
+        return `<div class="streak-row" style="align-items:center">
+          <span style="display:flex;align-items:center;gap:6px;min-width:90px">
+            <span style="display:inline-flex;align-items:center;width:22px;justify-content:center">${sym}</span>
+            <span class="streak-label">${labelMap[o]||o}</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:10px;margin-left:auto">
+            <span title="Losing streak" style="display:flex;flex-direction:column;align-items:center">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#ff4466;margin-bottom:1px">LOSE</span>
+              ${loseVal}
+            </span>
+            <span title="Winning streak" style="display:flex;flex-direction:column;align-items:center">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#00ff88;margin-bottom:1px">WIN</span>
+              ${winVal}
+            </span>
+          </span>
+        </div>`;
+      }).join('');
+    el.innerHTML = `<div class="stat-card-title">🔥 STREAKS (LOSE · WIN)</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:10px">LOSE = draws since last hit · WIN = consecutive current hits</div>
+      ${rows}`;
+  }
+
+  function renderGapCard(elId, gaps, labelMap, outcomes, market) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const rows = outcomes.map(o => {
+      const g = gaps[o];
+      if (!g) return '';
+      const sym = outcomeSymbol(market, o);
+      const gapBoxes = g.gaps.length
+        ? g.gaps.map((gap, i) =>
+            `<div class="gap-box ${i===0?'gap-recent':'gap-old'}" title="Gap${i+1}">${gap}</div>`).join('')
+        : `<span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted)">—</span>`;
+      const nowBadge = g.currentStreak > 0
+        ? `<span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:${loseColour(g.currentStreak)};margin-left:4px" title="Current streak">${g.currentStreak}↑</span>`
+        : `<span style="font-size:9px;color:#00ff88;margin-left:4px">✓</span>`;
+      return `<div class="gap-row" style="align-items:center;flex-wrap:wrap">
+        <span style="display:inline-flex;align-items:center;width:22px;justify-content:center;flex-shrink:0">${sym}</span>
+        <span class="gap-label" style="margin-left:4px">${labelMap[o]||o}</span>
+        ${gapBoxes}${nowBadge}
+      </div>`;
+    }).join('');
+    el.innerHTML = `<div class="stat-card-title">📐 LAST 4 GAPS (recent → older)</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:10px">Gap1=last two hits · Gap2=hit before · ↑=current streak now</div>
+      ${rows}`;
+  }
+
+  // ══════════════════════════════════════════════════
+  // MARKET-SPECIFIC COMPUTE FUNCTIONS
+  // ══════════════════════════════════════════════════
+
+  function computeHiLoStats(draws) {
+    const seq = draws.map(d => getHML(d.numbers));
+    const labelMap = { up:'HI', mid:'MID', down:'LO' };
+    const outcomes = ['up','mid','down'];
+    renderStreakCard('sc-hilo-streak', streakAnalysis(seq, outcomes), labelMap, 'hilo');
+    renderGapCard('sc-hilo-gaps', gapAnalysis(seq, outcomes), labelMap, outcomes, 'hilo');
+    renderPredictCard('sc-hilo-predict', patternEngine(seq), labelMap, 'hilo');
+  }
+
+  function computeColourStats(draws) {
+    const seq = draws.map(d => d.winCol || 'draw');
+    const labelMap = { red:'RED', yellow:'GREEN', blue:'BLUE', draw:'NO COLOUR' };
+    const outcomes = ['red','yellow','blue','draw'];
+    renderStreakCard('sc-colour-streak', streakAnalysis(seq, outcomes), labelMap, 'colour');
+    renderGapCard('sc-colour-gaps', gapAnalysis(seq, outcomes), labelMap, outcomes, 'colour');
+    renderPredictCard('sc-colour-predict', patternEngine(seq), labelMap, 'colour');
+  }
+
+  function computeBet49Stats(draws) {
+    const numStreaks = {};
+    for (let n = 1; n <= 49; n++) {
+      let losing = 0, winning = 0;
+      for (let i = draws.length - 1; i >= 0; i--) {
+        if (draws[i].numbers.includes(String(n))) break;
+        losing++;
+      }
+      // winning streak: only if most recent draw contains this number
+      if (draws[draws.length-1]?.numbers.includes(String(n))) {
+        for (let i = draws.length - 1; i >= 0; i--) {
+          if (!draws[i].numbers.includes(String(n))) break;
+          winning++;
+        }
+      }
+      numStreaks[n] = { losing, winning };
+    }
+
+    const coldest = Object.entries(numStreaks).sort((a,b) => b[1].losing - a[1].losing).slice(0,15);
+
+    // Streak card — cold numbers with both streaks
+    const el = document.getElementById('sc-bet49-streak');
+    if (el) {
+      const rows = coldest.map(([n, {losing, winning}]) =>
+        `<div class="streak-row" style="align-items:center">
+          <span style="display:flex;align-items:center;gap:5px">
+            <div class="ball49 ${ballColour(n)}" style="width:24px;height:24px;font-size:9px;flex-shrink:0">${n}</div>
+          </span>
+          <span style="display:flex;align-items:center;gap:10px;margin-left:auto">
+            <span style="display:flex;flex-direction:column;align-items:center">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#ff4466;margin-bottom:1px">LOSE</span>
+              <span style="font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:${loseColour(losing)}">${losing}</span>
+            </span>
+            <span style="display:flex;flex-direction:column;align-items:center">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#00ff88;margin-bottom:1px">WIN</span>
+              <span style="font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:${winning>0?winColour(winning):'#444'}">${winning>0?'+'+winning:'—'}</span>
+            </span>
+          </span>
+        </div>`
+      ).join('');
+      el.innerHTML = `<div class="stat-card-title">❄️ COLDEST NUMBERS — STREAKS</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:8px">Sorted by losing streak (draws since last appearance)</div>
+        ${rows}`;
+    }
+
+    // Pattern prediction — strictly 4 balls from repeating patterns
+    const el2 = document.getElementById('sc-bet49-predict');
+    if (el2) {
+      const predicted = patternEngineBalls(draws, 4);
+      if (!predicted || !predicted.length) {
+        el2.innerHTML = `<div class="stat-card-title">🧠 PATTERN PREDICTION (4 BALLS)</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);padding:20px 0">Insufficient repeating 6-ball patterns — keep collecting draws</div>`;
+      } else {
+        const total = predicted.reduce((s,p) => s+p.score, 0);
+        const ballsHtml = predicted.map(({n, score}) => {
+          const pct = Math.round(score/total*100);
+          return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="ball49 ${ballColour(n)}" style="width:36px;height:36px;font-size:12px">${n}</div>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--accent-cyan)">${pct}%</span>
+          </div>`;
+        }).join('');
+        el2.innerHTML = `<div class="stat-card-title">🧠 PATTERN PREDICTION (4 BALLS)</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:12px">Numbers that repeatedly followed current draw sequence</div>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px">${ballsHtml}</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted)">Based on ${draws.length.toLocaleString()} draws · pattern match only</div>`;
+      }
+    }
+
+    // Gap table — coldest 10 numbers
+    const el3 = document.getElementById('sc-bet49-gaps');
+    if (el3) {
+      const rows = coldest.slice(0,10).map(([n, {losing}]) => {
+        const positions = [];
+        draws.forEach((d,i) => { if (d.numbers.includes(String(n))) positions.push(i); });
+        const last5 = positions.slice(-5);
+        const gaps = [];
+        for (let i = last5.length-1; i >= 1; i--) {
+          gaps.push(last5[i] - last5[i-1]);
+          if (gaps.length === 4) break;
+        }
+        const gapBoxes = gaps.length
+          ? gaps.map((g,i) => `<div class="gap-box ${i===0?'gap-recent':'gap-old'}" title="Gap${i+1}">${g}</div>`).join('')
+          : `<span style="font-size:10px;color:var(--text-muted)">rare</span>`;
+        return `<div class="gap-row" style="align-items:center">
+          <div class="ball49 ${ballColour(n)}" style="width:22px;height:22px;font-size:9px;flex-shrink:0">${n}</div>
+          ${gapBoxes}
+          <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:${loseColour(losing)};margin-left:4px">${losing}</span>
+        </div>`;
+      }).join('');
+      el3.innerHTML = `<div class="stat-card-title">📐 COLDEST NUMBER GAPS</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:8px">Gap1 → Gap4 (recent→older) · last = current streak</div>
+        ${rows}`;
+    }
+  }
+
+  function computeRainbowStats(draws) {
+    // Brackets used on Bet9ja Rainbow market
+    const BRACKETS = ['0', '2+', '3+', '4+', '5+', '6+'];
+    // Map a raw count to its bracket label
+    const toBracket = v => v === 0 ? '0' : v >= 6 ? '6+' : v >= 5 ? '5+' : v >= 4 ? '4+' : v >= 3 ? '3+' : '2+';
+
+    // Build per-colour sequences  e.g. seq.red[i] = bracket label for draw i
+    const seq = { red: [], green: [], blue: [] };
+    draws.forEach(d => {
+      seq.red.push(toBracket(d.colR));
+      seq.green.push(toBracket(d.colG));
+      seq.blue.push(toBracket(d.colB));
+    });
+
+    // ── Overall outcome sequence for pattern engine (combined string) ──
+    const bin = v => v===0?'0':v>=6?'6+':v>=5?'5+':v>=4?'4+':v>=3?'3+':'2+';
+    const combined = draws.map(d => `R${bin(d.colR)}-G${bin(d.colG)}-B${bin(d.colB)}`);
+    const freqComb = {};
+    combined.forEach(s => { freqComb[s] = (freqComb[s]||0)+1; });
+    const topOutcomes = Object.entries(freqComb).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([o])=>o);
+    const labelMapComb = Object.fromEntries(topOutcomes.map(o=>[o,o]));
+
+    // ── Streak card — top 6 most-common combined outcomes ──
+    renderStreakCard('sc-rainbow-streak', streakAnalysis(combined, topOutcomes.slice(0,6)), labelMapComb, 'rainbow');
+
+    // ── Per-colour bracket cards ──
+    const COLOUR_DEFS = [
+      { key: 'red',   elId: 'sc-rainbow-red',   label: '🔴 RED BALLS',   hex: '#cc2233', seqKey: 'red'   },
+      { key: 'green', elId: 'sc-rainbow-green',  label: '🟢 GREEN BALLS', hex: '#22aa44', seqKey: 'green' },
+      { key: 'blue',  elId: 'sc-rainbow-blue',   label: '🔵 BLUE BALLS',  hex: '#2255cc', seqKey: 'blue'  },
+    ];
+
+    COLOUR_DEFS.forEach(({ elId, label, hex, seqKey }) => {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      const s = seq[seqKey];
+
+      const rows = BRACKETS.map(bracket => {
+        // Losing streak for this bracket
+        let losing = 0;
+        for (let i = s.length - 1; i >= 0; i--) {
+          if (s[i] === bracket) break;
+          losing++;
+        }
+        // Winning streak
+        let winning = 0;
+        if (s[s.length - 1] === bracket) {
+          for (let i = s.length - 1; i >= 0; i--) {
+            if (s[i] !== bracket) break;
+            winning++;
+          }
+        }
+        // Gaps (last 4, reading backwards)
+        const positions = s.reduce((acc, v, i) => { if (v === bracket) acc.push(i); return acc; }, []);
+        const last5 = positions.slice(-5);
+        const gaps = [];
+        for (let i = last5.length - 1; i >= 1; i--) {
+          gaps.push(last5[i] - last5[i-1]);
+          if (gaps.length === 4) break;
+        }
+        const freq = positions.length;
+
+        const loseC = losing >= 20 ? '#ff2244' : losing >= 10 ? '#ff4466' : losing >= 5 ? '#ffaa00' : '#888';
+        const winC  = winning >= 3 ? '#00ff88' : winning > 0 ? '#00cc66' : '#333';
+
+        const gapHtml = gaps.length
+          ? gaps.map((g,i) => `<span style="display:inline-block;padding:1px 5px;border:1px solid ${i===0?hex:'#333'};font-family:'Share Tech Mono',monospace;font-size:9px;color:${i===0?hex:'#666'};margin-right:2px">${g}</span>`).join('')
+          : `<span style="color:#444;font-size:9px">—</span>`;
+
+        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+          <td style="padding:5px 4px;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:${hex};white-space:nowrap">${bracket}</td>
+          <td style="padding:5px 4px;text-align:right">
+            <span style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:${loseC}">${losing === 0 ? '<span style="color:#00ff88;font-size:9px">✓</span>' : losing}</span>
+          </td>
+          <td style="padding:5px 4px;text-align:right">
+            <span style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:${winC}">${winning > 0 ? '+'+winning : '—'}</span>
+          </td>
+          <td style="padding:5px 8px">${gapHtml}</td>
+          <td style="padding:5px 4px;text-align:right;font-family:'Share Tech Mono',monospace;font-size:9px;color:#555">${freq}</td>
+        </tr>`;
+      }).join('');
+
+      el.innerHTML = `<div class="stat-card-title" style="color:${hex}">${label}</div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.08)">
+              <th style="padding:3px 4px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-muted);text-align:left;font-weight:400">BALLS</th>
+              <th style="padding:3px 4px;font-family:'Share Tech Mono',monospace;font-size:8px;color:#ff4466;text-align:right;font-weight:400">LOSE</th>
+              <th style="padding:3px 4px;font-family:'Share Tech Mono',monospace;font-size:8px;color:#00ff88;text-align:right;font-weight:400">WIN</th>
+              <th style="padding:3px 4px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-muted);text-align:left;font-weight:400">GAPS →</th>
+              <th style="padding:3px 4px;font-family:'Share Tech Mono',monospace;font-size:8px;color:#555;text-align:right;font-weight:400">HITS</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    });
+
+    // ── Gaps card for top 5 combined outcomes ──
+    renderGapCard('sc-rainbow-gaps', gapAnalysis(combined, topOutcomes), labelMapComb, topOutcomes.slice(0,5), 'rainbow');
+
+    // ── Prediction ──
+    renderPredictCard('sc-rainbow-predict', patternEngine(combined), labelMapComb, 'rainbow');
+  }
+
+  function computeDragonStats(draws) {
+    // Dragon market: player picks 6–15 numbers, wins if 3+ of the 6 drawn balls match.
+    // Useful stats: how many balls fall LOW (1–24) vs HIGH (25–48), and ball 49 (gold).
+    // This directly helps the player pick a number range to maximise 3+ matches.
+
+    // ── LOW/HIGH/MIXED streak & gap ──
+    // Classify each draw by dominant half
+    const classifyDraw = d => {
+      const low  = d.numbers.filter(n => parseInt(n) >= 1  && parseInt(n) <= 24).length;
+      const high = d.numbers.filter(n => parseInt(n) >= 25 && parseInt(n) <= 48).length;
+      const has49 = d.numbers.includes('49') ? 1 : 0;
+      if (low >= 4)       return 'LOW-DOM';   // 4+ balls in 1–24
+      if (high + has49 >= 4) return 'HIGH-DOM'; // 4+ balls in 25–49
+      return 'MIXED';                          // balanced
+    };
+
+    // ── ODD/EVEN streak & gap ──
+    const classifyOE = d => {
+      const odds  = d.numbers.filter(n => parseInt(n) % 2 === 1).length;
+      const evens = d.numbers.filter(n => parseInt(n) % 2 === 0).length;
+      if (odds >= 4)  return 'ODD-DOM';
+      if (evens >= 4) return 'EVEN-DOM';
+      return 'BALANCED';
+    };
+
+    const rangeSeq = draws.map(classifyDraw);
+    const oeSeq    = draws.map(classifyOE);
+
+    const rangeLabelMap = { 'LOW-DOM':'LOW DOM (1–24)', 'HIGH-DOM':'HIGH DOM (25–49)', 'MIXED':'MIXED' };
+    const oeLabelMap    = { 'ODD-DOM':'ODD DOM (4+)', 'EVEN-DOM':'EVEN DOM (4+)', 'BALANCED':'BALANCED' };
+
+    const rangeOutcomes = ['LOW-DOM','HIGH-DOM','MIXED'];
+    const oeOutcomes    = ['ODD-DOM','EVEN-DOM','BALANCED'];
+
+    // ── Streak card: both range and OE streaks together ──
+    const rangeStreaks = streakAnalysis(rangeSeq, rangeOutcomes);
+    const oeStreaks    = streakAnalysis(oeSeq, oeOutcomes);
+
+    const el = document.getElementById('sc-dragon-streak');
+    if (el) {
+      const rangeSym = { 'LOW-DOM': outcomeSymbol('dragon','LOW'), 'HIGH-DOM': outcomeSymbol('dragon','HIGH'), 'MIXED': outcomeSymbol('dragon','MID') };
+      const oeSym    = { 'ODD-DOM':'🔴', 'EVEN-DOM':'🔵', 'BALANCED':'⚪' };
+
+      const makeRow = (o, { losing, winning }, sym, label) => `
+        <div class="streak-row" style="align-items:center">
+          <span style="display:flex;align-items:center;gap:8px;flex:1">
+            <span style="display:inline-flex;align-items:center;width:24px;justify-content:center">${sym}</span>
+            <span class="streak-label" style="font-size:12px">${label}</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:18px">
+            <span style="display:flex;flex-direction:column;align-items:center;min-width:44px">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#ff4466;margin-bottom:2px">LOSE</span>
+              <span style="font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:${loseColour(losing)}">${losing === 0 ? '<span style="color:#00ff88;font-size:11px">✓</span>' : losing}</span>
+            </span>
+            <span style="display:flex;flex-direction:column;align-items:center;min-width:44px">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#00ff88;margin-bottom:2px">WIN</span>
+              <span style="font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:${winning>0?winColour(winning):'#333'}">${winning>0?'+'+winning:'—'}</span>
+            </span>
+          </span>
+        </div>`;
+
+      const rangeRows = rangeOutcomes.map(o => makeRow(o, rangeStreaks[o], rangeSym[o], rangeLabelMap[o])).join('');
+      const oeRows    = oeOutcomes.map(o => makeRow(o, oeStreaks[o], oeSym[o], oeLabelMap[o])).join('');
+
+      el.innerHTML = `<div class="stat-card-title">🔥 DRAGON STREAKS (LOSE · WIN)</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:14px">Ball range dominance · Odd/Even balance · Resets to 0 on hit</div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;color:rgba(0,245,255,0.5);letter-spacing:1px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.06)">RANGE (1–24 vs 25–49)</div>
+        ${rangeRows}
+        <div style="font-family:'Orbitron',monospace;font-size:9px;color:rgba(0,245,255,0.5);letter-spacing:1px;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.06)">ODD / EVEN</div>
+        ${oeRows}`;
+    }
+
+    // ── Distribution card: breakdown counts of low/high/49 balls per draw ──
+    const distEl = document.getElementById('sc-dragon-dist');
+    if (distEl) {
+      // Count across last 100 draws
+      const sample = draws.slice(-100);
+      let lowTotal=0, highTotal=0, gold49=0;
+      const rangeTally = { 'LOW-DOM':0, 'HIGH-DOM':0, 'MIXED':0 };
+      sample.forEach(d => {
+        lowTotal  += d.numbers.filter(n => parseInt(n) >= 1  && parseInt(n) <= 24).length;
+        highTotal += d.numbers.filter(n => parseInt(n) >= 25 && parseInt(n) <= 48).length;
+        gold49    += d.numbers.includes('49') ? 1 : 0;
+        rangeTally[classifyDraw(d)]++;
+      });
+      const avg = v => (v / sample.length).toFixed(2);
+      const pct = v => Math.round(v / sample.length * 100);
+
+      distEl.innerHTML = `<div class="stat-card-title">📊 BALL DISTRIBUTION (last ${sample.length})</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:14px">Avg balls per draw in each range — use this to guide number selection</div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+          ${[
+            { label:'LOW (1–24)',  val:lowTotal,  colour:'#00ff88', total: sample.length*6 },
+            { label:'HIGH (25–48)',val:highTotal, colour:'#ff6b00', total: sample.length*6 },
+            { label:'GOLD (49)',   val:gold49,    colour:'#ffd700', total: sample.length   },
+          ].map(({label,val,colour,total}) => {
+            const p = Math.round(val/total*100);
+            return `<div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                <span style="font-family:'Orbitron',monospace;font-size:10px;color:${colour}">${label}</span>
+                <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:${colour}">${avg(val)} avg · ${p}%</span>
+              </div>
+              <div style="height:5px;background:rgba(255,255,255,0.06);border-radius:3px">
+                <div style="height:5px;border-radius:3px;background:${colour};width:${p}%;transition:width 0.5s"></div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+
+        <div style="font-family:'Orbitron',monospace;font-size:9px;color:rgba(0,245,255,0.5);letter-spacing:1px;margin-bottom:10px">DRAW TYPE FREQUENCY</div>
+        ${Object.entries(rangeTally).map(([type, count]) => {
+          const p = pct(count);
+          const col = type==='LOW-DOM'?'#00ff88':type==='HIGH-DOM'?'#ff6b00':'#aaaaaa';
+          return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:${col};min-width:110px">${rangeLabelMap[type]}</span>
+            <div style="flex:1;height:5px;background:rgba(255,255,255,0.06);border-radius:3px">
+              <div style="height:5px;border-radius:3px;background:${col};width:${p}%"></div>
+            </div>
+            <span style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:${col};min-width:30px;text-align:right">${count}</span>
+          </div>`;
+        }).join('')}`;
+    }
+
+    // ── Gaps card ──
+    renderGapCard('sc-dragon-gaps', gapAnalysis(rangeSeq, rangeOutcomes), rangeLabelMap, rangeOutcomes, 'dragon');
+
+    // ── Prediction: based on range sequence patterns ──
+    renderPredictCard('sc-dragon-predict', patternEngine(rangeSeq), rangeLabelMap, 'dragon');
+  }
+
+  // ── Pattern insights bar ──
+  function generateInsights(draws) {
+    if (draws.length < 50) return;
+    const insights = [];
+    const hmlSeq = draws.map(d => getHML(d.numbers));
+    const hmlFreq = { up:0, mid:0, down:0 };
+    hmlSeq.slice(-100).forEach(h => hmlFreq[h]++);
+    const dominant = Object.entries(hmlFreq).sort((a,b)=>b[1]-a[1])[0];
+    insights.push(`HI/LO last 100: HI=${hmlFreq.up} · MID=${hmlFreq.mid} · LO=${hmlFreq.down} — <strong style="color:#00f5ff">${dominant[0].toUpperCase()} dominates</strong>`);
+    const colSeq = draws.slice(-50).map(d => d.winCol || 'draw');
+    const colFreq = { red:0, yellow:0, blue:0, draw:0 };
+    colSeq.forEach(c => { if(colFreq.hasOwnProperty(c)) colFreq[c]++; });
+    const domCol = Object.entries(colFreq).sort((a,b)=>b[1]-a[1])[0];
+    insights.push(`Win colour last 50: R=${colFreq.red} G=${colFreq.yellow} B=${colFreq.blue} NONE=${colFreq.draw} — <strong style="color:#00f5ff">${domCol[0].toUpperCase()} leads</strong>`);
+    const n49rate = draws.slice(-100).filter(d => d.numbers.includes('49')).length;
+    insights.push(`Ball 49 appeared ${n49rate}/100 draws (expected ~${Math.round(6/49*100)})`);
+    const midStreak = hmlSeq.slice().reverse().findIndex(h => h === 'mid');
+    if (midStreak > 5) insights.push(`⚠ MID absent for <strong style="color:#ffaa00">${midStreak} consecutive draws</strong>`);
+    const bar = document.getElementById('stats-insight-bar');
+    const content = document.getElementById('stats-insight-content');
+    if (bar && content) {
+      bar.style.display = 'block';
+      content.innerHTML = insights.map(i => `▸ ${i}`).join('<br>');
+    }
+  }
+
+  // ── Main compute ──
+  function computeStats() {
+    const draws = getStoredDraws();
+    const el = document.getElementById('stats-draw-count');
+    if (el) el.textContent = `${draws.length.toLocaleString()} draws analysed`;
+    if (draws.length < 10) {
+      ['sc-hilo-streak','sc-hilo-gaps','sc-hilo-predict',
+       'sc-colour-streak','sc-colour-gaps','sc-colour-predict',
+       'sc-bet49-streak','sc-bet49-predict','sc-bet49-gaps',
+       'sc-rainbow-streak','sc-rainbow-red','sc-rainbow-green','sc-rainbow-blue','sc-rainbow-gaps','sc-rainbow-predict',
+       'sc-dragon-streak','sc-dragon-dist','sc-dragon-gaps','sc-dragon-predict'].forEach(id => {
+        const e = document.getElementById(id);
+        if (e) e.innerHTML = `<div class="stat-card-title">WAITING</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);padding:20px 0">
+            Need at least 10 draws — open 49ja Live Feed first.
+          </div>`;
+      });
+      return;
+    }
+    computeHiLoStats(draws);
+    computeColourStats(draws);
+    computeBet49Stats(draws);
+    computeRainbowStats(draws);
+    computeDragonStats(draws);
+    generateInsights(draws);
+  }
+
   const _origShowPage = window.showPage;
   window.showPage = function(id) {
     _origShowPage(id);
     if (id === '49ja-live') start49jaFeed();
     else stop49jaFeed();
+    if (id === '49ja-stats')    computeStats();
+    if (id === 'arbitrary-calc') _arbPageInit();
   };
+</script>
+
+<!-- ══════════════════════════════════════ TRANSLATION ══ -->
+<script>
+  // ── Translation engine using MyMemory free API (no key required) ──
+  // Strategy: collect all visible text nodes from the DOM, batch them,
+  // translate via MyMemory API, then replace in-place.
+
+  let _originalTextMap = new Map(); // node → original text
+  let _currentLang = 'en';
+  let _translating = false;
+
+  // Populate lang-select options
+  const LANG_OPTIONS = [
+    ['en','English'],['fr','Français'],['es','Español'],['pt','Português'],
+    ['de','Deutsch'],['it','Italiano'],['ru','Русский'],['ar','العربية'],
+    ['zh-CN','中文(简体)'],['zh-TW','中文(繁體)'],['ja','日本語'],['ko','한국어'],
+    ['hi','हिन्दी'],['sw','Kiswahili'],['yo','Yorùbá'],['ig','Igbo'],['ha','Hausa'],
+    ['id','Bahasa Indonesia'],['tr','Türkçe'],['pl','Polski'],['nl','Nederlands'],
+    ['sv','Svenska'],['vi','Tiếng Việt'],['th','ไทย'],['tl','Filipino'],
+  ];
+  (function buildLangSelect() {
+    const sel = document.getElementById('lang-select');
+    if (!sel) return;
+    sel.innerHTML = LANG_OPTIONS.map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+    sel.value = 'en';
+  })();
+
+  // ── Collect text nodes eligible for translation ──
+  // Skip: script, style, meta, hidden elements, very short strings, numbers-only
+  function collectTextNodes(root) {
+    const nodes = [];
+    const skipTags = new Set(['SCRIPT','STYLE','META','LINK','NOSCRIPT','OPTION']);
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (skipTags.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
+        // Skip hidden elements
+        if (parent.offsetParent === null && parent.tagName !== 'TITLE') return NodeFilter.FILTER_SKIP;
+        const txt = node.textContent.trim();
+        if (!txt || txt.length < 2) return NodeFilter.FILTER_REJECT;
+        if (/^[\d\s.,%+×₦£$€\-:\/()]+$/.test(txt)) return NodeFilter.FILTER_REJECT; // numbers/symbols only
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+    return nodes;
+  }
+
+  // ── Translate a single string via MyMemory API ──
+  async function translateText(text, targetLang) {
+    if (!text.trim() || targetLang === 'en') return text;
+    try {
+      const encoded = encodeURIComponent(text.slice(0, 500));
+      const url = `https://api.mymemory.translated.net/get?q=${encoded}&langpair=en|${targetLang}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.responseStatus === 200 && data.responseData?.translatedText) {
+        return data.responseData.translatedText;
+      }
+    } catch (_) {}
+    return text; // fallback: return original
+  }
+
+  // ── Set progress bar ──
+  function setProgress(pct, message) {
+    const bar  = document.getElementById('translate-bar');
+    const fill = document.getElementById('translate-progress-fill');
+    const stat = document.getElementById('translate-status');
+    if (bar)  { bar.style.display = 'flex'; }
+    if (fill) fill.style.width = pct + '%';
+    if (stat) stat.textContent = message;
+  }
+  function hideProgress() {
+    const bar = document.getElementById('translate-bar');
+    if (bar) bar.style.display = 'none';
+  }
+
+  // ── Save original text so we can revert ──
+  function saveOriginals(nodes) {
+    nodes.forEach(n => {
+      if (!_originalTextMap.has(n)) {
+        _originalTextMap.set(n, n.textContent);
+      }
+    });
+  }
+
+  // ── Revert all nodes to English ──
+  function revertTranslation() {
+    _originalTextMap.forEach((orig, node) => {
+      try { node.textContent = orig; } catch(_) {}
+    });
+    _currentLang = 'en';
+    const sel = document.getElementById('lang-select');
+    if (sel) sel.value = 'en';
+    hideProgress();
+    document.documentElement.lang = 'en';
+  }
+
+  // ── Main translation function ──
+  async function applyTranslation(lang) {
+    if (lang === _currentLang) return;
+    if (lang === 'en') { revertTranslation(); return; }
+    if (_translating) return;
+    _translating = true;
+    _currentLang = lang;
+
+    // Revert to English first if we're switching languages
+    if (_originalTextMap.size > 0) {
+      _originalTextMap.forEach((orig, node) => {
+        try { node.textContent = orig; } catch(_) {}
+      });
+    }
+
+    const nodes = collectTextNodes(document.body);
+    saveOriginals(nodes);
+
+    // Batch: group up to 10 nodes into a single API call using a separator
+    const SEP = ' ||| ';
+    const BATCH = 8;
+    const batches = [];
+    for (let i = 0; i < nodes.length; i += BATCH) {
+      batches.push(nodes.slice(i, i + BATCH));
+    }
+
+    setProgress(0, `⟳ TRANSLATING TO ${lang.toUpperCase()}…  0/${batches.length}`);
+
+    let done = 0;
+    for (const batch of batches) {
+      const texts  = batch.map(n => n.textContent.trim());
+      const joined = texts.join(SEP);
+      const result = await translateText(joined, lang);
+      const parts  = result.split(SEP);
+      batch.forEach((node, i) => {
+        const translated = (parts[i] || '').trim();
+        if (translated && translated !== texts[i]) {
+          try { node.textContent = translated; } catch(_) {}
+        }
+      });
+      done++;
+      const pct = Math.round(done / batches.length * 100);
+      setProgress(pct, `⟳ TRANSLATING…  ${done}/${batches.length} batches  (${pct}%)`);
+      // Small pause to avoid rate limiting
+      await new Promise(r => setTimeout(r, 120));
+    }
+
+    setProgress(100, `✓ TRANSLATED TO ${lang.toUpperCase()}`);
+    setTimeout(hideProgress, 2500);
+    document.documentElement.lang = lang;
+    _translating = false;
+  }
+
+  // ── Auto-detect device language on load ──
+  function autoDetectLanguage() {
+    const raw = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+    const localeMap = {
+      'fr':'fr','es':'es','pt':'pt','de':'de','it':'it','ru':'ru','ar':'ar',
+      'ja':'ja','ko':'ko','hi':'hi','sw':'sw','yo':'yo','ig':'ig','ha':'ha',
+      'id':'id','tr':'tr','pl':'pl','nl':'nl','sv':'sv','vi':'vi','th':'th',
+      'tl':'tl','zh':'zh-CN','zh-cn':'zh-CN','zh-tw':'zh-TW','zh-hk':'zh-TW','en':'en',
+    };
+    const base = raw.split('-')[0];
+    const detected = localeMap[raw] || localeMap[base] || 'en';
+    const sel = document.getElementById('lang-select');
+    if (sel) {
+      const opt = Array.from(sel.options).find(o => o.value === detected);
+      if (opt) sel.value = detected;
+    }
+    if (detected !== 'en') applyTranslation(detected);
+  }
+
+  window.addEventListener('load', () => setTimeout(autoDetectLanguage, 400));
 </script>
 </body>
 </html>
