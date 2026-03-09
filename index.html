@@ -1637,7 +1637,27 @@
         <button class="btn btn-cyan btn-sm" onclick="fetch49ja()">↺ REFRESH</button>
       </div>
     </div>
-        <div class="jackpot-bar" id="jackpot-bar" style="display:none">
+    <!-- Worker setup panel — shown on connection failure -->
+    <div id="worker-setup" style="display:none;background:rgba(255,60,60,0.05);border:1px solid rgba(255,80,80,0.2);padding:16px;margin-bottom:16px">
+      <div style="font-family:'Orbitron',monospace;font-size:11px;color:#ff6666;letter-spacing:1px;margin-bottom:10px">⚠ REQUIRES CLOUDFLARE WORKER PROXY</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary);line-height:1.9;margin-bottom:12px">
+        The Bet9ja API requires a session cookie that CORS proxies can't forward.<br>
+        Fix: Deploy a free Cloudflare Worker in 2 minutes:<br>
+        <span style="color:var(--accent-cyan)">1.</span> Go to <strong style="color:#fff">workers.cloudflare.com</strong> → Sign up free → Create Worker<br>
+        <span style="color:var(--accent-cyan)">2.</span> Paste the worker code (copy from console: <code style="color:#ffaa00">console.log(window._workerCode)</code>)<br>
+        <span style="color:var(--accent-cyan)">3.</span> Deploy → copy the worker URL → paste below
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="worker-url-input" type="text" placeholder="https://bet9ja-proxy.YOUR-NAME.workers.dev"
+          style="flex:1;min-width:260px;padding:8px 12px;background:var(--bg-deep);border:1px solid rgba(255,80,80,0.3);color:var(--text-primary);font-family:'Share Tech Mono',monospace;font-size:11px"
+          value="">
+        <button class="btn btn-cyan btn-sm" onclick="saveWorkerUrl()">SAVE & RETRY</button>
+        <button class="btn btn-sm" style="background:var(--bg-deep);border:1px solid var(--border-dim);color:var(--text-muted)" onclick="clearWorkerUrl()">CLEAR</button>
+      </div>
+      <div id="worker-url-msg" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:6px"></div>
+    </div>
+
+    <div class="jackpot-bar" id="jackpot-bar" style="display:none">
       <div><div class="jackpot-label">⭐ STAR JACKPOT</div></div>
       <div class="jackpot-val" id="jackpot-val">—</div>
       <div style="text-align:right">
@@ -2563,36 +2583,51 @@
   const API_HISTORY  = 'https://logigames.bet9ja.com/Games/Balls49/DrawHistory';
   const API_TIMELEFT = 'https://logigames.bet9ja.com/Games/Balls49/TimeLeft';
 
+  // Your Cloudflare Worker proxy URL
+  let WORKER_URL = localStorage.getItem('49ja_worker_url') || 'https://silent-bar-b483.kurosoft01.workers.dev';
+
   const PROXIES = [
     u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
     u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
     u => `https://thingproxy.freeboard.io/fetch/${u}`,
   ];
 
-  async function fetchJSON(url) {
-    const body = JSON.stringify({
-      pff: 1,
-      gameId: 11000,
-      tmp: new Date().toISOString()
-    });
-    const opts = {
-      method: 'POST',
-      cache: 'no-store',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include', // send session cookies if same-domain
-      body,
-    };
+  const POST_BODY = () => JSON.stringify({ pff: 1, gameId: 11000, tmp: new Date().toISOString() });
 
-    // Try direct first (works if opened alongside the game in the same browser)
+  async function fetchJSON(url) {
+    const body = POST_BODY();
+
+    // 1. Try Cloudflare Worker (best option — forwards request server-side)
+    if (WORKER_URL) {
+      try {
+        const res = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Target-Url': url },
+          body,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.status !== -1 && !data.error?.code) return data;
+        }
+      } catch(_) {}
+    }
+
+    // 2. Try direct (works if app is on bet9ja.com domain or same browser session)
     try {
-      const res = await fetch(url, opts);
+      const res = await fetch(url, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body,
+      });
       if (res.ok) {
         const data = await res.json();
-        if (data && data.status !== -1 && !data.error) return data;
+        if (data && data.status !== -1 && !data.error?.code) return data;
       }
     } catch(_) {}
 
-    // Fall back to CORS proxies (proxies can't forward cookies, but worth trying)
+    // 3. CORS proxies fallback
     for (const proxy of PROXIES) {
       try {
         const res = await fetch(proxy(url), {
@@ -2618,7 +2653,7 @@
 
     const data = await fetchJSON(API_HISTORY);
 
-    if (!data || data.status === -1 || data.error) {
+    if (!data || data.status === -1 || data.error?.code) {
       statusEl.textContent = '✗ Connection failed';
       statusEl.style.color = 'var(--accent-red)';
       return;
@@ -2788,6 +2823,57 @@
     document.getElementById('ct-none').textContent  = t.draw   || 0;
   }
 
+  // ── Worker URL helpers ──
+  function saveWorkerUrl() {
+    const url = document.getElementById('worker-url-input').value.trim();
+    if (!url) return;
+    WORKER_URL = url;
+    localStorage.setItem('49ja_worker_url', url);
+    document.getElementById('worker-url-msg').textContent = '✓ Saved. Retrying...';
+    document.getElementById('worker-url-msg').style.color = 'var(--accent-green)';
+    fetch49ja();
+  }
+  function clearWorkerUrl() {
+    WORKER_URL = '';
+    localStorage.removeItem('49ja_worker_url');
+    document.getElementById('worker-url-input').value = '';
+    document.getElementById('worker-url-msg').textContent = 'Cleared.';
+    document.getElementById('worker-url-msg').style.color = 'var(--text-muted)';
+  }
+  function initWorkerInput() {
+    const saved = localStorage.getItem('49ja_worker_url');
+    if (saved) {
+      document.getElementById('worker-url-input').value = saved;
+      document.getElementById('worker-url-msg').textContent = '✓ Worker URL loaded';
+      document.getElementById('worker-url-msg').style.color = 'var(--accent-green)';
+    }
+  }
+
+  // Cloudflare Worker code — copy this and deploy at workers.cloudflare.com
+  window._workerCode = `
+export default {
+  async fetch(request) {
+    const targetUrl = request.headers.get('X-Target-Url');
+    if (!targetUrl) return new Response('Missing X-Target-Url', { status: 400 });
+    const body = await request.text();
+    const resp = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+    const data = await resp.text();
+    return new Response(data, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': '*',
+      },
+    });
+  },
+};`;
+  console.log('%c📋 Cloudflare Worker code ready — run: copy(window._workerCode)', 'color:#00f5ff;font-size:13px');
+
   // ── Lifecycle ──
   let _49jaTimer = null;
   let _countdownTimer = null;
@@ -2812,6 +2898,7 @@
   }
 
   function start49jaFeed() {
+    initWorkerInput();
     buildBallPicker('bp-bet49', 4);
     buildBallPicker('bp-dragon', 15);
     buildBallPicker('bp-betzero', 4);
