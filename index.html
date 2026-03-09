@@ -891,6 +891,7 @@
     #main { margin-left: 0; }
     .grid-2, .grid-3 { grid-template-columns: 1fr; }
   }
+</style>
 </head>
 <body>
 
@@ -1661,12 +1662,6 @@
     document.querySelectorAll('.nav-item').forEach(n => {
       if (n.getAttribute('onclick')?.includes("'" + id + "'")) n.classList.add('active');
     });
-  }
-
-  function switchAuthTab(tab) {
-    document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
-    document.getElementById('login-form').classList.toggle('active', tab==='login');
-    document.getElementById('register-form').classList.toggle('active', tab==='register');
   }
 
   // ── NOTIFICATION ──
