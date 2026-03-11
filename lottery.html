@@ -335,6 +335,7 @@ class LotteryAnalyzer {
     return{lotteryId:this.id,lotteryName:this.config.name,totalDraws:this.results.length,numberStats:numberStats.sort((a,b)=>a.number-b.number),hotNumbers:freq.filter(f=>f.isHot).map(f=>f.number),coldNumbers:freq.filter(f=>f.isCold).map(f=>f.number),overdueNumbers:gaps.filter(g=>g.overdue>1.5).sort((a,b)=>b.overdue-a.overdue).map(g=>g.number),topPairs:clusters[0]?.topPairs?.slice(0,10)||[],predictionRecord:{hits,partials,misses,total:preds.length,hitRate:preds.length>0?((hits/preds.length)*100).toFixed(1):'0'},modelWeights:this.weights,lastDraw:this.results[0]||null,last10:this.results.slice(0,10)};
   }
 }
+</script>
 
 <script>
 // ═══════════════════════════════════════════════════════════
