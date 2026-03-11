@@ -194,11 +194,9 @@ a { color:var(--accent-cyan); text-decoration:none; }
 
 <script>
 // ═══════════════════════════════════════════════════════════
-// LOTTERY ENGINE (embedded)
+// LOTTERY ENGINE (fully embedded)
 // ═══════════════════════════════════════════════════════════
-</script>
-<script>
-// Paste lottery-engine.js content here inline
+
 const LOTTERIES={"uk49s_lunch":{name:"UK 49s Lunchtime",icon:"🇬🇧",pool:49,draw:6,bonus:1,schedule:"Daily 12:49 PM GMT"},"uk49s_tea":{name:"UK 49s Teatime",icon:"🇬🇧",pool:49,draw:6,bonus:1,schedule:"Daily 5:49 PM GMT"},"ghana_monday":{name:"Ghana Monday Special",icon:"🇬🇭",pool:90,draw:5,bonus:0,schedule:"Monday"},"ghana_tuesday":{name:"Ghana Lucky Tuesday",icon:"🇬🇭",pool:90,draw:5,bonus:0,schedule:"Tuesday"},"ghana_midweek":{name:"Ghana Midweek",icon:"🇬🇭",pool:90,draw:5,bonus:0,schedule:"Wednesday"},"ghana_thursday":{name:"Ghana Fortune Thursday",icon:"🇬🇭",pool:90,draw:5,bonus:0,schedule:"Thursday"},"ghana_friday":{name:"Ghana Friday Bonanza",icon:"🇬🇭",pool:90,draw:5,bonus:0,schedule:"Friday"},"ghana_saturday":{name:"Ghana National Saturday",icon:"🇬🇭",pool:90,draw:5,bonus:0,schedule:"Saturday"},"us_powerball":{name:"US Powerball",icon:"🇺🇸",pool:69,draw:5,bonusPool:26,bonus:1,schedule:"Mon, Wed, Sat"},"us_mega":{name:"US Mega Millions",icon:"🇺🇸",pool:70,draw:5,bonusPool:25,bonus:1,schedule:"Tue, Fri"},"euromillions":{name:"EuroMillions",icon:"🇪🇺",pool:50,draw:5,bonusPool:12,bonus:2,schedule:"Tue, Fri"},"china_ssq":{name:"China Welfare (双色球)",icon:"🇨🇳",pool:33,draw:6,bonusPool:16,bonus:1,schedule:"Tue, Thu, Sun"},"china_3d":{name:"China Welfare 3D",icon:"🇨🇳",pool:9,draw:3,bonus:0,schedule:"Daily",isDigit:true},"sa_powerball":{name:"SA Powerball",icon:"🇿🇦",pool:50,draw:5,bonusPool:20,bonus:1,schedule:"Tue, Fri"},"nigeria_lotto":{name:"Nigeria Lotto (5/90)",icon:"🇳🇬",pool:90,draw:5,bonus:0,schedule:"Daily"},"bet9ja_49":{name:"Bet9ja 49 Balls",icon:"🎱",pool:49,draw:6,bonus:0,schedule:"Every 5 min"}};
 
 function getLotteryResults(id){try{return JSON.parse(localStorage.getItem('lottery_results_'+id)||'[]')}catch{return[]}}
@@ -207,8 +205,136 @@ function getLotteryPredictions(id){try{return JSON.parse(localStorage.getItem('l
 function saveLotteryPredictions(id,p){localStorage.setItem('lottery_preds_'+id,JSON.stringify(p))}
 function getModelWeights(id){try{return JSON.parse(localStorage.getItem('lottery_weights_'+id)||'null')}catch{return null}}
 function saveModelWeights(id,w){localStorage.setItem('lottery_weights_'+id,JSON.stringify(w))}
-</script>
-<script src="lottery-engine.js"></script>
+
+class LotteryAnalyzer {
+  constructor(lotteryId) {
+    this.id = lotteryId;
+    this.config = LOTTERIES[lotteryId];
+    this.results = getLotteryResults(lotteryId);
+    this.predictions = getLotteryPredictions(lotteryId);
+    this.weights = getModelWeights(lotteryId) || { frequency:0.20, bayesian:0.25, markov:0.15, gap:0.20, cluster:0.10, regression:0.10 };
+  }
+  frequencyAnalysis() {
+    const { pool, draw } = this.config;
+    const counts = new Array(pool+1).fill(0);
+    const total = this.results.length;
+    this.results.forEach(r => { r.numbers.forEach(n => { if(n>=1&&n<=pool) counts[n]++; }); });
+    const expected = total*(draw/pool);
+    const analysis = [];
+    for(let n=1;n<=pool;n++){
+      const freq=counts[n], deviation=freq-expected;
+      const zScore = expected>0 ? deviation/Math.sqrt(expected*(1-draw/pool)) : 0;
+      analysis.push({ number:n, frequency:freq, expected:Math.round(expected*100)/100, deviation:Math.round(deviation*100)/100, zScore:Math.round(zScore*100)/100, isHot:zScore>1.5, isCold:zScore<-1.5, score:Math.max(0,(expected-freq)/Math.max(expected,1))*50+(freq/Math.max(total,1))*50 });
+    }
+    return analysis.sort((a,b)=>b.score-a.score);
+  }
+  bayesianAnalysis() {
+    const { pool, draw } = this.config;
+    const posteriors = new Array(pool+1).fill(1/pool);
+    const alpha = Math.max(0.01, 1/Math.max(this.results.length,1));
+    this.results.forEach((r,idx) => { const recency=Math.exp(-idx*0.02); r.numbers.forEach(n => { if(n>=1&&n<=pool) posteriors[n]+=alpha*recency; }); });
+    const sum = posteriors.reduce((a,b)=>a+b,0);
+    return posteriors.map((p,n)=>({ number:n, probability:Math.round((p/sum)*10000)/10000, score:(p/sum)*1000 })).slice(1);
+  }
+  markovAnalysis() {
+    const { pool } = this.config;
+    const transitions = {};
+    for(let i=0;i<this.results.length-1;i++){
+      const current=this.results[i].numbers, next=this.results[i+1].numbers;
+      current.forEach(a => { if(!transitions[a]) transitions[a]=new Array(pool+1).fill(0); next.forEach(b => { transitions[a][b]++; }); });
+    }
+    if(!this.results.length) return [];
+    const lastDraw = this.results[0].numbers;
+    const scores = new Array(pool+1).fill(0);
+    lastDraw.forEach(a => { if(transitions[a]){ const total=transitions[a].reduce((s,v)=>s+v,0); if(total>0) transitions[a].forEach((count,b)=>{ scores[b]+=count/total; }); } });
+    return scores.map((score,n)=>({number:n,score})).slice(1);
+  }
+  gapAnalysis() {
+    const { pool, draw } = this.config;
+    const lastSeen = new Array(pool+1).fill(Infinity);
+    this.results.forEach((r,idx) => { r.numbers.forEach(n => { if(n>=1&&n<=pool&&lastSeen[n]===Infinity) lastSeen[n]=idx; }); });
+    const expectedGap = pool/draw;
+    return Array.from({length:pool},(_,i)=>{ const n=i+1, gap=lastSeen[n]===Infinity?this.results.length:lastSeen[n]; return { number:n, gap, expectedGap:Math.round(expectedGap*10)/10, overdue:Math.round((gap/expectedGap)*100)/100, score:Math.min((gap/expectedGap)*30,100) }; });
+  }
+  clusterAnalysis() {
+    const { pool } = this.config;
+    const pairCounts = {};
+    this.results.forEach(r => { const nums=r.numbers.filter(n=>n>=1&&n<=pool); for(let i=0;i<nums.length;i++) for(let j=i+1;j<nums.length;j++){ const key=`${Math.min(nums[i],nums[j])}-${Math.max(nums[i],nums[j])}`; pairCounts[key]=(pairCounts[key]||0)+1; } });
+    const pairs = Object.entries(pairCounts).map(([key,count])=>({pair:key.split('-').map(Number),count})).sort((a,b)=>b.count-a.count);
+    const scores = new Array(pool+1).fill(0);
+    pairs.slice(0,50).forEach(p => { p.pair.forEach(n => { scores[n]+=p.count; }); });
+    const maxScore = Math.max(...scores,1);
+    return scores.map((s,n)=>({number:n,score:(s/maxScore)*100,topPairs:pairs.filter(p=>p.pair.includes(n)).slice(0,3)})).slice(1);
+  }
+  regressionAnalysis() {
+    return this.frequencyAnalysis().map(f=>({ number:f.number, score:f.isCold?80+Math.abs(f.zScore)*10:f.isHot?20-f.zScore*5:50 }));
+  }
+  generatePrediction() {
+    if(this.results.length<5) return {error:'Need at least 5 past results',numbers:[]};
+    const { pool, draw } = this.config;
+    const w = this.weights;
+    const freqS=this.frequencyAnalysis(), bayesS=this.bayesianAnalysis(), markovS=this.markovAnalysis(), gapS=this.gapAnalysis(), clusterS=this.clusterAnalysis(), regS=this.regressionAnalysis();
+    const combined = [];
+    for(let n=1;n<=pool;n++){
+      const fS=(freqS.find(f=>f.number===n)?.score||0)*w.frequency;
+      const bS=(bayesS.find(f=>f.number===n)?.score||0)*w.bayesian;
+      const mS=(markovS.find(f=>f.number===n)?.score||0)*w.markov;
+      const gS=(gapS.find(f=>f.number===n)?.score||0)*w.gap;
+      const cS=(clusterS.find(f=>f.number===n)?.score||0)*w.cluster;
+      const rS=(regS.find(f=>f.number===n)?.score||0)*w.regression;
+      combined.push({number:n,totalScore:fS+bS+mS+gS+cS+rS,breakdown:{frequency:fS,bayesian:bS,markov:mS,gap:gS,cluster:cS,regression:rS}});
+    }
+    combined.sort((a,b)=>b.totalScore-a.totalScore);
+    const topPool=combined.slice(0,Math.min(draw*3,pool));
+    const selected=[], available=[...topPool];
+    for(let i=0;i<draw&&available.length>0;i++){
+      const maxS=Math.max(...available.map(a=>a.totalScore));
+      const expS=available.map(a=>Math.exp((a.totalScore-maxS)/5));
+      const sumE=expS.reduce((a,b)=>a+b,0);
+      const probs=expS.map(e=>e/sumE);
+      let rand=Math.random(),cum=0,idx=0;
+      for(let j=0;j<probs.length;j++){cum+=probs[j];if(rand<=cum){idx=j;break;}}
+      selected.push(available[idx]);
+      available.splice(idx,1);
+    }
+    selected.sort((a,b)=>a.number-b.number);
+    let bonusNumber=null;
+    if(this.config.bonus>0){ bonusNumber=Math.floor(Math.random()*(this.config.bonusPool||pool))+1; }
+    const prediction={id:Date.now().toString(),lotteryId:this.id,lotteryName:this.config.name,numbers:selected.map(s=>s.number),bonusNumber,confidence:this.calcConf(selected),breakdown:selected.map(s=>s.breakdown),timestamp:new Date().toISOString(),date:new Date().toLocaleDateString('en-GB'),dateKey:new Date().toISOString().slice(0,10),status:'pending',matchedNumbers:[],modelWeights:{...this.weights},basedOn:this.results.length+' past draws'};
+    const preds=this.predictions;preds.unshift(prediction);if(preds.length>200)preds.length=200;
+    saveLotteryPredictions(this.id,preds);this.predictions=preds;
+    return prediction;
+  }
+  calcConf(selected){if(this.results.length<20)return'LOW';const avg=selected.reduce((a,s)=>a+s.totalScore,0)/selected.length;return avg>60?'HIGH':avg>40?'MODERATE':'LOW';}
+  evaluatePredictions(actualDraw){
+    const preds=getLotteryPredictions(this.id);let changed=false;
+    preds.forEach(pred=>{if(pred.status!=='pending')return;const matched=pred.numbers.filter(n=>actualDraw.numbers.includes(n));pred.matchedNumbers=matched;const rate=matched.length/pred.numbers.length;pred.status=rate>=0.8?'hit':rate>=0.3?'partial':'miss';changed=true;});
+    if(changed){saveLotteryPredictions(this.id,preds);this.predictions=preds;this.updateModelWeights();}
+  }
+  updateModelWeights(){
+    const evaluated=this.predictions.filter(p=>p.status!=='pending'&&p.breakdown);
+    if(evaluated.length<10)return;
+    const perf={frequency:0,bayesian:0,markov:0,gap:0,cluster:0,regression:0};
+    evaluated.forEach(pred=>{const isGood=pred.status==='hit'||pred.status==='partial';const mult=isGood?1:-0.5;if(pred.breakdown&&pred.breakdown[0]){const avg={};Object.keys(perf).forEach(k=>{avg[k]=pred.breakdown.reduce((s,b)=>s+(b[k]||0),0)/pred.breakdown.length;});Object.keys(perf).forEach(k=>{perf[k]+=(avg[k]||0)*mult;});}});
+    const total=Object.values(perf).reduce((a,b)=>a+Math.max(b,0.01),0);
+    const smoothing=0.3;
+    Object.keys(this.weights).forEach(k=>{this.weights[k]=this.weights[k]*(1-smoothing)+(Math.max(perf[k],0.01)/total)*smoothing;});
+    const wTotal=Object.values(this.weights).reduce((a,b)=>a+b,0);
+    Object.keys(this.weights).forEach(k=>{this.weights[k]/=wTotal;});
+    saveModelWeights(this.id,this.weights);
+  }
+  addResult(draw){
+    this.results.unshift(draw);if(this.results.length>1000)this.results.length=1000;
+    saveLotteryResults(this.id,this.results);this.evaluatePredictions(draw);
+  }
+  getFullStats(){
+    const freq=this.frequencyAnalysis(),gaps=this.gapAnalysis(),clusters=this.clusterAnalysis(),bayesian=this.bayesianAnalysis();
+    const preds=this.predictions.filter(p=>p.status!=='pending');
+    const hits=preds.filter(p=>p.status==='hit').length,partials=preds.filter(p=>p.status==='partial').length,misses=preds.filter(p=>p.status==='miss').length;
+    const numberStats=freq.map(f=>{const gap=gaps.find(g=>g.number===f.number),cluster=clusters.find(c=>c.number===f.number),bayes=bayesian.find(b=>b.number===f.number);return{number:f.number,frequency:f.frequency,expected:f.expected,deviation:f.deviation,zScore:f.zScore,isHot:f.isHot,isCold:f.isCold,gap:gap?.gap||0,overdue:gap?.overdue||0,probability:bayes?.probability||0,clusterScore:cluster?.score||0,topPairs:cluster?.topPairs?.map(p=>p.pair)||[]};});
+    return{lotteryId:this.id,lotteryName:this.config.name,totalDraws:this.results.length,numberStats:numberStats.sort((a,b)=>a.number-b.number),hotNumbers:freq.filter(f=>f.isHot).map(f=>f.number),coldNumbers:freq.filter(f=>f.isCold).map(f=>f.number),overdueNumbers:gaps.filter(g=>g.overdue>1.5).sort((a,b)=>b.overdue-a.overdue).map(g=>g.number),topPairs:clusters[0]?.topPairs?.slice(0,10)||[],predictionRecord:{hits,partials,misses,total:preds.length,hitRate:preds.length>0?((hits/preds.length)*100).toFixed(1):'0'},modelWeights:this.weights,lastDraw:this.results[0]||null,last10:this.results.slice(0,10)};
+  }
+}
 
 <script>
 // ═══════════════════════════════════════════════════════════
