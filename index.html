@@ -1538,6 +1538,11 @@
   <div class="logo">BET<span>LAB</span> PRO</div>
   <div id="mob-page-title">DASHBOARD</div>
   <div class="topbar-right">
+    <!-- Auth buttons (shown when not logged in) -->
+    <div id="topbar-auth-btns" style="display:flex;gap:8px">
+      <button class="btn btn-cyan btn-sm" onclick="showPage('profile');switchAuthTab('login')" style="font-size:10px;padding:5px 12px">Sign In</button>
+      <button class="btn btn-green btn-sm" onclick="showPage('profile');switchAuthTab('signup')" style="font-size:10px;padding:5px 12px">Register</button>
+    </div>
     <div id="lang-wrap">
       <span class="lang-icon">🌐</span>
       <select id="lang-select" onchange="applyTranslation(this.value)" title="Translate page">
@@ -1695,6 +1700,17 @@
     </div>
     <div class="nav-item" id="admin-nav" onclick="window.open('admin.html','_self')" style="display:none">
       <span class="nav-icon">🔑</span> Admin Panel
+    </div>
+  </div>
+
+  <div class="nav-divider"></div>
+  <div class="nav-section">
+    <div class="nav-label">Info</div>
+    <div class="nav-item" onclick="showPage('about')">
+      <span class="nav-icon">ℹ️</span> About
+    </div>
+    <div class="nav-item" onclick="showPage('legal')">
+      <span class="nav-icon">📜</span> Legal & Privacy
     </div>
   </div>
 </nav>
@@ -3641,11 +3657,60 @@
             </div>
             <div class="field-group">
               <label class="field-label">Username *</label>
-              <input type="text" id="signup-username" placeholder="johndoe123" autocomplete="username">
+              <input type="text" id="signup-username" placeholder="johndoe123" autocomplete="username" style="text-transform:lowercase">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Country *</label>
+              <select id="signup-country" onchange="updateDialCode()" autocomplete="country-name">
+                <option value="">Select country...</option>
+                <option value="NG" data-dial="+234">🇳🇬 Nigeria</option>
+                <option value="GH" data-dial="+233">🇬🇭 Ghana</option>
+                <option value="KE" data-dial="+254">🇰🇪 Kenya</option>
+                <option value="ZA" data-dial="+27">🇿🇦 South Africa</option>
+                <option value="TZ" data-dial="+255">🇹🇿 Tanzania</option>
+                <option value="UG" data-dial="+256">🇺🇬 Uganda</option>
+                <option value="CM" data-dial="+237">🇨🇲 Cameroon</option>
+                <option value="ET" data-dial="+251">🇪🇹 Ethiopia</option>
+                <option value="SN" data-dial="+221">🇸🇳 Senegal</option>
+                <option value="CI" data-dial="+225">🇨🇮 Ivory Coast</option>
+                <option value="RW" data-dial="+250">🇷🇼 Rwanda</option>
+                <option value="GB" data-dial="+44">🇬🇧 United Kingdom</option>
+                <option value="US" data-dial="+1">🇺🇸 United States</option>
+                <option value="CA" data-dial="+1">🇨🇦 Canada</option>
+                <option value="AU" data-dial="+61">🇦🇺 Australia</option>
+                <option value="IN" data-dial="+91">🇮🇳 India</option>
+                <option value="CN" data-dial="+86">🇨🇳 China</option>
+                <option value="DE" data-dial="+49">🇩🇪 Germany</option>
+                <option value="FR" data-dial="+33">🇫🇷 France</option>
+                <option value="IT" data-dial="+39">🇮🇹 Italy</option>
+                <option value="ES" data-dial="+34">🇪🇸 Spain</option>
+                <option value="PT" data-dial="+351">🇵🇹 Portugal</option>
+                <option value="NL" data-dial="+31">🇳🇱 Netherlands</option>
+                <option value="BR" data-dial="+55">🇧🇷 Brazil</option>
+                <option value="AE" data-dial="+971">🇦🇪 UAE</option>
+                <option value="SA" data-dial="+966">🇸🇦 Saudi Arabia</option>
+                <option value="PK" data-dial="+92">🇵🇰 Pakistan</option>
+                <option value="BD" data-dial="+880">🇧🇩 Bangladesh</option>
+                <option value="PH" data-dial="+63">🇵🇭 Philippines</option>
+                <option value="ID" data-dial="+62">🇮🇩 Indonesia</option>
+                <option value="MY" data-dial="+60">🇲🇾 Malaysia</option>
+                <option value="JP" data-dial="+81">🇯🇵 Japan</option>
+                <option value="KR" data-dial="+82">🇰🇷 South Korea</option>
+                <option value="MX" data-dial="+52">🇲🇽 Mexico</option>
+                <option value="AR" data-dial="+54">🇦🇷 Argentina</option>
+                <option value="CO" data-dial="+57">🇨🇴 Colombia</option>
+                <option value="RU" data-dial="+7">🇷🇺 Russia</option>
+                <option value="TR" data-dial="+90">🇹🇷 Turkey</option>
+                <option value="EG" data-dial="+20">🇪🇬 Egypt</option>
+                <option value="OTHER" data-dial="">Other</option>
+              </select>
             </div>
             <div class="field-group">
               <label class="field-label">Phone Number *</label>
-              <input type="tel" id="signup-phone" placeholder="+234 800 000 0000" autocomplete="tel">
+              <div style="display:flex;gap:6px">
+                <input type="text" id="signup-dialcode" style="width:70px;text-align:center;font-weight:600;color:var(--accent-cyan)" readonly placeholder="+___">
+                <input type="tel" id="signup-phone" placeholder="800 000 0000" autocomplete="tel" style="flex:1">
+              </div>
             </div>
             <div class="field-group">
               <label class="field-label">Email Address *</label>
@@ -3662,14 +3727,14 @@
               <input type="text" id="signup-address" placeholder="123 Main Street" autocomplete="street-address">
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div class="field-group">
-                <label class="field-label">City</label>
-                <input type="text" id="signup-city" placeholder="Lagos" autocomplete="address-level2">
-              </div>
-              <div class="field-group">
-                <label class="field-label">State / Province</label>
-                <input type="text" id="signup-state" placeholder="Lagos State" autocomplete="address-level1">
-              </div>
+            <div class="field-group">
+              <label class="field-label">City *</label>
+              <input type="text" id="signup-city" placeholder="Lagos" autocomplete="address-level2">
+            </div>
+            <div class="field-group">
+              <label class="field-label">State / Province *</label>
+              <input type="text" id="signup-state" placeholder="Lagos State" autocomplete="address-level1">
+            </div>
             </div>
             <div class="field-group">
               <label class="field-label">Country</label>
@@ -3849,6 +3914,101 @@
     </div>
 
   </div>
+
+
+  <!-- ── ABOUT PAGE ── -->
+  <div id="page-about" class="page">
+    <div class="page-header">
+      <div class="page-title">ABOUT BETLAB PRO</div>
+      <div class="page-subtitle">Where betting meets data science</div>
+    </div>
+    <div class="card" style="max-width:800px">
+      <div style="font-size:15px;line-height:1.8;color:var(--text-secondary)">
+        <p style="margin-bottom:16px"><strong style="color:var(--accent-cyan);font-size:20px">BetLab Pro</strong> is a professional-grade analytics platform built for traders who see betting beyond gambling. This is not about luck — it is about data, probability, and informed decision-making.</p>
+        <p style="margin-bottom:16px">Our platform equips you with the same analytical tools used by professional sports traders: odds calculators, Kelly Criterion staking, Martingale sequence planners, back-bet recovery systems, arbitrage scanners across 40+ bookmakers, AI-powered lottery predictions, and real-time market data — all in one interface.</p>
+        <div style="margin:28px 0;padding:20px;background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:var(--radius)">
+          <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--accent-cyan);margin-bottom:12px">KEY FEATURES</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;color:var(--text-secondary)">
+            <div>&#x1F4CA; Odds Calculator &amp; Converter</div><div>&#x1F3AF; Probability Engine</div>
+            <div>&#x1F4B0; Kelly Criterion Staking</div><div>&#x1F504; Martingale Sequence Planner</div>
+            <div>&#x1F6E1;&#xFE0F; Back-Bet Recovery System</div><div>&#x2696;&#xFE0F; Multi-Odd Arbitrage Calculator</div>
+            <div>&#x1F4B9; Live Arbitrage Scanner</div><div>&#x1F3C0; NBA &amp; Football Predictions</div>
+            <div>&#x1F3B0; AI-Powered Lottery Lab</div><div>&#x2708;&#xFE0F; Aviator Crash Analytics</div>
+            <div>&#x1F4C8; Strategy Backtester</div><div>&#x1F30D; 25+ Language Support</div>
+          </div>
+        </div>
+        <p style="margin-bottom:16px">BetLab Pro is projected for traders — people who approach betting markets with strategy, discipline, and respect for mathematics. Every tool on this platform is designed to give you an analytical edge, not a false promise.</p>
+      </div>
+    </div>
+    <div class="card" style="max-width:800px">
+      <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+        <img src="data:image/jpeg;base64,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" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid var(--accent-cyan);flex-shrink:0" alt="Tabuku Kuro">
+        <div>
+          <div style="font-family:'Sora',sans-serif;font-size:20px;font-weight:800;color:var(--text-primary)">Tabuku Kuro</div>
+          <div style="font-size:13px;color:var(--accent-cyan);margin:4px 0 12px">@KuroSoft &mdash; Creator &amp; Developer</div>
+          <div style="font-size:14px;line-height:1.7;color:var(--text-secondary)">BetLab Pro is entirely conceived, designed, and developed by Tabuku Kuro. Every feature, from the arbitrage engine to the AI lottery models, from the Cloudflare Workers backend to the real-time scraping infrastructure &mdash; all built from the ground up. This platform represents the vision that betting analytics should be accessible, powerful, and beautiful.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LEGAL PAGE ── -->
+  <div id="page-legal" class="page">
+    <div class="page-header">
+      <div class="page-title">LEGAL &amp; PRIVACY</div>
+      <div class="page-subtitle">Terms of Service, Privacy Policy, Cookie Policy &amp; Disclaimer</div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px">
+      <button class="stats-tab active" onclick="showLegalTab('disclaimer',this)">Disclaimer</button>
+      <button class="stats-tab" onclick="showLegalTab('terms',this)">Terms of Service</button>
+      <button class="stats-tab" onclick="showLegalTab('privacy',this)">Privacy Policy</button>
+      <button class="stats-tab" onclick="showLegalTab('cookies',this)">Cookie Policy</button>
+    </div>
+    <div id="legal-disclaimer" class="card" style="max-width:800px;font-size:13px;line-height:1.8;color:var(--text-secondary)">
+      <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-orange);margin-bottom:12px">&#x26A0;&#xFE0F; Disclaimer</div>
+      <p style="margin-bottom:12px">BetLab Pro is an <strong>analytical tool only</strong>. We do not operate as a bookmaker, gambling operator, or financial advisor. All predictions, analyses, and recommendations are for <strong>informational and educational purposes only</strong>.</p>
+      <p style="margin-bottom:12px">Betting and gambling involve significant financial risk. Past performance does not guarantee future results. Statistical models and AI predictions are based on historical data and mathematical probability.</p>
+      <p style="margin-bottom:12px"><strong>You are solely responsible</strong> for your betting decisions and any financial losses incurred. BetLab Pro, its creator, and affiliates accept no liability for any losses arising from use of this platform.</p>
+      <p>If you or someone you know has a gambling problem, please seek help from a professional gambling support organization in your country.</p>
+    </div>
+    <div id="legal-terms" class="card" style="max-width:800px;font-size:13px;line-height:1.8;color:var(--text-secondary);display:none">
+      <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:12px">&#x1F4CB; Terms of Service</div>
+      <p style="margin-bottom:10px"><strong>1. Acceptance.</strong> By accessing BetLab Pro, you agree to these terms.</p>
+      <p style="margin-bottom:10px"><strong>2. Service.</strong> BetLab Pro provides betting analytics tools, statistical models, and educational content. We are not a gambling operator.</p>
+      <p style="margin-bottom:10px"><strong>3. Accounts.</strong> You are responsible for your account credentials and must provide accurate registration information. We may suspend accounts that violate these terms.</p>
+      <p style="margin-bottom:10px"><strong>4. Acceptable Use.</strong> Do not use the platform for illegal purposes, hack or exploit the system, resell our tools, or create multiple accounts.</p>
+      <p style="margin-bottom:10px"><strong>5. Intellectual Property.</strong> All content, code, algorithms, and designs are the property of Tabuku Kuro / KuroSoft.</p>
+      <p style="margin-bottom:10px"><strong>6. Liability.</strong> BetLab Pro is provided &quot;as is&quot; without warranties. We are not liable for losses resulting from use of our tools.</p>
+      <p><strong>7. Changes.</strong> We may update these terms at any time. Continued use constitutes acceptance.</p>
+    </div>
+    <div id="legal-privacy" class="card" style="max-width:800px;font-size:13px;line-height:1.8;color:var(--text-secondary);display:none">
+      <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-green);margin-bottom:12px">&#x1F512; Privacy Policy</div>
+      <p style="margin-bottom:10px"><strong>Data Collected:</strong> Name, username, email, phone, address when you register. Analytics: pages visited, time spent, device info, browser type.</p>
+      <p style="margin-bottom:10px"><strong>Usage:</strong> To provide and improve the service, personalize your experience, and understand usage patterns.</p>
+      <p style="margin-bottom:10px"><strong>Storage:</strong> Secured via Google Firebase with encryption in transit. Passwords are hashed by Firebase Authentication.</p>
+      <p style="margin-bottom:10px"><strong>Third Parties:</strong> We do not sell personal information. We use Firebase (Google) and Cloudflare for infrastructure.</p>
+      <p><strong>Your Rights:</strong> Request access to or deletion of your data by contacting the administrator.</p>
+    </div>
+    <div id="legal-cookies" class="card" style="max-width:800px;font-size:13px;line-height:1.8;color:var(--text-secondary);display:none">
+      <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-purple);margin-bottom:12px">&#x1F36A; Cookie Policy</div>
+      <p style="margin-bottom:10px"><strong>Essential:</strong> Firebase authentication tokens for login.</p>
+      <p style="margin-bottom:10px"><strong>Preferences:</strong> Language selection and theme settings in localStorage.</p>
+      <p style="margin-bottom:10px"><strong>Analytics:</strong> Anonymous usage data to improve the platform.</p>
+      <p>You can clear cookies via browser settings. Clearing essential cookies will log you out. By using BetLab Pro, you consent to our use of cookies.</p>
+    </div>
+  </div>
+
+
+<!-- ── FOOTER ── -->
+<footer style="border-top:1px solid var(--border-dim);padding:24px 28px;margin-top:40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+  <div style="font-size:12px;color:var(--text-muted)">&copy; 2024-2026 <strong style="color:var(--text-secondary)">BetLab Pro</strong> by <span style="color:var(--accent-cyan)">Tabuku Kuro (KuroSoft)</span>. All rights reserved.</div>
+  <div style="display:flex;gap:16px;font-size:11px">
+    <a href="#" onclick="showPage('about');return false" style="color:var(--text-muted);text-decoration:none">About</a>
+    <a href="#" onclick="showPage('legal');return false" style="color:var(--text-muted);text-decoration:none">Terms</a>
+    <a href="#" onclick="showPage('legal');return false" style="color:var(--text-muted);text-decoration:none">Privacy</a>
+    <a href="#" onclick="showPage('legal');return false" style="color:var(--text-muted);text-decoration:none">Disclaimer</a>
+  </div>
+</footer>
 
 </main>
 
@@ -7890,6 +8050,15 @@ export default {
   }
   window.switchAuthTab = switchAuthTab;
 
+  // ── Auto-fill phone dial code from country ──
+  function updateDialCode() {
+    const sel = document.getElementById('signup-country');
+    const opt = sel.options[sel.selectedIndex];
+    const dial = opt.getAttribute('data-dial') || '';
+    document.getElementById('signup-dialcode').value = dial;
+  }
+  window.updateDialCode = updateDialCode;
+
   function signupNextStep(step) {
     const msg = document.getElementById('signup-msg'); msg.style.display = 'none';
     if (step === 2) {
@@ -7926,7 +8095,10 @@ export default {
   async function doSignup() {
     if (!rateLimit('signup', 3000)) return;
     const fullname=sanitize(document.getElementById('signup-fullname').value.trim()), username=sanitize(document.getElementById('signup-username').value.trim().toLowerCase());
-    const phone=sanitize(document.getElementById('signup-phone').value.trim()), email=sanitize(document.getElementById('signup-email').value.trim());
+    const dialCode=document.getElementById('signup-dialcode').value||'';
+    const phoneRaw=sanitize(document.getElementById('signup-phone').value.trim());
+    const phone=dialCode?(dialCode+' '+phoneRaw):phoneRaw;
+    const email=sanitize(document.getElementById('signup-email').value.trim());
     const address=sanitize(document.getElementById('signup-address').value.trim()), city=sanitize(document.getElementById('signup-city').value.trim());
     const state=sanitize(document.getElementById('signup-state').value.trim()), country=document.getElementById('signup-country').value;
     const password=document.getElementById('signup-password').value, confirmPw=document.getElementById('signup-password-confirm').value;
@@ -8006,7 +8178,9 @@ export default {
   }
 
   auth.onAuthStateChanged(async (user) => {
+    const authBtns = document.getElementById('topbar-auth-btns');
     if (user) {
+      if (authBtns) authBtns.style.display = 'none';
       try {
         const doc=await db.collection('users').doc(user.uid).get();
         if(doc.exists) {
@@ -8017,7 +8191,7 @@ export default {
         }
       } catch(e) {}
       renderUserDash(); trackAnalytics('session_start');
-    } else { _cachedUser=null; document.getElementById('auth-view').style.display='block'; document.getElementById('dash-view').style.display='none'; updateTopbarAvatar(null); }
+    } else { _cachedUser=null; document.getElementById('auth-view').style.display='block'; document.getElementById('dash-view').style.display='none'; updateTopbarAvatar(null); if(authBtns) authBtns.style.display='flex'; }
   });
   trackVisitor();
 
@@ -8094,7 +8268,8 @@ export default {
       'arbitrary-calc':'ARBITRARY','backtester':'BACKTESTER','data-collect':'DATA',
       '49ja-live':'49JA LIVE','49ja-stats':'49JA STATS','profile':'ACCOUNT',
       'nba-predictions':'NBA','football-predictions':'FOOTBALL','arb-scanner':'ARB SCANNER',
-      'prediction-history':'MY PICKS','aviator':'AVIATOR'
+      'prediction-history':'MY PICKS','aviator':'AVIATOR',
+      'about':'ABOUT','legal':'LEGAL'
     };
     const titleEl = document.getElementById('mob-page-title');
     if (titleEl) titleEl.textContent = labels[id] || id.toUpperCase();
@@ -8105,6 +8280,19 @@ export default {
   function toggleMobNav() {
     document.body.classList.toggle('mob-nav-open');
   }
+
+  // ── Legal page tab switching ──
+  function showLegalTab(tab, btn) {
+    ['disclaimer','terms','privacy','cookies'].forEach(t => {
+      const el = document.getElementById('legal-' + t);
+      if (el) el.style.display = t === tab ? 'block' : 'none';
+    });
+    if (btn) {
+      btn.parentElement.querySelectorAll('.stats-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  }
+  window.showLegalTab = showLegalTab;
 
   // ── Bottom nav tab handler ──
   function mobNavGo(pageId, btn) {
