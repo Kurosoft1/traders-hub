@@ -362,7 +362,10 @@ function selectLottery(id) {
   const config = LOTTERIES[id];
   document.getElementById('ld-title').textContent = config.icon + ' ' + config.name;
   document.getElementById('ld-subtitle').textContent = `Pool: ${config.pool} numbers · Draw: ${config.draw} balls · ${config.schedule}`;
-  document.getElementById('ld-result-date').value = new Date().toISOString().slice(0, 10);
+  
+  // Show fetch status
+  const statusEl = document.getElementById('ld-fetch-status');
+  if (statusEl) statusEl.textContent = currentAnalyzer.results.length + ' draws loaded';
   
   renderDashboard();
 }
