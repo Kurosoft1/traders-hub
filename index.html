@@ -1709,6 +1709,9 @@
     <div class="nav-item" onclick="showPage('about')">
       <span class="nav-icon">ℹ️</span> About
     </div>
+    <div class="nav-item" onclick="showPage('guide')">
+      <span class="nav-icon">📖</span> How To Use
+    </div>
     <div class="nav-item" onclick="showPage('legal')">
       <span class="nav-icon">📜</span> Legal & Privacy
     </div>
@@ -3916,6 +3919,88 @@
   </div>
 
 
+  <!-- ── HOW TO USE / SERVICES GUIDE ── -->
+  <div id="page-guide" class="page">
+    <div class="page-header">
+      <div class="page-title">HOW TO USE BETLAB PRO</div>
+      <div class="page-subtitle">Complete guide to every tool and feature</div>
+    </div>
+
+    <div style="display:grid;gap:16px;max-width:900px">
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">📊 Odds Calculator</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">Convert between all major odds formats: Decimal, Fractional, American (Moneyline), and Implied Probability. Enter any format and instantly see all others. Use this to compare odds from different bookmakers that display in different formats.</div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">🎯 Probability Calculator</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">Calculate combined probabilities for accumulators and parlays. Enter individual event probabilities and see the combined chance of all events occurring together. Helps you understand the real probability behind multi-bet accumulators.</div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">💰 Stake Manager (Kelly Criterion)</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">Calculates the mathematically optimal stake size using the Kelly Criterion formula. Enter your bankroll, the odds, and your estimated probability of winning. The calculator tells you exactly how much to stake to maximize long-term growth while minimizing risk of ruin.</div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">🔄 Martingale Calculator</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">Plan your entire Martingale betting sequence before you start. Enter your base stake, odds, and number of rounds. See the exact stake amount for each round, cumulative exposure, and the bankroll needed. Know your limits before committing — this tool shows you when the math stops working.</div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">🛡️ Back-Bet Recovery System</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">A dual-bet system with two components: the Recovery Bet (chases profit at higher odds) and the Back Bet (protects your money at lower odds). Enter your target profit, select your odds, and the calculator shows exactly how much to place on each bet. If the high-odds bet wins, you profit. If it loses, the back bet recovers your money.</div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">⚖️ Arbitrary Calculator (Multi-Odd)</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">Bet on 2 to 6 different odds simultaneously and guarantee equal profit regardless of which one wins. Enter your total stake and the odds for each selection. The calculator distributes stakes so that no matter which bet wins, your payout is the same. Perfect for hedging across multiple outcomes.</div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">💹 Arbitrage Scanner</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">Scans live odds from 40+ bookmakers across Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Champions League, and NBA. Automatically detects when different bookmakers offer odds that create a guaranteed profit opportunity (arbitrage). Shows you exactly which bookmaker to bet with, how much to stake, and your guaranteed profit percentage.</div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">🏀 NBA &amp; ⚽ Football Predictions</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">AI-generated predictions for upcoming matches. Each prediction shows win probabilities for home/away/draw, a confidence rating, and recommended picks. For football: match result (1X2) and Both Teams to Score (GG/NG). For NBA: moneyline picks and over/under analysis. Save your picks to the Prediction History page to track your win/loss record over time.</div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">📋 Prediction History</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">Track every prediction you have saved. After matches are played, real scores are fetched automatically to determine if your pick was a Win or Loss. View your overall hit rate, win streaks, and performance by sport. This is your personal track record — use it to refine your strategy over time.</div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">🎰 Lottery Lab</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">AI-powered lottery analysis covering UK 49s, Ghana Lotto, US Powerball, Mega Millions, EuroMillions, China Welfare, SA Powerball, Nigeria Lotto, and more. Uses 6 statistical models (frequency analysis, Bayesian probability, Markov chains, gap analysis, clustering, and regression) that learn and adapt over time. View number statistics, hot/cold numbers, and generate AI predictions.</div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">🔴 49ja Live</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">Real-time feed of Bet9ja 49 Balls lottery draws. Connects to the live game API to show results as they happen, with colour analysis, frequency tracking, and pattern detection. The Stats page provides deep analysis of historical draws with number frequency, gap analysis, and due-number predictions.</div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">✈️ Aviator Analytics</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">Connects to a live Aviator game scraper to pull real multiplier results. Displays distribution charts, streak analysis, and cash-out simulations. Enter your VPS scraper URL to connect, or manually input multipliers. Use the statistics to understand the mathematical patterns behind crash game outcomes.</div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">▷ Strategy Backtester</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">Test any staking strategy against historical data before risking real money. Choose a system (flat stake, percentage, Martingale, Fibonacci), set your bankroll, and simulate hundreds of bets. See your projected P&amp;L curve, maximum drawdown, win rate, and ROI. Know whether a strategy works before you use it.</div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--accent-cyan);margin-bottom:8px">▷ Data Collection</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">Log every bet you place with full details: sport, event, market, odds, stake, and result. Build your personal betting dataset over time. Use this data to identify which sports, leagues, and bet types give you the best returns — and which ones to avoid.</div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ── ABOUT PAGE ── -->
   <div id="page-about" class="page">
     <div class="page-header">
@@ -3946,7 +4031,7 @@
         <div>
           <div style="font-family:'Sora',sans-serif;font-size:20px;font-weight:800;color:var(--text-primary)">Tabuku Kuro</div>
           <div style="font-size:13px;color:var(--accent-cyan);margin:4px 0 12px">@KuroSoft &mdash; Creator &amp; Developer</div>
-          <div style="font-size:14px;line-height:1.7;color:var(--text-secondary)">BetLab Pro is entirely conceived, designed, and developed by Tabuku Kuro. Every feature, from the arbitrage engine to the AI lottery models, from the Cloudflare Workers backend to the real-time scraping infrastructure &mdash; all built from the ground up. This platform represents the vision that betting analytics should be accessible, powerful, and beautiful.</div>
+          <div style="font-size:14px;line-height:1.7;color:var(--text-secondary)">This platform represents the vision that betting analytics should be accessible, powerful, and beautiful.</div>
         </div>
       </div>
     </div>
@@ -6921,65 +7006,58 @@ export default {
   // FOOTBALL PREDICTIONS ENGINE
   // ══════════════════════════════════════════════════════════
 
-  const FB_LEAGUES = {
-    ucl: {name:'Champions League',icon:'🏆',fixtures:[
-      {home:'Galatasaray',away:'Liverpool FC',time:'Mar 10 · 5:45 PM',wp:{h:21.1,a:56.1,d:22.8}},
-      {home:'Newcastle Utd',away:'FC Barcelona',time:'Mar 10 · 8:00 PM',wp:{h:36.4,a:39.2,d:24.4}},
-      {home:'Atletico Madrid',away:'Tottenham',time:'Mar 10 · 8:00 PM',wp:{h:56.8,a:18.5,d:24.7}},
-      {home:'Atalanta BC',away:'Bayern Munich',time:'Mar 10 · 8:00 PM',wp:{h:20.7,a:57.9,d:21.4}},
-      {home:'Leverkusen',away:'Arsenal FC',time:'Mar 11 · 5:45 PM',wp:{h:16.2,a:61.4,d:22.4}},
-      {home:'Real Madrid',away:'Man City',time:'Mar 11 · 8:00 PM',wp:{h:27.5,a:47.7,d:24.8}},
-      {home:'Bodoe/Glimt',away:'Sporting CP',time:'Mar 11 · 8:00 PM',wp:{h:37.1,a:37.0,d:25.9}},
-      {home:'PSG',away:'Chelsea FC',time:'Mar 11 · 8:00 PM',wp:{h:49.3,a:26.0,d:24.7}}
-    ]},
-    epl: {name:'Premier League',icon:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',fixtures:[
-      {home:'Burnley',away:'Bournemouth',time:'Mar 14 · 3:00 PM',wp:{h:23.6,a:51.4,d:25.0}},
-      {home:'Sunderland',away:'Brighton',time:'Mar 14 · 3:00 PM',wp:{h:28.6,a:42.9,d:28.5}},
-      {home:'Arsenal',away:'Everton',time:'Mar 14 · 5:30 PM',wp:{h:70.9,a:10.5,d:18.6}},
-      {home:'Chelsea',away:'Newcastle',time:'Mar 14 · 5:30 PM',wp:{h:53.6,a:23.7,d:22.7}},
-      {home:'West Ham',away:'Man City',time:'Mar 14 · 8:00 PM',wp:{h:20.6,a:57.6,d:21.8}},
-      {home:'Crystal Palace',away:'Leeds Utd',time:'Mar 15 · 2:00 PM',wp:{h:40.4,a:30.9,d:28.7}},
-      {home:'Man United',away:'Aston Villa',time:'Mar 15 · 2:00 PM',wp:{h:54.2,a:22.2,d:23.6}},
-      {home:'Nottingham F.',away:'Fulham',time:'Mar 15 · 2:00 PM',wp:{h:43.8,a:28.7,d:27.5}},
-      {home:'Liverpool',away:'Tottenham',time:'Mar 15 · 4:30 PM',wp:{h:72.1,a:11.6,d:16.3}},
-      {home:'Brentford',away:'Wolves',time:'Mar 16 · 8:00 PM',wp:{h:61.2,a:16.7,d:22.1}}
-    ]},
-    laliga: {name:'La Liga',icon:'🇪🇸',fixtures:[
-      {home:'Dep. Alaves',away:'Villarreal',time:'Mar 13 · 8:00 PM',wp:{h:29.1,a:43.4,d:27.5}},
-      {home:'Girona',away:'Athletic Bilbao',time:'Mar 14 · 1:00 PM',wp:{h:34.7,a:36.6,d:28.7}},
-      {home:'Atletico Madrid',away:'Getafe',time:'Mar 14 · 3:15 PM',wp:{h:60.1,a:14.2,d:25.7}},
-      {home:'Real Oviedo',away:'Valencia',time:'Mar 14 · 5:30 PM',wp:{h:32.9,a:37.2,d:29.9}},
-      {home:'Real Madrid',away:'Elche',time:'Mar 14 · 8:00 PM',wp:{h:78.0,a:8.3,d:13.7}},
-      {home:'RCD Mallorca',away:'Espanyol',time:'Mar 15 · 1:00 PM',wp:{h:40.1,a:29.4,d:30.5}},
-      {home:'Barcelona',away:'Sevilla',time:'Mar 15 · 3:15 PM',wp:{h:78.1,a:8.9,d:13.0}},
-      {home:'Real Betis',away:'Celta Vigo',time:'Mar 15 · 5:30 PM',wp:{h:43.2,a:27.9,d:28.9}},
-      {home:'Real Sociedad',away:'Osasuna',time:'Mar 15 · 8:00 PM',wp:{h:49.1,a:23.4,d:27.5}},
-      {home:'Rayo Vallecano',away:'Levante',time:'Mar 16 · 8:00 PM',wp:{h:55.9,a:19.3,d:24.8}}
-    ]},
-    seriea: {name:'Serie A',icon:'🇮🇹',fixtures:[
-      {home:'Torino',away:'Parma',time:'Mar 13 · 7:45 PM',wp:{h:44.9,a:24.6,d:30.5}},
-      {home:'Inter Milan',away:'Atalanta',time:'Mar 14 · 2:00 PM',wp:{h:62.1,a:16.3,d:21.6}},
-      {home:'Napoli',away:'Lecce',time:'Mar 14 · 5:00 PM',wp:{h:69.6,a:9.9,d:20.5}},
-      {home:'Udinese',away:'Juventus',time:'Mar 14 · 7:45 PM',wp:{h:16.2,a:60.0,d:23.8}},
-      {home:'Verona',away:'Genoa',time:'Mar 15 · 11:30 AM',wp:{h:29.5,a:39.1,d:31.4}},
-      {home:'Pisa',away:'Cagliari',time:'Mar 15 · 2:00 PM',wp:{h:37.7,a:31.3,d:31.0}},
-      {home:'Sassuolo',away:'Bologna',time:'Mar 15 · 2:00 PM',wp:{h:35.3,a:35.9,d:28.8}},
-      {home:'Como',away:'AS Roma',time:'Mar 15 · 5:00 PM',wp:{h:43.7,a:27.9,d:28.4}},
-      {home:'Lazio',away:'AC Milan',time:'Mar 15 · 7:45 PM',wp:{h:24.6,a:46.9,d:28.5}},
-      {home:'Cremonese',away:'Fiorentina',time:'Mar 16 · 7:45 PM',wp:{h:24.7,a:48.8,d:26.5}}
-    ]},
-    buli: {name:'Bundesliga',icon:'🇩🇪',fixtures:[
-      {home:"M'gladbach",away:'St. Pauli',time:'Mar 13 · 7:30 PM',wp:{h:47.6,a:24.3,d:28.1}},
-      {home:'Leverkusen',away:'Bayern Munich',time:'Mar 14 · 2:30 PM',wp:{h:19.9,a:59.5,d:20.6}},
-      {home:'Frankfurt',away:'Heidenheim',time:'Mar 14 · 2:30 PM',wp:{h:62.8,a:16.7,d:20.5}},
-      {home:'Dortmund',away:'Augsburg',time:'Mar 14 · 2:30 PM',wp:{h:68.1,a:13.6,d:18.3}},
-      {home:'Hoffenheim',away:'Wolfsburg',time:'Mar 14 · 2:30 PM',wp:{h:64.8,a:16.2,d:19.0}},
-      {home:'Hamburg',away:'Cologne',time:'Mar 14 · 5:30 PM',wp:{h:45.2,a:28.1,d:26.7}},
-      {home:'Werder Bremen',away:'Mainz',time:'Mar 15 · 2:30 PM',wp:{h:41.3,a:31.6,d:27.1}},
-      {home:'Freiburg',away:'Union Berlin',time:'Mar 15 · 4:30 PM',wp:{h:43.5,a:27.5,d:29.0}},
-      {home:'Stuttgart',away:'RB Leipzig',time:'Mar 15 · 6:30 PM',wp:{h:41.8,a:34.3,d:23.9}}
-    ]}
+  // Football predictions — populated dynamically from the arb worker
+  let FB_LEAGUES = {
+    ucl: {name:'Champions League',icon:'🏆',fixtures:[]},
+    epl: {name:'Premier League',icon:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',fixtures:[]},
+    laliga: {name:'La Liga',icon:'🇪🇸',fixtures:[]},
+    seriea: {name:'Serie A',icon:'🇮🇹',fixtures:[]},
+    buli: {name:'Bundesliga',icon:'🇩🇪',fixtures:[]},
   };
+
+  const SPORT_MAP = {
+    'Champions League':'ucl', 'Premier League':'epl', 'La Liga':'laliga',
+    'Serie A':'seriea', 'Bundesliga':'buli', 'Ligue 1':'buli',
+  };
+
+  // Convert decimal odds to implied probability
+  function oddsToProb(h, d, a) {
+    const total = (1/h) + (1/d) + (1/a);
+    return { h: ((1/h)/total)*100, d: ((1/d)/total)*100, a: ((1/a)/total)*100 };
+  }
+
+  async function fetchFootballFixtures() {
+    try {
+      const res = await fetch(ARB_WORKER_URL);
+      const data = await res.json();
+      if (!data.opportunities) return;
+
+      // Reset fixtures
+      Object.keys(FB_LEAGUES).forEach(k => FB_LEAGUES[k].fixtures = []);
+
+      data.opportunities.forEach(opp => {
+        if (!opp.isThreeWay) return; // Skip NBA (2-way)
+        const leagueKey = SPORT_MAP[opp.sport];
+        if (!leagueKey || !FB_LEAGUES[leagueKey]) return;
+
+        // Get best odds to compute probabilities
+        const hOdds = opp.bestOdds.home?.odds || 2;
+        const dOdds = opp.bestOdds.draw?.odds || 3.5;
+        const aOdds = opp.bestOdds.away?.odds || 2;
+        const wp = oddsToProb(hOdds, dOdds, aOdds);
+
+        const kickoff = opp.commenceTime ? new Date(opp.commenceTime) : new Date();
+        const timeStr = kickoff.toLocaleDateString('en-GB', {month:'short',day:'numeric'}) + ' · ' + kickoff.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+
+        FB_LEAGUES[leagueKey].fixtures.push({
+          home: opp.homeTeam,
+          away: opp.awayTeam,
+          time: timeStr,
+          wp: { h: Math.round(wp.h*10)/10, d: Math.round(wp.d*10)/10, a: Math.round(wp.a*10)/10 },
+        });
+      });
+    } catch(e) { console.warn('Football fixtures fetch failed:', e); }
+  }
 
   function fbPredict(wp) {
     // 1X2 pick
@@ -7100,7 +7178,9 @@ export default {
   window.switchFbTab = switchFbTab;
 
   async function renderFootballPage() {
-    // Render cards immediately with static data
+    // Fetch live fixtures from arb worker
+    await fetchFootballFixtures();
+    // Render cards
     _renderFootballCards();
     // Then fetch live odds and re-render with odds
     try { await fetchLiveOdds(); _renderFootballCards(); } catch(e) { console.warn('Live odds fetch failed:', e); }
@@ -8269,7 +8349,7 @@ export default {
       '49ja-live':'49JA LIVE','49ja-stats':'49JA STATS','profile':'ACCOUNT',
       'nba-predictions':'NBA','football-predictions':'FOOTBALL','arb-scanner':'ARB SCANNER',
       'prediction-history':'MY PICKS','aviator':'AVIATOR',
-      'about':'ABOUT','legal':'LEGAL'
+      'about':'ABOUT','legal':'LEGAL','guide':'HOW TO USE'
     };
     const titleEl = document.getElementById('mob-page-title');
     if (titleEl) titleEl.textContent = labels[id] || id.toUpperCase();
