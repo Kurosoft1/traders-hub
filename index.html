@@ -3432,7 +3432,7 @@
     <!-- Stake input -->
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
       <span style="font-size:13px;font-weight:600;color:var(--text-secondary)">Your stake:</span>
-      <select id="arb-currency" style="max-width:80px;padding:8px;font-size:13px" onchange="renderArbCards()">
+      <select id="arb-scanner-currency" style="max-width:80px;padding:8px;font-size:13px" onchange="renderArbCards()">
         <option value="₦">₦ NGN</option>
         <option value="$">$ USD</option>
         <option value="£">£ GBP</option>
@@ -6295,7 +6295,7 @@ export default {
     const rangeStreaks = streakAnalysis(rangeSeq, rangeOutcomes);
     const oeStreaks    = streakAnalysis(oeSeq, oeOutcomes);
 
-    const el = document.getElementById('sc-dragon-streak');
+    const el = document.getElementById('sc-dragon-streak'); if (!el) return;
     if (el) {
       const rangeSym = { 'LOW-DOM': outcomeSymbol('dragon','LOW'), 'HIGH-DOM': outcomeSymbol('dragon','HIGH'), 'MIXED': outcomeSymbol('dragon','MID') };
       const oeSym    = { 'ODD-DOM':'🔴', 'EVEN-DOM':'🔵', 'BALANCED':'⚪' };
@@ -6330,7 +6330,7 @@ export default {
     }
 
     // ── Distribution card: breakdown counts of low/high/49 balls per draw ──
-    const distEl = document.getElementById('sc-dragon-dist');
+    const distEl = document.getElementById('sc-dragon-dist'); if (!distEl) return;
     if (distEl) {
       // Count across last 100 draws
       const sample = draws.slice(-100);
@@ -6487,7 +6487,7 @@ export default {
     const container = document.getElementById('arb-cards-container');
     if (!container) return;
 
-    const sym = document.getElementById('arb-currency')?.value || '₦';
+    const sym = document.getElementById('arb-scanner-currency')?.value || '₦';
     const totalStake = parseFloat(document.getElementById('arb-stake-input')?.value) || 10000;
     const fmt = v => sym + Math.abs(v).toLocaleString('en', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
