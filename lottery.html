@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BetLab Pro — Lottery Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-void: #0c0f14; --bg-deep: #111620; --bg-card: #161d2a;
+  --border-dim: rgba(255,255,255,0.06); --border-glow: rgba(62,207,255,0.12);
+  --text-primary: #e8ecf4; --text-secondary: #94a3b8; --text-muted: #64748b;
+  --accent-cyan: #3ecfff; --accent-green: #34d399; --accent-orange: #f59e0b;
+  --accent-red: #ef4444; --accent-purple: #a855f7;
+  --radius: 12px; --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-void); color:var(--text-primary); font-family:'DM Sans',sans-serif; min-height:100vh; }
+a { color:var(--accent-cyan); text-decoration:none; }
+
+/* Layout */
+.topbar { position:fixed; top:0; left:0; right:0; z-index:90; background:rgba(12,15,20,0.95); backdrop-filter:blur(12px); border-bottom:1px solid var(--border-dim); padding:12px 24px; display:flex; align-items:center; gap:16px; }
+.topbar h1 { font-family:'Sora',sans-serif; font-size:18px; font-weight:800; color:var(--accent-cyan); }
+.topbar .back { font-size:14px; color:var(--text-muted); cursor:pointer; padding:6px 14px; border:1px solid var(--border-dim); border-radius:var(--radius-sm); }
+.topbar .back:hover { color:var(--text-primary); border-color:var(--accent-cyan); }
+.main { max-width:1200px; margin:0 auto; padding:80px 24px 40px; }
+.card { background:var(--bg-card); border:1px solid var(--border-dim); border-radius:var(--radius); padding:20px; margin-bottom:16px; }
+.card-title { font-family:'Sora',sans-serif; font-size:15px; font-weight:700; color:var(--text-primary); margin-bottom:14px; }
+
+/* Lottery grid */
+.lottery-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-bottom:24px; }
+.lottery-card { background:var(--bg-card); border:1px solid var(--border-dim); border-radius:var(--radius); padding:16px; cursor:pointer; transition:all 0.2s; }
+.lottery-card:hover { border-color:var(--accent-cyan); transform:translateY(-2px); }
+.lottery-card.active { border-color:var(--accent-cyan); background:rgba(62,207,255,0.04); }
+.lottery-card .icon { font-size:24px; margin-bottom:6px; }
+.lottery-card .name { font-family:'Sora',sans-serif; font-size:13px; font-weight:700; color:var(--text-primary); }
+.lottery-card .schedule { font-size:11px; color:var(--text-muted); margin-top:2px; }
+.lottery-card .draws { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--accent-green); margin-top:4px; }
+
+/* Tabs */
+.tabs { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.tab { padding:8px 16px; border:1px solid var(--border-dim); border-radius:20px; font-size:12px; font-weight:600; color:var(--text-muted); cursor:pointer; background:transparent; font-family:'DM Sans',sans-serif; }
+.tab.active { border-color:var(--accent-cyan); color:var(--accent-cyan); background:rgba(62,207,255,0.06); }
+
+/* Number balls */
+.ball { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; font-family:'Sora',sans-serif; font-size:13px; font-weight:700; color:#fff; }
+.ball.hot { background:linear-gradient(135deg,#ef4444,#f97316); }
+.ball.cold { background:linear-gradient(135deg,#3b82f6,#6366f1); }
+.ball.normal { background:linear-gradient(135deg,#475569,#64748b); }
+.ball.predicted { background:linear-gradient(135deg,#22cc66,#10b981); box-shadow:0 0 12px rgba(34,204,102,0.3); }
+.ball-sm { width:28px; height:28px; font-size:11px; }
+
+/* Stats table */
+.stats-table { width:100%; border-collapse:collapse; }
+.stats-table th { padding:8px 10px; font-size:10px; font-weight:600; color:var(--text-muted); text-transform:uppercase; text-align:left; border-bottom:1px solid rgba(255,255,255,0.08); }
+.stats-table td { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.03); font-size:12px; }
+
+/* Buttons */
+.btn { padding:8px 16px; border:1px solid var(--border-dim); border-radius:var(--radius-sm); font-size:12px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; background:transparent; color:var(--text-primary); }
+.btn-cyan { border-color:rgba(62,207,255,0.3); color:var(--accent-cyan); background:rgba(62,207,255,0.06); }
+.btn-green { border-color:rgba(52,211,153,0.3); color:var(--accent-green); background:rgba(52,211,153,0.06); }
+
+/* Tag */
+.tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:600; }
+.tag-green { background:rgba(52,211,153,0.1); color:var(--accent-green); }
+.tag-red { background:rgba(239,68,68,0.1); color:var(--accent-red); }
+.tag-orange { background:rgba(245,158,11,0.1); color:var(--accent-orange); }
+.tag-cyan { background:rgba(62,207,255,0.1); color:var(--accent-cyan); }
+
+/* Prediction card */
+.pred-card { background:var(--bg-deep); border:1px solid var(--border-dim); border-radius:var(--radius-sm); padding:14px; margin-bottom:10px; }
+.pred-card.hit { border-color:rgba(52,211,153,0.3); background:rgba(52,211,153,0.04); }
+.pred-card.partial { border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.04); }
+.pred-card.miss { border-color:rgba(239,68,68,0.2); }
+
+@media(max-width:768px) {
+  .lottery-grid { grid-template-columns:repeat(2,1fr); }
+  .main { padding:70px 12px 30px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <a href="index.html" class="back">← BetLab Pro</a>
+  <h1>🎰 LOTTERY LAB</h1>
+  <span style="font-size:11px;color:var(--text-muted);margin-left:auto">AI-powered lottery intelligence</span>
+</div>
+
+<div class="main">
+
+  <!-- Lottery selector -->
+  <div style="margin-bottom:24px">
+    <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:600;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Select Lottery</div>
+    <div class="lottery-grid" id="lottery-grid"></div>
+  </div>
+
+  <!-- Selected lottery dashboard -->
+  <div id="lottery-dashboard" style="display:none">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--text-primary)" id="ld-title"></div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="ld-subtitle"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-green" onclick="generatePrediction()">🎯 Generate Prediction</button>
+        <button class="btn btn-cyan" onclick="showAddResult()">+ Add Result</button>
+      </div>
+    </div>
+
+    <!-- Stats summary -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px" id="ld-stats-grid">
+      <div class="card" style="text-align:center;padding:14px">
+        <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Draws</div>
+        <div id="ld-stat-draws" style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--accent-cyan)">0</div>
+      </div>
+      <div class="card" style="text-align:center;padding:14px">
+        <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Predictions</div>
+        <div id="ld-stat-preds" style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--text-primary)">0</div>
+      </div>
+      <div class="card" style="text-align:center;padding:14px">
+        <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Hits</div>
+        <div id="ld-stat-hits" style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--accent-green)">0</div>
+      </div>
+      <div class="card" style="text-align:center;padding:14px">
+        <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Partials</div>
+        <div id="ld-stat-partials" style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--accent-orange)">0</div>
+      </div>
+      <div class="card" style="text-align:center;padding:14px">
+        <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Hit Rate</div>
+        <div id="ld-stat-rate" style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800">0%</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" id="ld-tab-predict" onclick="switchLdTab('predict')">🎯 Predictions</button>
+      <button class="tab" id="ld-tab-numbers" onclick="switchLdTab('numbers')">🔢 Number Stats</button>
+      <button class="tab" id="ld-tab-history" onclick="switchLdTab('history')">📜 Draw History</button>
+      <button class="tab" id="ld-tab-models" onclick="switchLdTab('models')">🧠 AI Models</button>
+    </div>
+
+    <!-- Predictions panel -->
+    <div id="ld-panel-predict">
+      <div id="ld-latest-pred"></div>
+      <div id="ld-pred-history"></div>
+    </div>
+
+    <!-- Number stats panel -->
+    <div id="ld-panel-numbers" style="display:none">
+      <div class="card">
+        <div class="card-title">Hot & Cold Numbers</div>
+        <div id="ld-hot-cold" style="margin-bottom:16px"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">All Numbers — Frequency, Gap & Probability</div>
+        <div style="overflow-x:auto" id="ld-number-table"></div>
+      </div>
+    </div>
+
+    <!-- Draw history panel -->
+    <div id="ld-panel-history" style="display:none">
+      <div class="card">
+        <div class="card-title">Recent Draws</div>
+        <div id="ld-draw-list"></div>
+      </div>
+    </div>
+
+    <!-- AI Models panel -->
+    <div id="ld-panel-models" style="display:none">
+      <div class="card">
+        <div class="card-title">🧠 Model Weights — Continuous Learning</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:16px">The engine automatically adjusts which statistical models get more weight based on which ones produce better predictions over time.</div>
+        <div id="ld-model-weights"></div>
+      </div>
+    </div>
+
+    <!-- Add Result modal -->
+    <div id="ld-add-result" style="display:none" class="card">
+      <div class="card-title">Add Draw Result</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+        <input type="text" id="ld-result-numbers" placeholder="Enter numbers separated by commas (e.g. 5,12,23,34,41,49)" style="flex:1;min-width:200px;padding:10px;font-size:14px;font-family:'JetBrains Mono',monospace">
+        <input type="text" id="ld-result-bonus" placeholder="Bonus (optional)" style="width:100px;padding:10px;font-size:14px">
+        <input type="date" id="ld-result-date" style="padding:10px;font-size:13px">
+        <button class="btn btn-green" onclick="submitResult()">Save</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// LOTTERY ENGINE (embedded)
+// ═══════════════════════════════════════════════════════════
+</script>
+<script>
+// Paste lottery-engine.js content here inline
+const LOTTERIES={"uk49s_lunch":{name:"UK 49s Lunchtime",icon:"🇬🇧",pool:49,draw:6,bonus:1,schedule:"Daily 12:49 PM GMT"},"uk49s_tea":{name:"UK 49s Teatime",icon:"🇬🇧",pool:49,draw:6,bonus:1,schedule:"Daily 5:49 PM GMT"},"ghana_monday":{name:"Ghana Monday Special",icon:"🇬🇭",pool:90,draw:5,bonus:0,schedule:"Monday"},"ghana_tuesday":{name:"Ghana Lucky Tuesday",icon:"🇬🇭",pool:90,draw:5,bonus:0,schedule:"Tuesday"},"ghana_midweek":{name:"Ghana Midweek",icon:"🇬🇭",pool:90,draw:5,bonus:0,schedule:"Wednesday"},"ghana_thursday":{name:"Ghana Fortune Thursday",icon:"🇬🇭",pool:90,draw:5,bonus:0,schedule:"Thursday"},"ghana_friday":{name:"Ghana Friday Bonanza",icon:"🇬🇭",pool:90,draw:5,bonus:0,schedule:"Friday"},"ghana_saturday":{name:"Ghana National Saturday",icon:"🇬🇭",pool:90,draw:5,bonus:0,schedule:"Saturday"},"us_powerball":{name:"US Powerball",icon:"🇺🇸",pool:69,draw:5,bonusPool:26,bonus:1,schedule:"Mon, Wed, Sat"},"us_mega":{name:"US Mega Millions",icon:"🇺🇸",pool:70,draw:5,bonusPool:25,bonus:1,schedule:"Tue, Fri"},"euromillions":{name:"EuroMillions",icon:"🇪🇺",pool:50,draw:5,bonusPool:12,bonus:2,schedule:"Tue, Fri"},"china_ssq":{name:"China Welfare (双色球)",icon:"🇨🇳",pool:33,draw:6,bonusPool:16,bonus:1,schedule:"Tue, Thu, Sun"},"china_3d":{name:"China Welfare 3D",icon:"🇨🇳",pool:9,draw:3,bonus:0,schedule:"Daily",isDigit:true},"sa_powerball":{name:"SA Powerball",icon:"🇿🇦",pool:50,draw:5,bonusPool:20,bonus:1,schedule:"Tue, Fri"},"nigeria_lotto":{name:"Nigeria Lotto (5/90)",icon:"🇳🇬",pool:90,draw:5,bonus:0,schedule:"Daily"},"bet9ja_49":{name:"Bet9ja 49 Balls",icon:"🎱",pool:49,draw:6,bonus:0,schedule:"Every 5 min"}};
+
+function getLotteryResults(id){try{return JSON.parse(localStorage.getItem('lottery_results_'+id)||'[]')}catch{return[]}}
+function saveLotteryResults(id,r){localStorage.setItem('lottery_results_'+id,JSON.stringify(r))}
+function getLotteryPredictions(id){try{return JSON.parse(localStorage.getItem('lottery_preds_'+id)||'[]')}catch{return[]}}
+function saveLotteryPredictions(id,p){localStorage.setItem('lottery_preds_'+id,JSON.stringify(p))}
+function getModelWeights(id){try{return JSON.parse(localStorage.getItem('lottery_weights_'+id)||'null')}catch{return null}}
+function saveModelWeights(id,w){localStorage.setItem('lottery_weights_'+id,JSON.stringify(w))}
+</script>
+<script src="lottery-engine.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// UI CONTROLLER
+// ═══════════════════════════════════════════════════════════
+
+let currentLottery = null;
+let currentAnalyzer = null;
+
+// Build lottery grid
+function renderLotteryGrid() {
+  const grid = document.getElementById('lottery-grid');
+  grid.innerHTML = Object.entries(LOTTERIES).map(([id, l]) => {
+    const draws = getLotteryResults(id).length;
+    return `<div class="lottery-card" id="lc-${id}" onclick="selectLottery('${id}')">
+      <div class="icon">${l.icon}</div>
+      <div class="name">${l.name}</div>
+      <div class="schedule">${l.schedule}</div>
+      <div class="draws">${draws} draws stored</div>
+    </div>`;
+  }).join('');
+}
+
+function selectLottery(id) {
+  currentLottery = id;
+  currentAnalyzer = new LotteryAnalyzer(id);
+  
+  // Highlight active card
+  document.querySelectorAll('.lottery-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('lc-' + id)?.classList.add('active');
+  
+  // Show dashboard
+  document.getElementById('lottery-dashboard').style.display = 'block';
+  
+  const config = LOTTERIES[id];
+  document.getElementById('ld-title').textContent = config.icon + ' ' + config.name;
+  document.getElementById('ld-subtitle').textContent = `Pool: ${config.pool} numbers · Draw: ${config.draw} balls · ${config.schedule}`;
+  document.getElementById('ld-result-date').value = new Date().toISOString().slice(0, 10);
+  
+  renderDashboard();
+}
+
+function renderDashboard() {
+  if (!currentAnalyzer) return;
+  const stats = currentAnalyzer.getFullStats();
+  
+  // Stats
+  document.getElementById('ld-stat-draws').textContent = stats.totalDraws;
+  document.getElementById('ld-stat-preds').textContent = stats.predictionRecord.total;
+  document.getElementById('ld-stat-hits').textContent = stats.predictionRecord.hits;
+  document.getElementById('ld-stat-partials').textContent = stats.predictionRecord.partials;
+  const rateEl = document.getElementById('ld-stat-rate');
+  rateEl.textContent = stats.predictionRecord.hitRate + '%';
+  rateEl.style.color = parseFloat(stats.predictionRecord.hitRate) > 20 ? 'var(--accent-green)' : 'var(--accent-orange)';
+  
+  renderPredictions();
+  renderNumberStats(stats);
+  renderDrawHistory(stats);
+  renderModels(stats);
+}
+
+function switchLdTab(tab) {
+  ['predict','numbers','history','models'].forEach(t => {
+    const p = document.getElementById('ld-panel-' + t);
+    const b = document.getElementById('ld-tab-' + t);
+    if (p) p.style.display = t === tab ? 'block' : 'none';
+    if (b) b.classList.toggle('active', t === tab);
+  });
+}
+
+// ── Generate Prediction ──
+function generatePrediction() {
+  if (!currentAnalyzer) return;
+  if (currentAnalyzer.results.length < 5) {
+    alert('Need at least 5 past results. Add some draw results first!');
+    return;
+  }
+  const pred = currentAnalyzer.generatePrediction();
+  renderDashboard();
+}
+
+// ── Render Predictions ──
+function renderPredictions() {
+  const preds = getLotteryPredictions(currentLottery);
+  
+  if (!preds.length) {
+    document.getElementById('ld-latest-pred').innerHTML = `<div class="card" style="text-align:center;padding:40px;color:var(--text-muted)">
+      <div style="font-size:32px;margin-bottom:12px">🎯</div>
+      <div>No predictions yet. Add some past results, then click "Generate Prediction"</div>
+    </div>`;
+    document.getElementById('ld-pred-history').innerHTML = '';
+    return;
+  }
+
+  // Latest prediction
+  const latest = preds[0];
+  const ballsHtml = latest.numbers.map(n => `<div class="ball predicted">${n}</div>`).join('');
+  const bonusHtml = latest.bonusNumber ? `<div class="ball" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">${latest.bonusNumber}</div>` : '';
+  
+  document.getElementById('ld-latest-pred').innerHTML = `<div class="card" style="border-color:rgba(52,211,153,0.2);background:rgba(52,211,153,0.02)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="card-title" style="margin:0">🎯 Latest Prediction</div>
+      <span class="tag tag-${latest.confidence === 'HIGH' ? 'green' : latest.confidence === 'MODERATE' ? 'orange' : 'cyan'}">${latest.confidence}</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${ballsHtml} ${bonusHtml ? '<span style="margin:0 4px;color:var(--text-muted);font-size:12px;align-self:center">+</span>' + bonusHtml : ''}</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted)">${latest.date} · Based on ${latest.basedOn} · Status: <span style="color:${latest.status === 'hit' ? 'var(--accent-green)' : latest.status === 'partial' ? 'var(--accent-orange)' : latest.status === 'miss' ? 'var(--accent-red)' : 'var(--text-muted)'}">${latest.status.toUpperCase()}</span></div>
+    ${latest.matchedNumbers?.length ? `<div style="margin-top:6px;font-size:11px;color:var(--accent-green)">Matched: ${latest.matchedNumbers.join(', ')}</div>` : ''}
+  </div>`;
+
+  // Prediction history
+  document.getElementById('ld-pred-history').innerHTML = preds.slice(1, 20).map(p => {
+    const cls = p.status === 'hit' ? 'hit' : p.status === 'partial' ? 'partial' : p.status === 'miss' ? 'miss' : '';
+    return `<div class="pred-card ${cls}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:11px;color:var(--text-muted)">${p.date}</span>
+        <span class="tag tag-${p.status === 'hit' ? 'green' : p.status === 'partial' ? 'orange' : p.status === 'miss' ? 'red' : 'cyan'}">${p.status.toUpperCase()}</span>
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">${p.numbers.map(n => {
+        const matched = p.matchedNumbers?.includes(n);
+        return `<div class="ball ball-sm ${matched ? 'predicted' : 'normal'}">${n}</div>`;
+      }).join('')}</div>
+      ${p.matchedNumbers?.length ? `<div style="margin-top:4px;font-size:10px;color:var(--accent-green)">Matched ${p.matchedNumbers.length}/${p.numbers.length}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── Render Number Stats ──
+function renderNumberStats(stats) {
+  // Hot & Cold
+  const hotHtml = stats.hotNumbers.map(n => `<div class="ball ball-sm hot">${n}</div>`).join('') || '<span style="color:var(--text-muted);font-size:12px">None</span>';
+  const coldHtml = stats.coldNumbers.map(n => `<div class="ball ball-sm cold">${n}</div>`).join('') || '<span style="color:var(--text-muted);font-size:12px">None</span>';
+  const overdueHtml = stats.overdueNumbers.slice(0, 10).map(n => `<div class="ball ball-sm" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">${n}</div>`).join('') || '<span style="color:var(--text-muted);font-size:12px">None</span>';
+
+  document.getElementById('ld-hot-cold').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+      <div><div style="font-size:11px;font-weight:600;color:var(--accent-red);margin-bottom:8px">🔥 Hot Numbers</div><div style="display:flex;gap:4px;flex-wrap:wrap">${hotHtml}</div></div>
+      <div><div style="font-size:11px;font-weight:600;color:var(--accent-cyan);margin-bottom:8px">❄️ Cold Numbers</div><div style="display:flex;gap:4px;flex-wrap:wrap">${coldHtml}</div></div>
+      <div><div style="font-size:11px;font-weight:600;color:var(--accent-orange);margin-bottom:8px">⏰ Overdue Numbers</div><div style="display:flex;gap:4px;flex-wrap:wrap">${overdueHtml}</div></div>
+    </div>`;
+
+  // Number table
+  const rows = stats.numberStats.map(n => {
+    const freqBar = Math.min((n.frequency / Math.max(n.expected, 1)) * 50, 100);
+    const tagClass = n.isHot ? 'tag-red' : n.isCold ? 'tag-cyan' : '';
+    return `<tr>
+      <td><div class="ball ball-sm ${n.isHot ? 'hot' : n.isCold ? 'cold' : 'normal'}">${n.number}</div></td>
+      <td style="font-family:'Sora',sans-serif;font-weight:700">${n.frequency}</td>
+      <td>${n.expected}</td>
+      <td style="color:${n.deviation > 0 ? 'var(--accent-green)' : n.deviation < 0 ? 'var(--accent-red)' : 'var(--text-muted)'}">${n.deviation > 0 ? '+' : ''}${n.deviation}</td>
+      <td>${n.gap}</td>
+      <td style="color:${n.overdue > 1.5 ? 'var(--accent-orange)' : 'var(--text-muted)'}">${n.overdue}x</td>
+      <td style="font-family:'JetBrains Mono',monospace">${(n.probability * 100).toFixed(2)}%</td>
+      <td>${tagClass ? `<span class="tag ${tagClass}">${n.isHot ? 'HOT' : 'COLD'}</span>` : ''}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('ld-number-table').innerHTML = `<table class="stats-table">
+    <thead><tr><th>Ball</th><th>Freq</th><th>Expected</th><th>Dev</th><th>Gap</th><th>Overdue</th><th>Prob</th><th>Status</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// ── Render Draw History ──
+function renderDrawHistory(stats) {
+  const draws = stats.last10;
+  if (!draws.length) {
+    document.getElementById('ld-draw-list').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">No draws recorded yet</div>';
+    return;
+  }
+  document.getElementById('ld-draw-list').innerHTML = draws.map(d => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);min-width:80px">${d.date || '—'}</span>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">${d.numbers.map(n => `<div class="ball ball-sm normal">${n}</div>`).join('')}</div>
+      ${d.bonus ? `<span style="color:var(--text-muted)">+</span><div class="ball ball-sm" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">${d.bonus}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// ── Render Model Weights ──
+function renderModels(stats) {
+  const w = stats.modelWeights;
+  const labels = { frequency: 'Frequency Analysis', bayesian: 'Bayesian Probability', markov: 'Markov Chains', gap: 'Gap Analysis', cluster: 'Cluster Analysis', regression: 'Regression to Mean' };
+  const colors = { frequency: '#ef4444', bayesian: '#3ecfff', markov: '#a855f7', gap: '#f59e0b', cluster: '#34d399', regression: '#ec4899' };
+
+  document.getElementById('ld-model-weights').innerHTML = Object.entries(w).map(([key, val]) => {
+    const pct = (val * 100).toFixed(1);
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;font-weight:600;color:var(--text-primary)">${labels[key] || key}</span>
+        <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:${colors[key]}">${pct}%</span>
+      </div>
+      <div style="height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${colors[key]};border-radius:4px;transition:width 0.5s"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Add Result ──
+function showAddResult() {
+  const el = document.getElementById('ld-add-result');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function submitResult() {
+  if (!currentAnalyzer) return;
+  const numbersStr = document.getElementById('ld-result-numbers').value;
+  const bonusStr = document.getElementById('ld-result-bonus').value;
+  const date = document.getElementById('ld-result-date').value;
+  
+  const numbers = numbersStr.split(/[,\s]+/).map(Number).filter(n => n > 0);
+  if (numbers.length < currentAnalyzer.config.draw) {
+    alert(`Enter at least ${currentAnalyzer.config.draw} numbers`);
+    return;
+  }
+  
+  const draw = { numbers, date, bonus: bonusStr ? parseInt(bonusStr) : null, id: Date.now().toString() };
+  currentAnalyzer.addResult(draw);
+  
+  document.getElementById('ld-result-numbers').value = '';
+  document.getElementById('ld-result-bonus').value = '';
+  
+  // Update grid card count
+  const card = document.getElementById('lc-' + currentLottery);
+  if (card) {
+    const drawsEl = card.querySelector('.draws');
+    if (drawsEl) drawsEl.textContent = currentAnalyzer.results.length + ' draws stored';
+  }
+  
+  renderDashboard();
+}
+
+// ── Init ──
+renderLotteryGrid();
+</script>
+</body>
+</html>
