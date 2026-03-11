@@ -3621,33 +3621,102 @@
           </div>
         </div>
 
-        <!-- Signup form -->
+        <!-- Signup form — Multi-step registration -->
         <div id="auth-signup-form" class="card" style="display:none">
-          <div class="field-group">
-            <label class="field-label">Display Name</label>
-            <input type="text" id="signup-name" placeholder="Your name">
+          <!-- Step indicator -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px">
+            <div id="step-dot-1" style="width:28px;height:28px;border-radius:50%;background:var(--accent-cyan);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--bg-void);transition:all 0.3s">1</div>
+            <div style="flex:1;height:2px;background:var(--border-dim);border-radius:1px"><div id="step-bar-1" style="height:100%;width:0%;background:var(--accent-cyan);border-radius:1px;transition:width 0.4s"></div></div>
+            <div id="step-dot-2" style="width:28px;height:28px;border-radius:50%;background:var(--bg-deep);border:1px solid var(--border-dim);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text-muted);transition:all 0.3s">2</div>
+            <div style="flex:1;height:2px;background:var(--border-dim);border-radius:1px"><div id="step-bar-2" style="height:100%;width:0%;background:var(--accent-cyan);border-radius:1px;transition:width 0.4s"></div></div>
+            <div id="step-dot-3" style="width:28px;height:28px;border-radius:50%;background:var(--bg-deep);border:1px solid var(--border-dim);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text-muted);transition:all 0.3s">3</div>
           </div>
-          <div class="field-group">
-            <label class="field-label">Email</label>
-            <input type="email" id="signup-email" placeholder="you@example.com">
+
+          <!-- Step 1: Identity -->
+          <div id="signup-step-1">
+            <div style="font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--accent-cyan);margin-bottom:14px">👤 Personal Info</div>
+            <div class="field-group">
+              <label class="field-label">Full Name *</label>
+              <input type="text" id="signup-fullname" placeholder="John Doe" autocomplete="name">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Username *</label>
+              <input type="text" id="signup-username" placeholder="johndoe123" autocomplete="username">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Phone Number *</label>
+              <input type="tel" id="signup-phone" placeholder="+234 800 000 0000" autocomplete="tel">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Email Address *</label>
+              <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="email">
+            </div>
+            <button class="btn btn-cyan" onclick="signupNext(2)" style="width:100%;padding:12px;font-size:14px;margin-top:8px">Continue →</button>
           </div>
-          <div class="field-group">
-            <label class="field-label">Password</label>
-            <input type="password" id="signup-password" placeholder="Min 6 characters">
-          </div>
-          <div class="field-group">
-            <label class="field-label">Starting Balance</label>
-            <div style="display:flex;gap:8px">
-              <select id="signup-currency" style="max-width:90px">
-                <option value="₦">₦ NGN</option>
-                <option value="$">$ USD</option>
-                <option value="£">£ GBP</option>
-                <option value="€">€ EUR</option>
+
+          <!-- Step 2: Location -->
+          <div id="signup-step-2" style="display:none">
+            <div style="font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--accent-cyan);margin-bottom:14px">📍 Address</div>
+            <div class="field-group">
+              <label class="field-label">Home Address</label>
+              <input type="text" id="signup-address" placeholder="123 Main Street" autocomplete="street-address">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field-group">
+                <label class="field-label">City</label>
+                <input type="text" id="signup-city" placeholder="Lagos" autocomplete="address-level2">
+              </div>
+              <div class="field-group">
+                <label class="field-label">State / Province</label>
+                <input type="text" id="signup-state" placeholder="Lagos State" autocomplete="address-level1">
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Country</label>
+              <select id="signup-country" autocomplete="country-name">
+                <option value="">Select country...</option>
+                <option value="NG">Nigeria</option><option value="GH">Ghana</option><option value="KE">Kenya</option>
+                <option value="ZA">South Africa</option><option value="TZ">Tanzania</option><option value="UG">Uganda</option>
+                <option value="US">United States</option><option value="GB">United Kingdom</option><option value="CA">Canada</option>
+                <option value="AU">Australia</option><option value="IN">India</option><option value="DE">Germany</option>
+                <option value="FR">France</option><option value="BR">Brazil</option><option value="Other">Other</option>
               </select>
-              <input type="number" id="signup-balance" placeholder="e.g. 10000" min="0">
+            </div>
+            <div style="display:flex;gap:10px;margin-top:8px">
+              <button class="btn btn-sm" style="color:var(--text-muted);border-color:var(--border-dim);flex:1;padding:12px" onclick="signupNext(1)">← Back</button>
+              <button class="btn btn-cyan" onclick="signupNext(3)" style="flex:2;padding:12px;font-size:14px">Continue →</button>
             </div>
           </div>
-          <button class="btn btn-green" onclick="doSignup()" style="width:100%;padding:12px;font-size:14px;margin-top:8px">Create Account</button>
+
+          <!-- Step 3: Security + Wallet -->
+          <div id="signup-step-3" style="display:none">
+            <div style="font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--accent-cyan);margin-bottom:14px">🔒 Security & Wallet</div>
+            <div class="field-group">
+              <label class="field-label">Password *</label>
+              <input type="password" id="signup-password" placeholder="Min 6 characters" autocomplete="new-password">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Confirm Password *</label>
+              <input type="password" id="signup-password-confirm" placeholder="Re-enter password">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Starting Balance</label>
+              <div style="display:flex;gap:8px">
+                <select id="signup-currency" style="max-width:90px">
+                  <option value="₦">₦ NGN</option>
+                  <option value="$">$ USD</option>
+                  <option value="£">£ GBP</option>
+                  <option value="€">€ EUR</option>
+                </select>
+                <input type="number" id="signup-balance" placeholder="e.g. 10000" min="0">
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:8px">
+              <button class="btn btn-sm" style="color:var(--text-muted);border-color:var(--border-dim);flex:1;padding:12px" onclick="signupNext(2)">← Back</button>
+              <button class="btn btn-green" onclick="doSignup()" style="flex:2;padding:12px;font-size:14px">🚀 Create Account</button>
+            </div>
+          </div>
+
           <div id="signup-msg" style="font-size:12px;color:var(--accent-red);margin-top:10px;text-align:center;display:none"></div>
         </div>
       </div>
@@ -3670,10 +3739,27 @@
         <div class="card">
           <div class="card-title">Profile</div>
           <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-            <div id="profile-avatar-lg" style="width:56px;height:56px;border-radius:50%;background:var(--accent-cyan);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--bg-void);flex-shrink:0">?</div>
+            <div style="position:relative;flex-shrink:0">
+              <div id="profile-avatar-lg" style="width:64px;height:64px;border-radius:50%;background:var(--accent-cyan);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:24px;font-weight:800;color:var(--bg-void);overflow:hidden;border:2px solid var(--border-dim)">?</div>
+              <label for="profile-pic-upload" style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--accent-cyan);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--bg-void);border:2px solid var(--bg-panel)" title="Change photo">📷</label>
+              <input type="file" id="profile-pic-upload" accept="image/*" style="display:none" onchange="uploadProfilePic(this)">
+            </div>
             <div>
               <div id="profile-name-display" style="font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:var(--text-primary)">—</div>
-              <div id="profile-email-display" style="font-size:13px;color:var(--text-muted);margin-top:2px">—</div>
+              <div id="profile-username-display" style="font-size:12px;color:var(--accent-cyan);margin-top:1px">@—</div>
+              <div id="profile-email-display" style="font-size:12px;color:var(--text-muted);margin-top:1px">—</div>
+            </div>
+          </div>
+          <!-- Read-only registered info -->
+          <div style="background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px">Registered Information</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+              <div><span style="color:var(--text-muted)">Phone:</span> <span id="profile-phone-display" style="color:var(--text-secondary)">—</span></div>
+              <div><span style="color:var(--text-muted)">Country:</span> <span id="profile-country-display" style="color:var(--text-secondary)">—</span></div>
+              <div><span style="color:var(--text-muted)">City:</span> <span id="profile-city-display" style="color:var(--text-secondary)">—</span></div>
+              <div><span style="color:var(--text-muted)">State:</span> <span id="profile-state-display" style="color:var(--text-secondary)">—</span></div>
+              <div style="grid-column:1/-1"><span style="color:var(--text-muted)">Address:</span> <span id="profile-address-display" style="color:var(--text-secondary)">—</span></div>
+              <div style="grid-column:1/-1"><span style="color:var(--text-muted)">Member since:</span> <span id="profile-since-display" style="color:var(--text-secondary)">—</span></div>
             </div>
           </div>
           <div class="field-group">
@@ -7761,11 +7847,14 @@ export default {
   window.renderPredictionHistoryPage = renderPredictionHistoryPage;
 
   // ══════════════════════════════════════════════════════════
-  // USER SYSTEM — Firebase Authentication + Firestore
+  // USER SYSTEM — Firebase Auth + Firestore + Storage
+  // Full registration, profile pics, visitor tracking
   // ══════════════════════════════════════════════════════════
 
-  // ── Data access (Firestore with localStorage fallback) ──
-  let _cachedUser = null; // In-memory cache to avoid async everywhere
+  let _cachedUser = null;
+  let _pageEnterTime = Date.now();
+  let _currentPage = 'dashboard';
+  let _sessionId = 'ses_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 
   async function getUser() {
     if (_cachedUser) return _cachedUser;
@@ -7774,375 +7863,219 @@ export default {
     try {
       const doc = await db.collection('users').doc(fbUser.uid).get();
       if (doc.exists) {
+        if (doc.data().blocked) { await auth.signOut(); notify('Your account has been suspended.'); return null; }
         _cachedUser = { uid: fbUser.uid, ...doc.data() };
         localStorage.setItem('betlab_user', JSON.stringify(_cachedUser));
         return _cachedUser;
       }
       return null;
     } catch (e) {
-      console.warn('getUser fallback to localStorage:', e.message);
       try { return JSON.parse(localStorage.getItem('betlab_user')); } catch { return null; }
     }
   }
-  function getUserSync() {
-    if (_cachedUser) return _cachedUser;
-    try { return JSON.parse(localStorage.getItem('betlab_user')); } catch { return null; }
-  }
-
+  function getUserSync() { if (_cachedUser) return _cachedUser; try { return JSON.parse(localStorage.getItem('betlab_user')); } catch { return null; } }
   async function saveUser(u) {
     const fbUser = auth.currentUser;
-    if (fbUser) {
-      const data = { ...u };
-      delete data.uid; delete data.password;
-      try { await db.collection('users').doc(fbUser.uid).set(data, { merge: true }); } catch(e) { console.warn('saveUser error:', e); }
-    }
-    _cachedUser = u;
-    localStorage.setItem('betlab_user', JSON.stringify(u));
+    if (fbUser) { const data = { ...u }; delete data.uid; delete data.password; try { await db.collection('users').doc(fbUser.uid).set(data, { merge: true }); } catch(e) {} }
+    _cachedUser = u; localStorage.setItem('betlab_user', JSON.stringify(u));
   }
-
-  function getUserBets() {
-    try { return JSON.parse(localStorage.getItem('betlab_user_bets') || '[]'); } catch { return []; }
-  }
+  function getUserBets() { try { return JSON.parse(localStorage.getItem('betlab_user_bets') || '[]'); } catch { return []; } }
   function saveUserBets(b) { localStorage.setItem('betlab_user_bets', JSON.stringify(b)); }
 
-  // ── Auth tab toggle ──
   function switchAuthTab(tab) {
-    const loginBtn = document.getElementById('auth-tab-login');
-    const signupBtn = document.getElementById('auth-tab-signup');
-    const loginForm = document.getElementById('auth-login-form');
-    const signupForm = document.getElementById('auth-signup-form');
-    if (tab === 'login') {
-      loginBtn.style.background = 'var(--accent-cyan)'; loginBtn.style.color = 'var(--bg-void)';
-      signupBtn.style.background = 'var(--bg-card)'; signupBtn.style.color = 'var(--text-muted)';
-      loginForm.style.display = 'block'; signupForm.style.display = 'none';
-    } else {
-      signupBtn.style.background = 'var(--accent-green)'; signupBtn.style.color = 'var(--bg-void)';
-      loginBtn.style.background = 'var(--bg-card)'; loginBtn.style.color = 'var(--text-muted)';
-      signupForm.style.display = 'block'; loginForm.style.display = 'none';
-    }
+    const loginBtn = document.getElementById('auth-tab-login'), signupBtn = document.getElementById('auth-tab-signup');
+    const loginForm = document.getElementById('auth-login-form'), signupForm = document.getElementById('auth-signup-form');
+    if (tab === 'login') { loginBtn.style.background='var(--accent-cyan)'; loginBtn.style.color='var(--bg-void)'; signupBtn.style.background='var(--bg-card)'; signupBtn.style.color='var(--text-muted)'; loginForm.style.display='block'; signupForm.style.display='none'; }
+    else { signupBtn.style.background='var(--accent-green)'; signupBtn.style.color='var(--bg-void)'; loginBtn.style.background='var(--bg-card)'; loginBtn.style.color='var(--text-muted)'; signupForm.style.display='block'; loginForm.style.display='none'; }
   }
   window.switchAuthTab = switchAuthTab;
 
-  // ── Friendly Firebase error messages ──
-  function firebaseErrorMsg(code) {
-    const msgs = {
-      'auth/email-already-in-use': 'This email is already registered. Try signing in.',
-      'auth/invalid-email': 'Invalid email address.',
-      'auth/weak-password': 'Password must be at least 6 characters.',
-      'auth/user-not-found': 'No account found with this email.',
-      'auth/wrong-password': 'Incorrect password. Try again or reset it.',
-      'auth/too-many-requests': 'Too many attempts. Please wait a moment.',
-      'auth/network-request-failed': 'Network error. Check your connection.',
-      'auth/invalid-credential': 'Incorrect email or password.',
-    };
-    return msgs[code] || 'Something went wrong (' + code + '). Please try again.';
+  function signupNextStep(step) {
+    const msg = document.getElementById('signup-msg'); msg.style.display = 'none';
+    if (step === 2) {
+      const fn = document.getElementById('signup-fullname').value.trim(), un = document.getElementById('signup-username').value.trim();
+      const ph = document.getElementById('signup-phone').value.trim(), em = document.getElementById('signup-email').value.trim();
+      if (!fn||!un||!ph||!em) { msg.textContent='Please fill all required fields'; msg.style.color='var(--accent-red)'; msg.style.display='block'; return; }
+      if (un.length < 3) { msg.textContent='Username must be at least 3 characters'; msg.style.color='var(--accent-red)'; msg.style.display='block'; return; }
+      if (!validateEmail(em)) { msg.textContent='Please enter a valid email'; msg.style.color='var(--accent-red)'; msg.style.display='block'; return; }
+    }
+    if (step === 3) {
+      const city = document.getElementById('signup-city').value.trim(), st = document.getElementById('signup-state').value.trim(), co = document.getElementById('signup-country').value;
+      if (!city||!st||!co) { msg.textContent='City, state and country are required'; msg.style.color='var(--accent-red)'; msg.style.display='block'; return; }
+    }
+    [1,2,3].forEach(s => { document.getElementById('signup-step-'+s).style.display = s===step?'block':'none'; document.getElementById('step-dot-'+s).style.background = s<=step?'var(--accent-cyan)':'var(--border-dim)'; });
   }
+  window.signupNextStep = signupNextStep;
 
-  // ── Analytics tracker ──
-  async function trackAnalytics(event, data) {
+  function firebaseErrorMsg(code) { const m={'auth/email-already-in-use':'Email already registered.','auth/invalid-email':'Invalid email.','auth/weak-password':'Password min 6 chars.','auth/user-not-found':'No account found.','auth/wrong-password':'Incorrect password.','auth/too-many-requests':'Too many attempts.','auth/network-request-failed':'Network error.','auth/invalid-credential':'Incorrect email or password.'}; return m[code]||'Error: '+code; }
+
+  async function trackVisitor() {
     try {
-      await db.collection('analytics').add({
-        event: event,
-        data: data || {},
-        uid: auth.currentUser?.uid || 'anonymous',
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        userAgent: navigator.userAgent,
-        screen: screen.width + 'x' + screen.height,
-        referrer: document.referrer || 'direct',
-      });
-    } catch(e) { /* silently fail — analytics shouldn't break the app */ }
+      let geo = {}; try { const r = await fetch('https://ipapi.co/json/'); geo = await r.json(); } catch(e) {}
+      await db.collection('visitors').add({ sessionId:_sessionId, uid:auth.currentUser?.uid||null, timestamp:firebase.firestore.FieldValue.serverTimestamp(), userAgent:navigator.userAgent, screen:screen.width+'x'+screen.height, referrer:document.referrer||'direct', language:navigator.language, ip:geo.ip||null, city:geo.city||null, region:geo.region||null, country:geo.country_name||null, countryCode:geo.country_code||null });
+    } catch(e) {}
   }
+  async function trackPageVisit(pageId) {
+    const now = Date.now(), duration = Math.round((now - _pageEnterTime) / 1000);
+    if (duration > 1 && _currentPage) { try { await db.collection('pageviews').add({ sessionId:_sessionId, uid:auth.currentUser?.uid||null, page:_currentPage, duration:duration, timestamp:firebase.firestore.FieldValue.serverTimestamp() }); } catch(e) {} }
+    _pageEnterTime = now; _currentPage = pageId;
+  }
+  async function trackAnalytics(event, data) { try { await db.collection('analytics').add({ event:event, data:data||{}, uid:auth.currentUser?.uid||'anonymous', sessionId:_sessionId, timestamp:firebase.firestore.FieldValue.serverTimestamp(), userAgent:navigator.userAgent, screen:screen.width+'x'+screen.height }); } catch(e) {} }
+  window.addEventListener('beforeunload', () => { trackPageVisit('_exit'); });
 
-  // ── Signup (Firebase) ──
   async function doSignup() {
     if (!rateLimit('signup', 3000)) return;
-    const name = sanitize(document.getElementById('signup-name').value.trim());
-    const email = sanitize(document.getElementById('signup-email').value.trim());
-    const password = document.getElementById('signup-password').value;
-    const balance = parseFloat(document.getElementById('signup-balance').value) || 0;
-    const currency = document.getElementById('signup-currency').value;
-    const msg = document.getElementById('signup-msg');
-
-    if (!name || !email || password.length < 6) {
-      msg.textContent = 'Please fill all fields (password min 6 chars)';
-      msg.style.color = 'var(--accent-red)'; msg.style.display = 'block'; return;
-    }
-    if (!validateEmail(email)) {
-      msg.textContent = 'Please enter a valid email address';
-      msg.style.color = 'var(--accent-red)'; msg.style.display = 'block'; return;
-    }
-
-    msg.style.color = 'var(--accent-cyan)';
-    msg.textContent = 'Creating account...';
-    msg.style.display = 'block';
-
+    const fullname=sanitize(document.getElementById('signup-fullname').value.trim()), username=sanitize(document.getElementById('signup-username').value.trim().toLowerCase());
+    const phone=sanitize(document.getElementById('signup-phone').value.trim()), email=sanitize(document.getElementById('signup-email').value.trim());
+    const address=sanitize(document.getElementById('signup-address').value.trim()), city=sanitize(document.getElementById('signup-city').value.trim());
+    const state=sanitize(document.getElementById('signup-state').value.trim()), country=document.getElementById('signup-country').value;
+    const password=document.getElementById('signup-password').value, confirmPw=document.getElementById('signup-password-confirm').value;
+    const balance=parseFloat(document.getElementById('signup-balance').value)||0, currency=document.getElementById('signup-currency').value;
+    const msg=document.getElementById('signup-msg');
+    if (password!==confirmPw) { msg.textContent='Passwords do not match'; msg.style.color='var(--accent-red)'; msg.style.display='block'; return; }
+    if (password.length<6) { msg.textContent='Password must be at least 6 characters'; msg.style.color='var(--accent-red)'; msg.style.display='block'; return; }
+    msg.style.color='var(--accent-cyan)'; msg.textContent='Creating your account...'; msg.style.display='block';
     try {
+      const uc = await db.collection('users').where('username','==',username).get();
+      if (!uc.empty) { msg.textContent='Username already taken'; msg.style.color='var(--accent-red)'; msg.style.display='block'; return; }
       const cred = await auth.createUserWithEmailAndPassword(email, password);
-      await cred.user.updateProfile({ displayName: name });
-
-      const userData = {
-        name: name, email: email, balance: balance, currency: currency,
-        color: '#3ecfff', role: 'user', created: Date.now(), lastLogin: Date.now(),
-      };
+      await cred.user.updateProfile({ displayName: fullname });
+      const userData = { name:fullname, username:username, email:email, phone:phone, address:address, city:city, state:state, country:country, balance:balance, currency:currency, color:'#3ecfff', role:'user', blocked:false, photoURL:null, online:true, created:Date.now(), lastLogin:Date.now(), lastActive:Date.now() };
       await db.collection('users').doc(cred.user.uid).set(userData);
-      _cachedUser = { uid: cred.user.uid, ...userData };
-      localStorage.setItem('betlab_user', JSON.stringify(_cachedUser));
-      localStorage.setItem('betlab_user_bets', '[]');
-
-      trackAnalytics('signup', { method: 'email' });
-      msg.style.display = 'none';
-      renderUserDash();
-      notify('Account created! Welcome, ' + name);
-    } catch (e) {
-      msg.style.color = 'var(--accent-red)';
-      msg.textContent = firebaseErrorMsg(e.code);
-      msg.style.display = 'block';
-    }
+      _cachedUser = { uid:cred.user.uid, ...userData }; localStorage.setItem('betlab_user', JSON.stringify(_cachedUser)); localStorage.setItem('betlab_user_bets','[]');
+      trackAnalytics('signup',{method:'email'}); msg.style.display='none'; renderUserDash(); notify('Account created! Welcome, '+fullname);
+    } catch(e) { msg.style.color='var(--accent-red)'; msg.textContent=firebaseErrorMsg(e.code); msg.style.display='block'; }
   }
   window.doSignup = doSignup;
 
-  // ── Login (Firebase) ──
   async function doLogin() {
-    if (!rateLimit('login', 2000)) return;
-    const email = sanitize(document.getElementById('login-email').value.trim());
-    const password = document.getElementById('login-password').value;
-    const msg = document.getElementById('login-msg');
-
-    if (!email || !password) {
-      msg.textContent = 'Please enter email and password';
-      msg.style.color = 'var(--accent-red)'; msg.style.display = 'block'; return;
+    if (!rateLimit('login',2000)) return;
+    let emailInput=sanitize(document.getElementById('login-email').value.trim()); const password=document.getElementById('login-password').value;
+    const msg=document.getElementById('login-msg');
+    if (!emailInput||!password) { msg.textContent='Enter email/username and password'; msg.style.color='var(--accent-red)'; msg.style.display='block'; return; }
+    if (!emailInput.includes('@')) {
+      msg.style.color='var(--accent-cyan)'; msg.textContent='Looking up username...'; msg.style.display='block';
+      try { const snap=await db.collection('users').where('username','==',emailInput.toLowerCase()).limit(1).get(); if(!snap.empty) emailInput=snap.docs[0].data().email; else { msg.textContent='Username not found'; msg.style.color='var(--accent-red)'; msg.style.display='block'; return; } } catch(e) {}
     }
-
-    msg.style.color = 'var(--accent-cyan)';
-    msg.textContent = 'Signing in...';
-    msg.style.display = 'block';
-
+    msg.style.color='var(--accent-cyan)'; msg.textContent='Signing in...'; msg.style.display='block';
     try {
-      const cred = await auth.signInWithEmailAndPassword(email, password);
-      // Update last login in Firestore
-      await db.collection('users').doc(cred.user.uid).update({ lastLogin: Date.now() });
-      // Load user profile
-      const doc = await db.collection('users').doc(cred.user.uid).get();
-      if (doc.exists) {
-        _cachedUser = { uid: cred.user.uid, ...doc.data() };
-        localStorage.setItem('betlab_user', JSON.stringify(_cachedUser));
-      }
-
-      trackAnalytics('login', { method: 'email' });
-      msg.style.display = 'none';
-      renderUserDash();
-      notify('Welcome back, ' + (_cachedUser?.name || email) + '!');
-    } catch (e) {
-      msg.style.color = 'var(--accent-red)';
-      msg.textContent = firebaseErrorMsg(e.code);
-      msg.style.display = 'block';
-    }
+      const cred=await auth.signInWithEmailAndPassword(emailInput,password);
+      const userDoc=await db.collection('users').doc(cred.user.uid).get();
+      if (userDoc.exists&&userDoc.data().blocked) { await auth.signOut(); msg.textContent='Account suspended. Contact admin.'; msg.style.color='var(--accent-red)'; msg.style.display='block'; return; }
+      await db.collection('users').doc(cred.user.uid).update({lastLogin:Date.now(),lastActive:Date.now(),online:true});
+      if(userDoc.exists) { _cachedUser={uid:cred.user.uid,...userDoc.data()}; localStorage.setItem('betlab_user',JSON.stringify(_cachedUser)); }
+      trackAnalytics('login',{method:'email'}); msg.style.display='none'; renderUserDash(); notify('Welcome back, '+(_cachedUser?.name||emailInput)+'!');
+    } catch(e) { msg.style.color='var(--accent-red)'; msg.textContent=firebaseErrorMsg(e.code); msg.style.display='block'; }
   }
   window.doLogin = doLogin;
 
-  // ── Logout (Firebase) ──
   async function doLogout() {
-    try { await auth.signOut(); } catch(e) { console.warn('Logout error:', e); }
-    _cachedUser = null;
-    document.getElementById('auth-view').style.display = 'block';
-    document.getElementById('dash-view').style.display = 'none';
-    updateTopbarAvatar(null);
-    // Hide admin nav
-    const adminNav = document.getElementById('admin-nav');
-    if (adminNav) adminNav.style.display = 'none';
-    notify('Signed out');
+    const fbUser=auth.currentUser;
+    if(fbUser) { try { await db.collection('users').doc(fbUser.uid).update({online:false,lastActive:Date.now()}); } catch(e) {} }
+    try { await auth.signOut(); } catch(e) {} _cachedUser=null;
+    document.getElementById('auth-view').style.display='block'; document.getElementById('dash-view').style.display='none'; updateTopbarAvatar(null);
+    const an=document.getElementById('admin-nav'); if(an) an.style.display='none'; notify('Signed out');
   }
   window.doLogout = doLogout;
 
-  // ── Password Reset ──
   async function doPasswordReset() {
-    const email = sanitize(document.getElementById('login-email').value.trim());
-    if (!email) { notify('Enter your email first, then click Forgot password'); return; }
-    try {
-      await auth.sendPasswordResetEmail(email);
-      notify('Password reset email sent! Check your inbox.');
-    } catch (e) {
-      notify(firebaseErrorMsg(e.code));
-    }
+    const email=sanitize(document.getElementById('login-email').value.trim());
+    if(!email) { notify('Enter your email first'); return; }
+    try { await auth.sendPasswordResetEmail(email); notify('Reset email sent!'); } catch(e) { notify(firebaseErrorMsg(e.code)); }
   }
   window.doPasswordReset = doPasswordReset;
 
-  // ── Firebase Auth State Observer ──
+  async function uploadProfilePic(input) {
+    const file=input.files[0]; if(!file) return; const fbUser=auth.currentUser; if(!fbUser) { notify('Please sign in'); return; }
+    if(file.size>2*1024*1024) { notify('Image must be under 2MB'); return; }
+    const msgEl=document.getElementById('profile-pic-msg'); msgEl.textContent='Uploading...'; msgEl.style.color='var(--accent-cyan)'; msgEl.style.display='block';
+    try {
+      const ref=storage.ref('profilePics/'+fbUser.uid+'_'+Date.now()); await ref.put(file); const url=await ref.getDownloadURL();
+      await db.collection('users').doc(fbUser.uid).update({photoURL:url});
+      if(_cachedUser) _cachedUser.photoURL=url; localStorage.setItem('betlab_user',JSON.stringify(_cachedUser));
+      renderUserAvatar(_cachedUser); updateTopbarAvatar(_cachedUser);
+      msgEl.textContent='Photo updated!'; setTimeout(()=>{msgEl.style.display='none';},2000);
+    } catch(e) { msgEl.textContent='Upload failed'; msgEl.style.color='var(--accent-red)'; }
+  }
+  window.uploadProfilePic = uploadProfilePic;
+
+  function renderUserAvatar(user) {
+    const el=document.getElementById('profile-avatar-lg'); if(!el) return;
+    if(user&&user.photoURL) { el.innerHTML='<img src="'+user.photoURL+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+    else if(user&&user.name) { el.innerHTML=''; el.textContent=user.name.charAt(0).toUpperCase(); el.style.background=user.color||'var(--accent-cyan)'; }
+  }
+
   auth.onAuthStateChanged(async (user) => {
     if (user) {
-      // Load profile from Firestore
       try {
-        const doc = await db.collection('users').doc(user.uid).get();
-        if (doc.exists) {
-          _cachedUser = { uid: user.uid, ...doc.data() };
-          localStorage.setItem('betlab_user', JSON.stringify(_cachedUser));
-          // Show admin nav if admin
-          if (doc.data().role === 'admin') {
-            const adminNav = document.getElementById('admin-nav');
-            if (adminNav) adminNav.style.display = 'flex';
-          }
+        const doc=await db.collection('users').doc(user.uid).get();
+        if(doc.exists) {
+          if(doc.data().blocked) { await auth.signOut(); notify('Account suspended.'); return; }
+          _cachedUser={uid:user.uid,...doc.data()}; localStorage.setItem('betlab_user',JSON.stringify(_cachedUser));
+          if(doc.data().role==='admin') { const an=document.getElementById('admin-nav'); if(an) an.style.display='flex'; }
+          await db.collection('users').doc(user.uid).update({online:true,lastActive:Date.now()});
         }
-      } catch(e) { console.warn('Auth observer error:', e); }
-      renderUserDash();
-      trackAnalytics('session_start');
-    } else {
-      _cachedUser = null;
-      document.getElementById('auth-view').style.display = 'block';
-      document.getElementById('dash-view').style.display = 'none';
-      updateTopbarAvatar(null);
-    }
+      } catch(e) {}
+      renderUserDash(); trackAnalytics('session_start');
+    } else { _cachedUser=null; document.getElementById('auth-view').style.display='block'; document.getElementById('dash-view').style.display='none'; updateTopbarAvatar(null); }
   });
-
-  // ── Migrate localStorage data to Firebase (runs once per user) ──
-  async function migrateLocalData() {
-    const fbUser = auth.currentUser;
-    if (!fbUser) return;
-    if (localStorage.getItem('betlab_migrated_' + fbUser.uid)) return;
-    const localUser = getUserSync();
-    if (localUser && localUser.name) {
-      await db.collection('users').doc(fbUser.uid).set({
-        name: localUser.name, balance: localUser.balance || 0,
-        currency: localUser.currency || '₦', color: localUser.color || '#3ecfff',
-      }, { merge: true });
-    }
-    localStorage.setItem('betlab_migrated_' + fbUser.uid, 'true');
-  }
+  trackVisitor();
 
   function updateTopbarAvatar(user) {
-    const el = document.getElementById('topbar-avatar');
-    if (!el) return;
-    if (user) {
-      el.textContent = user.name ? user.name.charAt(0).toUpperCase() : '?';
-      el.style.background = user.color || 'var(--accent-cyan)';
-    } else {
-      el.textContent = '?';
-      el.style.background = 'var(--accent-cyan)';
-    }
+    const el=document.getElementById('topbar-avatar'); if(!el) return;
+    if(user&&user.photoURL) { el.innerHTML='<img src="'+user.photoURL+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+    else if(user&&user.name) { el.innerHTML=''; el.textContent=user.name.charAt(0).toUpperCase(); el.style.background=user.color||'var(--accent-cyan)'; }
+    else { el.innerHTML=''; el.textContent='?'; el.style.background='var(--accent-cyan)'; }
   }
 
-  function setAvatarColor(color) {
-    const user = getUserSync();
-    if (!user) return;
-    user.color = color;
-    saveUser(user);
-    document.querySelectorAll('.avatar-color-btn').forEach(b => {
-      b.classList.toggle('active', b.style.background === color || b.style.backgroundColor === color);
-    });
-    document.getElementById('profile-avatar-lg').style.background = color;
-    updateTopbarAvatar(user);
-  }
+  function setAvatarColor(color) { const user=getUserSync(); if(!user) return; user.color=color; saveUser(user); document.querySelectorAll('.avatar-color-btn').forEach(b=>{b.classList.toggle('active',b.style.background===color||b.style.backgroundColor===color);}); if(!user.photoURL) document.getElementById('profile-avatar-lg').style.background=color; updateTopbarAvatar(user); }
   window.setAvatarColor = setAvatarColor;
 
-  function saveProfile() {
-    const user = getUserSync();
-    if (!user) return;
-    const name = sanitize(document.getElementById('profile-name-input').value.trim());
-    if (name) { user.name = name; saveUser(user); }
-    renderUserDash();
-    notify('Profile updated');
-  }
+  function saveProfile() { const user=getUserSync(); if(!user) return; const name=sanitize(document.getElementById('profile-name-input').value.trim()); if(name){user.name=name;saveUser(user);} renderUserDash(); notify('Profile updated'); }
   window.saveProfile = saveProfile;
 
-  function adjustWallet(dir) {
-    const user = getUserSync();
-    if (!user) return;
-    const amt = parseFloat(document.getElementById('wallet-adjust-amt').value);
-    if (!amt || amt <= 0) return;
-    if (dir === 'add') user.balance = (user.balance || 0) + amt;
-    else user.balance = Math.max(0, (user.balance || 0) - amt);
-    saveUser(user);
-    document.getElementById('wallet-adjust-amt').value = '';
-    renderUserDash();
-    notify((dir === 'add' ? '+' : '−') + user.currency + amt.toLocaleString('en',{minimumFractionDigits:2}));
-  }
+  function adjustWallet(dir) { const user=getUserSync(); if(!user) return; const amt=parseFloat(document.getElementById('wallet-adjust-amt').value); if(!amt||amt<=0) return; if(dir==='add') user.balance=(user.balance||0)+amt; else user.balance=Math.max(0,(user.balance||0)-amt); saveUser(user); document.getElementById('wallet-adjust-amt').value=''; renderUserDash(); notify((dir==='add'?'+':'−')+user.currency+amt.toLocaleString('en',{minimumFractionDigits:2})); }
   window.adjustWallet = adjustWallet;
 
   function renderUserDash() {
-    const user = getUserSync();
-    if (!user) {
-      document.getElementById('auth-view').style.display = 'block';
-      document.getElementById('dash-view').style.display = 'none';
-      updateTopbarAvatar(null);
-      return;
-    }
-
-    document.getElementById('auth-view').style.display = 'none';
-    document.getElementById('dash-view').style.display = 'block';
-    updateTopbarAvatar(user);
-
-    const sym = user.currency || '₦';
-    const fmt = v => sym + Math.abs(v).toLocaleString('en',{minimumFractionDigits:2, maximumFractionDigits:2});
-
-    // Profile
-    document.getElementById('dash-greeting').textContent = 'Hey, ' + user.name;
-    document.getElementById('profile-name-display').textContent = user.name;
-    document.getElementById('profile-email-display').textContent = user.email;
-    document.getElementById('profile-name-input').value = user.name;
-    document.getElementById('profile-avatar-lg').textContent = user.name.charAt(0).toUpperCase();
-    document.getElementById('profile-avatar-lg').style.background = user.color || '#3ecfff';
-
-    // Highlight active avatar color
-    document.querySelectorAll('.avatar-color-btn').forEach(b => {
-      const c = user.color || '#3ecfff';
-      b.classList.toggle('active', b.style.backgroundColor === c || b.style.background === c);
-    });
-
-    // Wallet
-    const bets = getUserBets();
-    let totalWon = 0, totalLost = 0, totalStaked = 0;
-    bets.forEach(b => {
-      if (b.pnl > 0) totalWon += b.pnl;
-      else if (b.pnl < 0) totalLost += Math.abs(b.pnl);
-      totalStaked += (b.stake || 0);
-    });
-    const netPnl = totalWon - totalLost;
-    const roi = totalStaked > 0 ? ((netPnl / totalStaked) * 100).toFixed(1) : '0.0';
-
-    document.getElementById('wallet-balance').textContent = fmt(user.balance || 0);
-    document.getElementById('wallet-balance').style.color = (user.balance || 0) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-    document.getElementById('wallet-won').textContent = fmt(totalWon);
-    document.getElementById('wallet-lost').textContent = fmt(totalLost);
-    document.getElementById('wallet-pnl').textContent = (netPnl >= 0 ? '+' : '−') + fmt(netPnl);
-    document.getElementById('wallet-pnl').style.color = netPnl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-    document.getElementById('wallet-roi').textContent = roi + '%';
-    document.getElementById('wallet-roi').style.color = parseFloat(roi) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-
-    // Bet history
-    const tbody = document.getElementById('user-bet-tbody');
-    const countEl = document.getElementById('bet-history-count');
-    if (countEl) countEl.textContent = bets.length + ' bet' + (bets.length !== 1 ? 's' : '');
-
-    if (!bets.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:40px">No bets recorded yet</td></tr>';
-    } else {
-      tbody.innerHTML = bets.slice().reverse().map(b => {
-        const resTag = b.result === 'win' ? 'tag-green' : b.result === 'loss' ? 'tag-red' : 'tag-cyan';
-        const pnlColor = b.pnl > 0 ? 'var(--accent-green)' : b.pnl < 0 ? 'var(--accent-red)' : 'var(--text-muted)';
-        return `<tr>
-          <td>${b.date || '—'}</td>
-          <td>${b.event || '—'}</td>
-          <td>${b.market || '—'}</td>
-          <td style="font-family:'JetBrains Mono',monospace;font-weight:600">${b.odds || '—'}</td>
-          <td>${b.stake ? sym + b.stake.toFixed(2) : '—'}</td>
-          <td><span class="tag ${resTag}">${(b.result||'pending').toUpperCase()}</span></td>
-          <td style="font-family:'Sora',sans-serif;font-weight:700;color:${pnlColor}">${b.pnl > 0 ? '+' : ''}${b.pnl ? sym + b.pnl.toFixed(2) : '—'}</td>
-        </tr>`;
-      }).join('');
-    }
+    const user=getUserSync();
+    if(!user) { document.getElementById('auth-view').style.display='block'; document.getElementById('dash-view').style.display='none'; updateTopbarAvatar(null); return; }
+    document.getElementById('auth-view').style.display='none'; document.getElementById('dash-view').style.display='block';
+    updateTopbarAvatar(user); renderUserAvatar(user);
+    const sym=user.currency||'₦'; const fmt=v=>sym+Math.abs(v).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById('dash-greeting').textContent='Hey, '+user.name;
+    document.getElementById('profile-name-display').textContent=user.name;
+    const unEl=document.getElementById('profile-username-display'); if(unEl) unEl.textContent='@'+(user.username||'—');
+    document.getElementById('profile-email-display').textContent=user.email;
+    document.getElementById('profile-name-input').value=user.name;
+    const s=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val||'—';};
+    s('profile-phone-display',user.phone); s('profile-address-display',user.address); s('profile-city-display',user.city); s('profile-state-display',user.state); s('profile-country-display',user.country);
+    s('profile-since-display',user.created?new Date(user.created).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—');
+    document.querySelectorAll('.avatar-color-btn').forEach(b=>{const c=user.color||'#3ecfff';b.classList.toggle('active',b.style.backgroundColor===c||b.style.background===c);});
+    const bets=getUserBets(); let totalWon=0,totalLost=0,totalStaked=0;
+    bets.forEach(b=>{if(b.pnl>0)totalWon+=b.pnl;else if(b.pnl<0)totalLost+=Math.abs(b.pnl);totalStaked+=(b.stake||0);});
+    const netPnl=totalWon-totalLost; const roi=totalStaked>0?((netPnl/totalStaked)*100).toFixed(1):'0.0';
+    document.getElementById('wallet-balance').textContent=fmt(user.balance||0);
+    document.getElementById('wallet-balance').style.color=(user.balance||0)>=0?'var(--accent-green)':'var(--accent-red)';
+    document.getElementById('wallet-won').textContent=fmt(totalWon);
+    document.getElementById('wallet-lost').textContent=fmt(totalLost);
+    document.getElementById('wallet-pnl').textContent=(netPnl>=0?'+':'−')+fmt(netPnl);
+    document.getElementById('wallet-pnl').style.color=netPnl>=0?'var(--accent-green)':'var(--accent-red)';
+    document.getElementById('wallet-roi').textContent=roi+'%';
+    document.getElementById('wallet-roi').style.color=parseFloat(roi)>=0?'var(--accent-green)':'var(--accent-red)';
+    const tbody=document.getElementById('user-bet-tbody'); const countEl=document.getElementById('bet-history-count');
+    if(countEl) countEl.textContent=bets.length+' bet'+(bets.length!==1?'s':'');
+    if(!bets.length) { tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:40px">No bets recorded yet</td></tr>'; }
+    else { tbody.innerHTML=bets.slice().reverse().map(b=>{const resTag=b.result==='win'?'tag-green':b.result==='loss'?'tag-red':'tag-cyan';const pnlColor=b.pnl>0?'var(--accent-green)':b.pnl<0?'var(--accent-red)':'var(--text-muted)';return '<tr><td>'+(b.date||'—')+'</td><td>'+(b.event||'—')+'</td><td>'+(b.market||'—')+'</td><td style="font-family:\'JetBrains Mono\',monospace;font-weight:600">'+(b.odds||'—')+'</td><td>'+(b.stake?sym+b.stake.toFixed(2):'—')+'</td><td><span class="tag '+resTag+'">'+(b.result||'pending').toUpperCase()+'</span></td><td style="font-family:\'Sora\',sans-serif;font-weight:700;color:'+pnlColor+'">'+(b.pnl>0?'+':'')+(b.pnl?sym+b.pnl.toFixed(2):'—')+'</td></tr>';}).join(''); }
   }
 
-  // ── Init — Firebase handles auth state, no manual init needed ──
-  function initUserSystem() {
-    // Firebase onAuthStateChanged handles everything above
-    // This is kept for backward compatibility with the load event
-    const user = getUserSync();
-    if (user) renderUserDash();
-    else updateTopbarAvatar(null);
-  }
+  function initUserSystem() { const user=getUserSync(); if(user) renderUserDash(); else updateTopbarAvatar(null); }
+
 
   const _origShowPage = window.showPage;
   window.showPage = function(id) {
     _origShowPage(id);
+    trackPageVisit(id);
     if (id === '49ja-live' || id === '49ja-stats') start49jaFeed();
     else stop49jaFeed();
     if (id === '49ja-stats')     computeStats();
