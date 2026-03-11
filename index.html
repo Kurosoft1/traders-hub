@@ -8,6 +8,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<!-- Content Security Policy -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://www.gstatic.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com https://logigames.bet9ja.com https://corsproxy.io https://api.allorigins.win https://*.workers.dev https://api.the-odds-api.com https://api.mymemory.translated.net; frame-src https://*.firebaseapp.com;">
+
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;600;700&family=Sora:wght@400;500;600;700;800&display=swap');
 
@@ -1459,6 +1467,70 @@
 </head>
 <body>
 
+<!-- ═══ SECURITY MODULE (loads first) ═══ -->
+<script>
+(function() {
+  'use strict';
+  // HTTPS enforcement
+  if (location.protocol === 'http:' && !location.hostname.includes('localhost') && !location.hostname.includes('127.0.0.1')) {
+    location.replace('https://' + location.host + location.pathname + location.search);
+  }
+  // XSS Sanitizer
+  window.sanitize = function(input) {
+    if (input == null) return '';
+    let s = String(input);
+    s = s.replace(/<[^>]*>/g, '');
+    s = s.replace(/javascript\s*:/gi, '');
+    s = s.replace(/on\w+\s*=/gi, '');
+    s = s.replace(/data\s*:[^,]*,/gi, '');
+    s = s.replace(/expression\s*\(/gi, '');
+    s = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+         .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    return s.trim();
+  };
+  window.safeText = function(el, text) { if (el) el.textContent = String(text || ''); };
+  window.validateEmail = function(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254; };
+  // Rate limiter
+  const _rl = {};
+  window.rateLimit = function(key, ms) {
+    ms = ms || 2000; const now = Date.now();
+    if (_rl[key] && now - _rl[key] < ms) return false;
+    _rl[key] = now; return true;
+  };
+  // Clickjacking protection
+  if (window.self !== window.top) {
+    try {
+      const ph = window.top.location.hostname;
+      if (!ph.includes('betlab') && !ph.includes('localhost')) {
+        document.body.innerHTML = '<h1>BetLab Pro cannot be loaded in an iframe.</h1>';
+      }
+    } catch(e) { document.body.innerHTML = '<h1>BetLab Pro cannot be loaded in an iframe.</h1>'; }
+  }
+  console.log('🔒 Security module loaded');
+})();
+</script>
+
+<!-- ═══ FIREBASE INIT ═══ -->
+<script>
+  // ════════════════════════════════════════════════════
+  // REPLACE these values with YOUR Firebase project config
+  // Get them from: Firebase Console → Project Settings → Web app
+  // ════════════════════════════════════════════════════
+  const firebaseConfig = {
+    apiKey: "AIzaSyCHEuYOHVAi8MtnW8vnADfSTnbwo7uYYyM",
+    authDomain: "betlab-pro.firebaseapp.com",
+    projectId: "betlab-pro",
+    storageBucket: "betlab-pro.firebasestorage.app",
+    messagingSenderId: "367140208884",
+    appId: "1:367140208884:web:cf50fd65fbf55fc9039ea1",
+    measurementId: "G-SWXC95DEW4"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  db.enablePersistence({ synchronizeTabs: true }).catch(e => console.warn('Persistence:', e.code));
+</script>
+
 
 <!-- ══════════════════════════════════════ TOPBAR ══ -->
 <div id="topbar">
@@ -1620,6 +1692,9 @@
     <div class="nav-label">Account</div>
     <div class="nav-item" onclick="showPage('profile')">
       <span class="nav-icon">👤</span> My Account
+    </div>
+    <div class="nav-item" id="admin-nav" onclick="window.open('admin.html','_self')" style="display:none">
+      <span class="nav-icon">🔑</span> Admin Panel
     </div>
   </div>
 </nav>
@@ -3541,6 +3616,9 @@
           </div>
           <button class="btn btn-cyan" onclick="doLogin()" style="width:100%;padding:12px;font-size:14px;margin-top:8px">Sign In</button>
           <div id="login-msg" style="font-size:12px;color:var(--accent-red);margin-top:10px;text-align:center;display:none"></div>
+          <div style="text-align:center;margin-top:10px">
+            <a href="#" onclick="doPasswordReset();return false" style="font-size:11px;color:var(--accent-cyan);text-decoration:none;opacity:0.7">Forgot password?</a>
+          </div>
         </div>
 
         <!-- Signup form -->
@@ -5426,7 +5504,7 @@
 
   // ── Worker URL helpers ──
   function saveWorkerUrl() {
-    const url = document.getElementById('worker-url-input').value.trim();
+    const url = sanitize(document.getElementById('worker-url-input').value.trim());
     if (!url) return;
     WORKER_URL = url;
     localStorage.setItem('49ja_worker_url', url);
@@ -7122,7 +7200,7 @@ export default {
 
   async function connectAviator() {
     const urlInput = document.getElementById('av-api-url');
-    if (urlInput) _avApiUrl = urlInput.value.trim().replace(/\/$/, '');
+    if (urlInput) _avApiUrl = sanitize(urlInput.value.trim()).replace(/\/$/, '');
     const status = document.getElementById('av-status');
 
     if (_avTimer) clearInterval(_avTimer);
@@ -7683,18 +7761,51 @@ export default {
   window.renderPredictionHistoryPage = renderPredictionHistoryPage;
 
   // ══════════════════════════════════════════════════════════
-  // USER SYSTEM (localStorage demo mode)
+  // USER SYSTEM — Firebase Authentication + Firestore
   // ══════════════════════════════════════════════════════════
 
-  function getUser() {
+  // ── Data access (Firestore with localStorage fallback) ──
+  let _cachedUser = null; // In-memory cache to avoid async everywhere
+
+  async function getUser() {
+    if (_cachedUser) return _cachedUser;
+    const fbUser = auth.currentUser;
+    if (!fbUser) return null;
+    try {
+      const doc = await db.collection('users').doc(fbUser.uid).get();
+      if (doc.exists) {
+        _cachedUser = { uid: fbUser.uid, ...doc.data() };
+        localStorage.setItem('betlab_user', JSON.stringify(_cachedUser));
+        return _cachedUser;
+      }
+      return null;
+    } catch (e) {
+      console.warn('getUser fallback to localStorage:', e.message);
+      try { return JSON.parse(localStorage.getItem('betlab_user')); } catch { return null; }
+    }
+  }
+  function getUserSync() {
+    if (_cachedUser) return _cachedUser;
     try { return JSON.parse(localStorage.getItem('betlab_user')); } catch { return null; }
   }
-  function saveUser(u) { localStorage.setItem('betlab_user', JSON.stringify(u)); }
+
+  async function saveUser(u) {
+    const fbUser = auth.currentUser;
+    if (fbUser) {
+      const data = { ...u };
+      delete data.uid; delete data.password;
+      try { await db.collection('users').doc(fbUser.uid).set(data, { merge: true }); } catch(e) { console.warn('saveUser error:', e); }
+    }
+    _cachedUser = u;
+    localStorage.setItem('betlab_user', JSON.stringify(u));
+  }
+
   function getUserBets() {
     try { return JSON.parse(localStorage.getItem('betlab_user_bets') || '[]'); } catch { return []; }
   }
   function saveUserBets(b) { localStorage.setItem('betlab_user_bets', JSON.stringify(b)); }
 
+  // ── Auth tab toggle ──
   function switchAuthTab(tab) {
     const loginBtn = document.getElementById('auth-tab-login');
     const signupBtn = document.getElementById('auth-tab-signup');
@@ -7712,9 +7823,41 @@ export default {
   }
   window.switchAuthTab = switchAuthTab;
 
-  function doSignup() {
-    const name = document.getElementById('signup-name').value.trim();
-    const email = document.getElementById('signup-email').value.trim();
+  // ── Friendly Firebase error messages ──
+  function firebaseErrorMsg(code) {
+    const msgs = {
+      'auth/email-already-in-use': 'This email is already registered. Try signing in.',
+      'auth/invalid-email': 'Invalid email address.',
+      'auth/weak-password': 'Password must be at least 6 characters.',
+      'auth/user-not-found': 'No account found with this email.',
+      'auth/wrong-password': 'Incorrect password. Try again or reset it.',
+      'auth/too-many-requests': 'Too many attempts. Please wait a moment.',
+      'auth/network-request-failed': 'Network error. Check your connection.',
+      'auth/invalid-credential': 'Incorrect email or password.',
+    };
+    return msgs[code] || 'Something went wrong (' + code + '). Please try again.';
+  }
+
+  // ── Analytics tracker ──
+  async function trackAnalytics(event, data) {
+    try {
+      await db.collection('analytics').add({
+        event: event,
+        data: data || {},
+        uid: auth.currentUser?.uid || 'anonymous',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        userAgent: navigator.userAgent,
+        screen: screen.width + 'x' + screen.height,
+        referrer: document.referrer || 'direct',
+      });
+    } catch(e) { /* silently fail — analytics shouldn't break the app */ }
+  }
+
+  // ── Signup (Firebase) ──
+  async function doSignup() {
+    if (!rateLimit('signup', 3000)) return;
+    const name = sanitize(document.getElementById('signup-name').value.trim());
+    const email = sanitize(document.getElementById('signup-email').value.trim());
     const password = document.getElementById('signup-password').value;
     const balance = parseFloat(document.getElementById('signup-balance').value) || 0;
     const currency = document.getElementById('signup-currency').value;
@@ -7722,49 +7865,154 @@ export default {
 
     if (!name || !email || password.length < 6) {
       msg.textContent = 'Please fill all fields (password min 6 chars)';
-      msg.style.display = 'block'; return;
+      msg.style.color = 'var(--accent-red)'; msg.style.display = 'block'; return;
     }
-    const user = { name, email, password, balance, currency, color: '#3ecfff', created: Date.now() };
-    saveUser(user);
-    saveUserBets([]);
-    msg.style.display = 'none';
-    renderUserDash();
-    notify('Account created! Welcome, ' + name);
+    if (!validateEmail(email)) {
+      msg.textContent = 'Please enter a valid email address';
+      msg.style.color = 'var(--accent-red)'; msg.style.display = 'block'; return;
+    }
+
+    msg.style.color = 'var(--accent-cyan)';
+    msg.textContent = 'Creating account...';
+    msg.style.display = 'block';
+
+    try {
+      const cred = await auth.createUserWithEmailAndPassword(email, password);
+      await cred.user.updateProfile({ displayName: name });
+
+      const userData = {
+        name: name, email: email, balance: balance, currency: currency,
+        color: '#3ecfff', role: 'user', created: Date.now(), lastLogin: Date.now(),
+      };
+      await db.collection('users').doc(cred.user.uid).set(userData);
+      _cachedUser = { uid: cred.user.uid, ...userData };
+      localStorage.setItem('betlab_user', JSON.stringify(_cachedUser));
+      localStorage.setItem('betlab_user_bets', '[]');
+
+      trackAnalytics('signup', { method: 'email' });
+      msg.style.display = 'none';
+      renderUserDash();
+      notify('Account created! Welcome, ' + name);
+    } catch (e) {
+      msg.style.color = 'var(--accent-red)';
+      msg.textContent = firebaseErrorMsg(e.code);
+      msg.style.display = 'block';
+    }
   }
   window.doSignup = doSignup;
 
-  function doLogin() {
-    const email = document.getElementById('login-email').value.trim();
+  // ── Login (Firebase) ──
+  async function doLogin() {
+    if (!rateLimit('login', 2000)) return;
+    const email = sanitize(document.getElementById('login-email').value.trim());
     const password = document.getElementById('login-password').value;
     const msg = document.getElementById('login-msg');
-    const user = getUser();
 
-    if (!user) {
-      msg.textContent = 'No account found — please create one first';
-      msg.style.display = 'block'; return;
+    if (!email || !password) {
+      msg.textContent = 'Please enter email and password';
+      msg.style.color = 'var(--accent-red)'; msg.style.display = 'block'; return;
     }
-    if (user.email !== email || user.password !== password) {
-      msg.textContent = 'Incorrect email or password';
-      msg.style.display = 'block'; return;
+
+    msg.style.color = 'var(--accent-cyan)';
+    msg.textContent = 'Signing in...';
+    msg.style.display = 'block';
+
+    try {
+      const cred = await auth.signInWithEmailAndPassword(email, password);
+      // Update last login in Firestore
+      await db.collection('users').doc(cred.user.uid).update({ lastLogin: Date.now() });
+      // Load user profile
+      const doc = await db.collection('users').doc(cred.user.uid).get();
+      if (doc.exists) {
+        _cachedUser = { uid: cred.user.uid, ...doc.data() };
+        localStorage.setItem('betlab_user', JSON.stringify(_cachedUser));
+      }
+
+      trackAnalytics('login', { method: 'email' });
+      msg.style.display = 'none';
+      renderUserDash();
+      notify('Welcome back, ' + (_cachedUser?.name || email) + '!');
+    } catch (e) {
+      msg.style.color = 'var(--accent-red)';
+      msg.textContent = firebaseErrorMsg(e.code);
+      msg.style.display = 'block';
     }
-    msg.style.display = 'none';
-    renderUserDash();
-    notify('Welcome back, ' + user.name + '!');
   }
   window.doLogin = doLogin;
 
-  function doLogout() {
+  // ── Logout (Firebase) ──
+  async function doLogout() {
+    try { await auth.signOut(); } catch(e) { console.warn('Logout error:', e); }
+    _cachedUser = null;
     document.getElementById('auth-view').style.display = 'block';
     document.getElementById('dash-view').style.display = 'none';
     updateTopbarAvatar(null);
+    // Hide admin nav
+    const adminNav = document.getElementById('admin-nav');
+    if (adminNav) adminNav.style.display = 'none';
+    notify('Signed out');
   }
   window.doLogout = doLogout;
+
+  // ── Password Reset ──
+  async function doPasswordReset() {
+    const email = sanitize(document.getElementById('login-email').value.trim());
+    if (!email) { notify('Enter your email first, then click Forgot password'); return; }
+    try {
+      await auth.sendPasswordResetEmail(email);
+      notify('Password reset email sent! Check your inbox.');
+    } catch (e) {
+      notify(firebaseErrorMsg(e.code));
+    }
+  }
+  window.doPasswordReset = doPasswordReset;
+
+  // ── Firebase Auth State Observer ──
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      // Load profile from Firestore
+      try {
+        const doc = await db.collection('users').doc(user.uid).get();
+        if (doc.exists) {
+          _cachedUser = { uid: user.uid, ...doc.data() };
+          localStorage.setItem('betlab_user', JSON.stringify(_cachedUser));
+          // Show admin nav if admin
+          if (doc.data().role === 'admin') {
+            const adminNav = document.getElementById('admin-nav');
+            if (adminNav) adminNav.style.display = 'flex';
+          }
+        }
+      } catch(e) { console.warn('Auth observer error:', e); }
+      renderUserDash();
+      trackAnalytics('session_start');
+    } else {
+      _cachedUser = null;
+      document.getElementById('auth-view').style.display = 'block';
+      document.getElementById('dash-view').style.display = 'none';
+      updateTopbarAvatar(null);
+    }
+  });
+
+  // ── Migrate localStorage data to Firebase (runs once per user) ──
+  async function migrateLocalData() {
+    const fbUser = auth.currentUser;
+    if (!fbUser) return;
+    if (localStorage.getItem('betlab_migrated_' + fbUser.uid)) return;
+    const localUser = getUserSync();
+    if (localUser && localUser.name) {
+      await db.collection('users').doc(fbUser.uid).set({
+        name: localUser.name, balance: localUser.balance || 0,
+        currency: localUser.currency || '₦', color: localUser.color || '#3ecfff',
+      }, { merge: true });
+    }
+    localStorage.setItem('betlab_migrated_' + fbUser.uid, 'true');
+  }
 
   function updateTopbarAvatar(user) {
     const el = document.getElementById('topbar-avatar');
     if (!el) return;
     if (user) {
-      el.textContent = user.name.charAt(0).toUpperCase();
+      el.textContent = user.name ? user.name.charAt(0).toUpperCase() : '?';
       el.style.background = user.color || 'var(--accent-cyan)';
     } else {
       el.textContent = '?';
@@ -7773,7 +8021,7 @@ export default {
   }
 
   function setAvatarColor(color) {
-    const user = getUser();
+    const user = getUserSync();
     if (!user) return;
     user.color = color;
     saveUser(user);
@@ -7786,9 +8034,9 @@ export default {
   window.setAvatarColor = setAvatarColor;
 
   function saveProfile() {
-    const user = getUser();
+    const user = getUserSync();
     if (!user) return;
-    const name = document.getElementById('profile-name-input').value.trim();
+    const name = sanitize(document.getElementById('profile-name-input').value.trim());
     if (name) { user.name = name; saveUser(user); }
     renderUserDash();
     notify('Profile updated');
@@ -7796,7 +8044,7 @@ export default {
   window.saveProfile = saveProfile;
 
   function adjustWallet(dir) {
-    const user = getUser();
+    const user = getUserSync();
     if (!user) return;
     const amt = parseFloat(document.getElementById('wallet-adjust-amt').value);
     if (!amt || amt <= 0) return;
@@ -7810,7 +8058,7 @@ export default {
   window.adjustWallet = adjustWallet;
 
   function renderUserDash() {
-    const user = getUser();
+    const user = getUserSync();
     if (!user) {
       document.getElementById('auth-view').style.display = 'block';
       document.getElementById('dash-view').style.display = 'none';
@@ -7883,9 +8131,11 @@ export default {
     }
   }
 
-  // Auto-login on page load if user exists
+  // ── Init — Firebase handles auth state, no manual init needed ──
   function initUserSystem() {
-    const user = getUser();
+    // Firebase onAuthStateChanged handles everything above
+    // This is kept for backward compatibility with the load event
+    const user = getUserSync();
     if (user) renderUserDash();
     else updateTopbarAvatar(null);
   }
