@@ -3515,10 +3515,31 @@
     <!-- Filter tabs -->
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       <button class="stats-tab active" id="arb-filter-all" onclick="filterArbs('all')">All</button>
+      <button class="stats-tab" id="arb-filter-nigeria" onclick="filterArbs('nigeria')" style="background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.3)">🇳🇬 Nigeria Priority</button>
       <button class="stats-tab" id="arb-filter-arb" onclick="filterArbs('arb')">Arb Only 💰</button>
       <button class="stats-tab" id="arb-filter-near" onclick="filterArbs('near')">Near-Arb</button>
       <button class="stats-tab" id="arb-filter-football" onclick="filterArbs('football')">⚽ Football</button>
       <button class="stats-tab" id="arb-filter-nba" onclick="filterArbs('nba')">🏀 NBA</button>
+      <button class="stats-tab" id="arb-filter-custom" onclick="filterArbs('custom')" style="background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.3)">⚙️ My Books</button>
+    </div>
+
+    <!-- Custom bookmaker selector -->
+    <div id="arb-custom-panel" style="display:none;margin-bottom:16px">
+      <div class="card" style="padding:16px;border-color:rgba(167,139,250,0.25);background:rgba(167,139,250,0.03)">
+        <div style="font-family:'Sora',sans-serif;font-size:12px;font-weight:700;color:var(--accent-purple);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">⚙️ Custom Bookmaker Filter</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Select 2 or more bookmakers. Only arbs where <strong>ALL best odds</strong> come from your selected books will show.</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <input type="text" id="arb-book-search" placeholder="Search bookmakers..." oninput="filterBookmakerList()" style="flex:1;min-width:200px;padding:8px 12px;font-size:13px">
+          <button class="btn btn-sm" style="color:var(--accent-purple);border-color:rgba(167,139,250,0.3);font-size:10px" onclick="clearCustomBooks()">Clear All</button>
+        </div>
+        <div id="arb-book-list" style="display:flex;flex-wrap:wrap;gap:6px;max-height:180px;overflow-y:auto;padding:4px 0">
+          <!-- Populated by JS -->
+        </div>
+        <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
+          <div style="font-size:11px;color:var(--text-muted)">Selected: <strong id="arb-book-count" style="color:var(--accent-purple)">0</strong></div>
+          <button class="btn btn-sm" style="color:var(--accent-purple);border-color:rgba(167,139,250,0.3)" onclick="applyCustomBooks()">Apply Filter</button>
+        </div>
+      </div>
     </div>
 
     <!-- Stake input -->
@@ -6882,15 +6903,78 @@ export default {
   }
   window.startArbAutoRefresh = startArbAutoRefresh;
 
+  let _customBooks = JSON.parse(localStorage.getItem('betlab_custom_books') || '[]');
+
   function filterArbs(filter) {
     _arbFilter = filter;
-    ['all','arb','near','football','nba'].forEach(f => {
+    ['all','nigeria','arb','near','football','nba','custom'].forEach(f => {
       const btn = document.getElementById('arb-filter-' + f);
       if (btn) btn.classList.toggle('active', f === filter);
     });
+    // Show/hide custom panel
+    const panel = document.getElementById('arb-custom-panel');
+    if (panel) panel.style.display = filter === 'custom' ? 'block' : 'none';
+    if (filter === 'custom') populateBookmakerList();
     renderArbCards();
   }
   window.filterArbs = filterArbs;
+
+  // Build the bookmaker checkbox list from current scan data
+  function populateBookmakerList() {
+    if (!_arbScanData) return;
+    const container = document.getElementById('arb-book-list');
+    if (!container) return;
+    // Collect all unique bookmakers
+    const books = new Map();
+    (_arbScanData.opportunities || []).forEach(o => {
+      (o.bookmakers || []).forEach(b => {
+        if (!books.has(b.key)) books.set(b.key, b.name);
+      });
+    });
+    const sorted = [...books.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+    const search = (document.getElementById('arb-book-search')?.value || '').toLowerCase();
+    const filtered = search ? sorted.filter(([k, n]) => n.toLowerCase().includes(search)) : sorted;
+    container.innerHTML = filtered.map(([key, name]) => {
+      const checked = _customBooks.includes(key);
+      return `<label style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;border:1px solid ${checked ? 'rgba(167,139,250,0.5)' : 'var(--border-dim)'};background:${checked ? 'rgba(167,139,250,0.1)' : 'var(--bg-deep)'};color:${checked ? 'var(--accent-purple)' : 'var(--text-secondary)'};transition:all 0.2s" onclick="toggleCustomBook('${key}',this)">
+        <input type="checkbox" ${checked ? 'checked' : ''} style="accent-color:var(--accent-purple);width:13px;height:13px"> ${name}
+      </label>`;
+    }).join('');
+    updateBookCount();
+  }
+  window.populateBookmakerList = populateBookmakerList;
+
+  function filterBookmakerList() { populateBookmakerList(); }
+  window.filterBookmakerList = filterBookmakerList;
+
+  function toggleCustomBook(key, el) {
+    const idx = _customBooks.indexOf(key);
+    if (idx >= 0) _customBooks.splice(idx, 1);
+    else _customBooks.push(key);
+    localStorage.setItem('betlab_custom_books', JSON.stringify(_customBooks));
+    populateBookmakerList();
+  }
+  window.toggleCustomBook = toggleCustomBook;
+
+  function clearCustomBooks() {
+    _customBooks = [];
+    localStorage.setItem('betlab_custom_books', '[]');
+    populateBookmakerList();
+    renderArbCards();
+  }
+  window.clearCustomBooks = clearCustomBooks;
+
+  function applyCustomBooks() {
+    if (_customBooks.length < 2) { notify('Select at least 2 bookmakers'); return; }
+    renderArbCards();
+    notify('Showing arbs for ' + _customBooks.length + ' selected bookmakers');
+  }
+  window.applyCustomBooks = applyCustomBooks;
+
+  function updateBookCount() {
+    const el = document.getElementById('arb-book-count');
+    if (el) el.textContent = _customBooks.length;
+  }
 
   function renderArbCards() {
     if (!_arbScanData) return;
@@ -6901,6 +6985,10 @@ export default {
     const totalStake = parseFloat(document.getElementById('arb-stake-input')?.value) || 10000;
     const fmt = v => sym + Math.abs(v).toLocaleString('en', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
+    // Nigerian-accessible bookmaker keys
+    const NIGERIA_BOOKS = ['onexbet','betway','pinnacle','marathonbet','betonlineag','smarkets','sport888','williamhill','betvictor','coolbet','matchbook','everygame','mybookieag','gtbets','betanysports'];
+    const NIGERIA_PRIORITY = ['onexbet','betway']; // 1xBet and Betway — main Nigerian books
+
     let opps = _arbScanData.opportunities || [];
 
     // Apply filter
@@ -6908,6 +6996,80 @@ export default {
     else if (_arbFilter === 'near') opps = opps.filter(o => !o.isArb && o.arbSum < 1.03);
     else if (_arbFilter === 'football') opps = opps.filter(o => o.sport !== 'NBA');
     else if (_arbFilter === 'nba') opps = opps.filter(o => o.sport === 'NBA');
+    else if (_arbFilter === 'nigeria') {
+      opps = opps.filter(o => {
+        const bestBooks = [o.bestOdds.home?.key, o.bestOdds.away?.key, o.bestOdds.draw?.key].filter(Boolean);
+        return bestBooks.some(k => NIGERIA_BOOKS.includes(k));
+      });
+      opps.sort((a, b) => {
+        const aPriority = [a.bestOdds.home?.key, a.bestOdds.away?.key, a.bestOdds.draw?.key].some(k => NIGERIA_PRIORITY.includes(k)) ? 1 : 0;
+        const bPriority = [b.bestOdds.home?.key, b.bestOdds.away?.key, b.bestOdds.draw?.key].some(k => NIGERIA_PRIORITY.includes(k)) ? 1 : 0;
+        if (bPriority !== aPriority) return bPriority - aPriority;
+        if (a.isArb && !b.isArb) return -1;
+        if (!a.isArb && b.isArb) return 1;
+        return b.profitPct - a.profitPct;
+      });
+    }
+    else if (_arbFilter === 'custom' && _customBooks.length >= 2) {
+      // Only show opportunities where ALL best odds come from selected bookmakers
+      opps = opps.filter(o => {
+        const bestKeys = [o.bestOdds.home?.key, o.bestOdds.away?.key];
+        if (o.bestOdds.draw) bestKeys.push(o.bestOdds.draw.key);
+        return bestKeys.every(k => _customBooks.includes(k));
+      });
+      // Also find arbs that exist ONLY between selected books (recalculate)
+      if (!opps.length) {
+        // Fallback: show opps where at least the best odds have ANY of the selected books
+        opps = (_arbScanData.opportunities || []).filter(o => {
+          const bestKeys = [o.bestOdds.home?.key, o.bestOdds.away?.key];
+          if (o.bestOdds.draw) bestKeys.push(o.bestOdds.draw.key);
+          return bestKeys.some(k => _customBooks.includes(k));
+        });
+        // Recalculate arb using only selected bookmakers' odds
+        opps = opps.map(o => {
+          let bestHome = {odds:0,bookmaker:'',key:''}, bestAway = {odds:0,bookmaker:'',key:''}, bestDraw = {odds:0,bookmaker:'',key:''};
+          (o.bookmakers||[]).filter(b => _customBooks.includes(b.key)).forEach(b => {
+            if (b.home > bestHome.odds) bestHome = {odds:b.home,bookmaker:b.name,key:b.key};
+            if (b.away > bestAway.odds) bestAway = {odds:b.away,bookmaker:b.name,key:b.key};
+            if (b.draw > bestDraw.odds) bestDraw = {odds:b.draw,bookmaker:b.name,key:b.key};
+          });
+          if (bestHome.odds <= 1 || bestAway.odds <= 1) return null;
+          let arbSum = (1/bestHome.odds) + (1/bestAway.odds);
+          if (o.isThreeWay && bestDraw.odds > 1) arbSum += (1/bestDraw.odds);
+          const profitPct = ((1 - arbSum) * 100);
+          const totalS = 1000;
+          return {
+            ...o,
+            bestOdds: { home: bestHome, away: bestAway, draw: o.isThreeWay && bestDraw.odds > 1 ? bestDraw : null },
+            arbSum: arbSum,
+            profitPct: +profitPct.toFixed(2),
+            isArb: arbSum < 1,
+            stakes: {
+              home: { amount: +(totalS / bestHome.odds / arbSum).toFixed(2), bookmaker: bestHome.bookmaker, odds: bestHome.odds },
+              away: { amount: +(totalS / bestAway.odds / arbSum).toFixed(2), bookmaker: bestAway.bookmaker, odds: bestAway.odds },
+              ...(o.isThreeWay && bestDraw.odds > 1 ? { draw: { amount: +(totalS / bestDraw.odds / arbSum).toFixed(2), bookmaker: bestDraw.bookmaker, odds: bestDraw.odds } } : {}),
+            },
+            _customFiltered: true,
+          };
+        }).filter(Boolean);
+        opps.sort((a,b) => { if(a.isArb&&!b.isArb)return-1; if(!a.isArb&&b.isArb)return 1; return b.profitPct-a.profitPct; });
+      }
+    }
+      // Filter: at least one best odd must be from a Nigeria-accessible bookmaker
+      opps = opps.filter(o => {
+        const bestBooks = [o.bestOdds.home?.key, o.bestOdds.away?.key, o.bestOdds.draw?.key].filter(Boolean);
+        return bestBooks.some(k => NIGERIA_BOOKS.includes(k));
+      });
+      // Sort: prioritize opportunities where 1xBet or Betway is involved
+      opps.sort((a, b) => {
+        const aPriority = [a.bestOdds.home?.key, a.bestOdds.away?.key, a.bestOdds.draw?.key].some(k => NIGERIA_PRIORITY.includes(k)) ? 1 : 0;
+        const bPriority = [b.bestOdds.home?.key, b.bestOdds.away?.key, b.bestOdds.draw?.key].some(k => NIGERIA_PRIORITY.includes(k)) ? 1 : 0;
+        if (bPriority !== aPriority) return bPriority - aPriority;
+        if (a.isArb && !b.isArb) return -1;
+        if (!a.isArb && b.isArb) return 1;
+        return b.profitPct - a.profitPct;
+      });
+    }
 
     if (!opps.length) {
       container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-muted)">No opportunities found for this filter.</div>';
@@ -6932,10 +7094,13 @@ export default {
         const label = key === 'home' ? o.homeTeam : key === 'away' ? o.awayTeam : 'Draw';
         const amt = s.amount * scaleFactor;
         const payout = amt * s.odds;
+        const ngFlag = NIGERIA_BOOKS.includes(o.bestOdds[key]?.key) ? ' 🇳🇬' : '';
+        const isPriority = NIGERIA_PRIORITY.includes(o.bestOdds[key]?.key);
+        const bkStyle = isPriority ? 'color:var(--accent-green);font-weight:700' : 'color:var(--accent-orange)';
         return `<tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
           <td style="padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text-primary)">${label}</td>
           <td style="padding:8px 12px;text-align:center;font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--accent-cyan)">${s.odds.toFixed(2)}</td>
-          <td style="padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--accent-orange)">${s.bookmaker}</td>
+          <td style="padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:12px;${bkStyle}">${s.bookmaker}${ngFlag}</td>
           <td style="padding:8px 12px;text-align:right;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--text-primary)">${fmt(amt)}</td>
           <td style="padding:8px 12px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent-green)">${fmt(payout)}</td>
         </tr>`;
@@ -6960,20 +7125,20 @@ export default {
 
         <!-- Best odds row -->
         <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-          <div style="flex:1;min-width:90px;background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:var(--radius-sm);padding:10px;text-align:center">
+          <div style="flex:1;min-width:90px;background:var(--bg-deep);border:1px solid ${NIGERIA_PRIORITY.includes(o.bestOdds.home.key)?'rgba(52,211,153,0.4)':'var(--border-dim)'};border-radius:var(--radius-sm);padding:10px;text-align:center">
             <div style="font-size:10px;font-weight:600;color:var(--text-muted);margin-bottom:4px">HOME</div>
             <div style="font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:var(--accent-cyan)">${o.bestOdds.home.odds.toFixed(2)}</div>
-            <div style="font-size:10px;color:var(--accent-orange);margin-top:2px">${o.bestOdds.home.bookmaker}</div>
+            <div style="font-size:10px;color:${NIGERIA_PRIORITY.includes(o.bestOdds.home.key)?'var(--accent-green)':'var(--accent-orange)'};margin-top:2px">${o.bestOdds.home.bookmaker}${NIGERIA_BOOKS.includes(o.bestOdds.home.key)?' 🇳🇬':''}</div>
           </div>
-          ${o.bestOdds.draw ? `<div style="flex:1;min-width:90px;background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:var(--radius-sm);padding:10px;text-align:center">
+          ${o.bestOdds.draw ? `<div style="flex:1;min-width:90px;background:var(--bg-deep);border:1px solid ${NIGERIA_PRIORITY.includes(o.bestOdds.draw.key)?'rgba(52,211,153,0.4)':'var(--border-dim)'};border-radius:var(--radius-sm);padding:10px;text-align:center">
             <div style="font-size:10px;font-weight:600;color:var(--text-muted);margin-bottom:4px">DRAW</div>
             <div style="font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:var(--accent-cyan)">${o.bestOdds.draw.odds.toFixed(2)}</div>
-            <div style="font-size:10px;color:var(--accent-orange);margin-top:2px">${o.bestOdds.draw.bookmaker}</div>
+            <div style="font-size:10px;color:${NIGERIA_PRIORITY.includes(o.bestOdds.draw.key)?'var(--accent-green)':'var(--accent-orange)'};margin-top:2px">${o.bestOdds.draw.bookmaker}${NIGERIA_BOOKS.includes(o.bestOdds.draw.key)?' 🇳🇬':''}</div>
           </div>` : ''}
-          <div style="flex:1;min-width:90px;background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:var(--radius-sm);padding:10px;text-align:center">
+          <div style="flex:1;min-width:90px;background:var(--bg-deep);border:1px solid ${NIGERIA_PRIORITY.includes(o.bestOdds.away.key)?'rgba(52,211,153,0.4)':'var(--border-dim)'};border-radius:var(--radius-sm);padding:10px;text-align:center">
             <div style="font-size:10px;font-weight:600;color:var(--text-muted);margin-bottom:4px">AWAY</div>
             <div style="font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:var(--accent-cyan)">${o.bestOdds.away.odds.toFixed(2)}</div>
-            <div style="font-size:10px;color:var(--accent-orange);margin-top:2px">${o.bestOdds.away.bookmaker}</div>
+            <div style="font-size:10px;color:${NIGERIA_PRIORITY.includes(o.bestOdds.away.key)?'var(--accent-green)':'var(--accent-orange)'};margin-top:2px">${o.bestOdds.away.bookmaker}${NIGERIA_BOOKS.includes(o.bestOdds.away.key)?' 🇳🇬':''}</div>
           </div>
         </div>
 
