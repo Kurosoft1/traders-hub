@@ -3512,6 +3512,22 @@
       </div>
     </div>
 
+    <!-- Worker URL config (collapsible) -->
+    <div style="margin-bottom:16px">
+      <button onclick="document.getElementById('arb-worker-config').style.display=document.getElementById('arb-worker-config').style.display==='none'?'block':'none'" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:4px 0">⚙ Worker URL config ▾</button>
+      <div id="arb-worker-config" style="display:none;margin-top:8px;background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--radius-sm);padding:12px 16px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">If the scanner isn't connecting, check your Cloudflare Worker URL:</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="arb-worker-url-input" type="text" placeholder="https://your-worker.workers.dev/"
+            style="flex:1;padding:8px 12px;font-size:13px;font-family:'JetBrains Mono',monospace"
+            onfocus="this.value=this.value||ARB_WORKER_URL">
+          <button class="btn btn-cyan btn-sm" onclick="saveArbWorkerUrl()">Save</button>
+          <button class="btn btn-sm" style="color:var(--text-muted);border-color:var(--border-dim)" onclick="resetArbWorkerUrl()">Reset</button>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:6px">Current: <span id="arb-worker-url-display" style="color:var(--accent-cyan)"></span></div>
+      </div>
+    </div>
+
     <!-- Filter tabs -->
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       <button class="stats-tab active" id="arb-filter-all" onclick="filterArbs('all')">All</button>
@@ -3579,6 +3595,7 @@
       <button class="stats-tab" id="fb-tab-laliga" onclick="switchFbTab('laliga')">La Liga</button>
       <button class="stats-tab" id="fb-tab-seriea" onclick="switchFbTab('seriea')">Serie A</button>
       <button class="stats-tab" id="fb-tab-buli" onclick="switchFbTab('buli')">Bundesliga</button>
+      <button class="stats-tab" id="fb-tab-ligue1" onclick="switchFbTab('ligue1')">Ligue 1</button>
     </div>
 
     <!-- Panels -->
@@ -3587,6 +3604,7 @@
     <div id="fb-panel-laliga" style="display:none"></div>
     <div id="fb-panel-seriea" style="display:none"></div>
     <div id="fb-panel-buli" style="display:none"></div>
+    <div id="fb-panel-ligue1" style="display:none"></div>
   </div>
 
   <!-- ── NBA PREDICTIONS ── -->
@@ -5490,10 +5508,24 @@
   async function fetchJSON(url) {
     const body = POST_BODY();
 
+    // Helper: fetch with a timeout (default 10s)
+    async function timedFetch(fetchUrl, opts, timeoutMs = 10000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(fetchUrl, { ...opts, signal: controller.signal });
+        clearTimeout(timer);
+        return res;
+      } catch(e) {
+        clearTimeout(timer);
+        throw e;
+      }
+    }
+
     // 1. Try Cloudflare Worker (best option — forwards request server-side)
     if (WORKER_URL) {
       try {
-        const res = await fetch(WORKER_URL, {
+        const res = await timedFetch(WORKER_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Target-Url': url },
           body,
@@ -5507,7 +5539,7 @@
 
     // 2. Try direct (works if app is on bet9ja.com domain or same browser session)
     try {
-      const res = await fetch(url, {
+      const res = await timedFetch(url, {
         method: 'POST',
         cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
@@ -5523,12 +5555,12 @@
     // 3. CORS proxies fallback
     for (const proxy of PROXIES) {
       try {
-        const res = await fetch(proxy(url), {
+        const res = await timedFetch(proxy(url), {
           method: 'POST',
           cache: 'no-store',
           headers: { 'Content-Type': 'application/json' },
           body,
-        });
+        }, 8000);
         if (!res.ok) continue;
         const ct = res.headers.get('content-type') || '';
         const raw = ct.includes('json') ? await res.json() : JSON.parse(await res.text());
@@ -5539,6 +5571,8 @@
     return null;
   }
 
+  let _49jaFailCount = 0;
+
   async function fetch49ja() {
     const statusEl = document.getElementById('feed-status');
     statusEl.textContent = 'Fetching...';
@@ -5547,11 +5581,20 @@
     const data = await fetchJSON(API_HISTORY);
 
     if (!data || data.status === -1 || data.error?.code) {
-      statusEl.textContent = '✗ Connection failed';
+      _49jaFailCount++;
+      const retryMsg = _49jaFailCount > 1 ? ` (retry ${_49jaFailCount})` : '';
+      statusEl.textContent = '✗ Connection failed' + retryMsg;
       statusEl.style.color = 'var(--accent-red)';
+      // Auto-retry with longer backoff on repeated failures
+      if (_49jaFailCount <= 10 && _49jaFailCount > 3) {
+        const delay = Math.min(5000 * _49jaFailCount, 30000);
+        statusEl.textContent += ` — retrying in ${Math.round(delay/1000)}s`;
+        // Don't duplicate with setInterval — just let the next interval handle it
+      }
       return;
     }
 
+    _49jaFailCount = 0; // reset on success
     if (parseGameJSON(data)) {
       statusEl.textContent = '● LIVE';
       statusEl.style.color = 'var(--accent-green)';
@@ -6871,37 +6914,141 @@ export default {
   // ARBITRAGE SCANNER — Live from Cloudflare Worker
   // ══════════════════════════════════════════════════════════
 
-  const ARB_WORKER_URL = 'https://snowy-brook-d722arb-scanner.kurosoft01.workers.dev/';
+  // ── Configurable Arb Worker URL (persisted in localStorage) ──
+  let ARB_WORKER_URL = localStorage.getItem('arb_worker_url') || 'https://snowy-brook-d722arb-scanner.kurosoft01.workers.dev/';
   let _arbScanData = null;
   let _arbFilter = 'all';
   let _arbRefreshTimer = null;
+  let _fbRefreshTimer = null;
+  let _nbaRefreshTimer = null;
+  let _arbRetryCount = 0;
+  const _arbMaxRetries = 5;
+
+  // ── Universal fetch-with-retry (exponential backoff) ──
+  async function fetchWithRetry(url, options = {}, maxRetries = 3) {
+    let lastErr;
+    for (let i = 0; i <= maxRetries; i++) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), options.timeout || 15000);
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timeout);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res;
+      } catch (e) {
+        lastErr = e;
+        if (i < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, i) + Math.random() * 500, 10000);
+          await new Promise(r => setTimeout(r, delay));
+        }
+      }
+    }
+    throw lastErr;
+  }
 
   async function fetchArbData() {
     const statusEl = document.getElementById('arb-scan-status');
     if (statusEl) { statusEl.textContent = 'Scanning...'; statusEl.style.color = 'var(--accent-orange)'; }
     try {
-      const res = await fetch(ARB_WORKER_URL);
-      if (!res.ok) throw new Error('Worker returned ' + res.status);
+      const res = await fetchWithRetry(ARB_WORKER_URL, { cache: 'no-store' }, 3);
       _arbScanData = await res.json();
+      _arbRetryCount = 0; // reset on success
 
       if (statusEl) { statusEl.textContent = '● LIVE'; statusEl.style.color = 'var(--accent-green)'; }
-      document.getElementById('arb-total-events').textContent = _arbScanData.totalEvents;
-      document.getElementById('arb-total-arbs').textContent = _arbScanData.arbCount;
-      document.getElementById('arb-total-near').textContent = _arbScanData.nearArbCount;
-      document.getElementById('arb-last-update').textContent = 'Updated: ' + new Date(_arbScanData.timestamp).toLocaleTimeString();
+      const totalEvEl = document.getElementById('arb-total-events');
+      const totalArbEl = document.getElementById('arb-total-arbs');
+      const totalNearEl = document.getElementById('arb-total-near');
+      const lastUpEl = document.getElementById('arb-last-update');
+      if (totalEvEl) totalEvEl.textContent = _arbScanData.totalEvents ?? '—';
+      if (totalArbEl) totalArbEl.textContent = _arbScanData.arbCount ?? '—';
+      if (totalNearEl) totalNearEl.textContent = _arbScanData.nearArbCount ?? '—';
+      if (lastUpEl) lastUpEl.textContent = 'Updated: ' + new Date(_arbScanData.timestamp || Date.now()).toLocaleTimeString();
 
       renderArbCards();
     } catch (e) {
-      if (statusEl) { statusEl.textContent = '✗ Error: ' + e.message; statusEl.style.color = 'var(--accent-red)'; }
+      _arbRetryCount++;
+      const msg = e.name === 'AbortError' ? 'Timeout — retrying...' : e.message;
+      if (statusEl) {
+        statusEl.textContent = `✗ ${msg}` + (_arbRetryCount > 1 ? ` (attempt ${_arbRetryCount})` : '');
+        statusEl.style.color = 'var(--accent-red)';
+      }
+      // Auto-retry with increasing backoff (up to 5 retries)
+      if (_arbRetryCount <= _arbMaxRetries) {
+        const delay = Math.min(5000 * _arbRetryCount, 30000);
+        setTimeout(fetchArbData, delay);
+      } else if (statusEl) {
+        statusEl.textContent = '✗ Worker offline — check URL or try ↺ Refresh';
+        statusEl.style.color = 'var(--accent-red)';
+      }
     }
   }
   window.fetchArbData = fetchArbData;
 
   function startArbAutoRefresh() {
     if (_arbRefreshTimer) clearInterval(_arbRefreshTimer);
+    _arbRetryCount = 0;
     _arbRefreshTimer = setInterval(fetchArbData, 120000); // refresh every 2 min
   }
   window.startArbAutoRefresh = startArbAutoRefresh;
+
+  function stopArbAutoRefresh() {
+    if (_arbRefreshTimer) { clearInterval(_arbRefreshTimer); _arbRefreshTimer = null; }
+  }
+
+  // ── Auto-refresh for Football & NBA pages ──
+  function startFbAutoRefresh() {
+    if (_fbRefreshTimer) clearInterval(_fbRefreshTimer);
+    _fbRefreshTimer = setInterval(renderFootballPage, 180000); // refresh every 3 min
+  }
+  function stopFbAutoRefresh() {
+    if (_fbRefreshTimer) { clearInterval(_fbRefreshTimer); _fbRefreshTimer = null; }
+  }
+  function startNbaAutoRefresh() {
+    if (_nbaRefreshTimer) clearInterval(_nbaRefreshTimer);
+    _nbaRefreshTimer = setInterval(renderNbaPage, 180000); // refresh every 3 min
+  }
+  function stopNbaAutoRefresh() {
+    if (_nbaRefreshTimer) { clearInterval(_nbaRefreshTimer); _nbaRefreshTimer = null; }
+  }
+
+  // ── Arb Worker URL config ──
+  function saveArbWorkerUrl() {
+    const input = document.getElementById('arb-worker-url-input');
+    let url = (input?.value || '').trim();
+    if (!url) return;
+    if (!url.endsWith('/')) url += '/';
+    ARB_WORKER_URL = url;
+    localStorage.setItem('arb_worker_url', url);
+    updateArbWorkerDisplay();
+    _arbRetryCount = 0;
+    _arbScanData = null;
+    _liveOddsCache = null;
+    _liveOddsCacheTime = 0;
+    fetchArbData();
+    notify('Arb worker URL updated');
+  }
+  window.saveArbWorkerUrl = saveArbWorkerUrl;
+
+  function resetArbWorkerUrl() {
+    localStorage.removeItem('arb_worker_url');
+    ARB_WORKER_URL = 'https://snowy-brook-d722arb-scanner.kurosoft01.workers.dev/';
+    const input = document.getElementById('arb-worker-url-input');
+    if (input) input.value = '';
+    updateArbWorkerDisplay();
+    _arbRetryCount = 0;
+    fetchArbData();
+    notify('Arb worker URL reset to default');
+  }
+  window.resetArbWorkerUrl = resetArbWorkerUrl;
+
+  function updateArbWorkerDisplay() {
+    const el = document.getElementById('arb-worker-url-display');
+    if (el) el.textContent = ARB_WORKER_URL;
+    const input = document.getElementById('arb-worker-url-input');
+    if (input && !input.value) input.placeholder = ARB_WORKER_URL;
+  }
+  // Init display on page load
+  setTimeout(updateArbWorkerDisplay, 500);
 
   let _customBooks = JSON.parse(localStorage.getItem('betlab_custom_books') || '[]');
 
@@ -7179,11 +7326,12 @@ export default {
     laliga: {name:'La Liga',icon:'🇪🇸',fixtures:[]},
     seriea: {name:'Serie A',icon:'🇮🇹',fixtures:[]},
     buli: {name:'Bundesliga',icon:'🇩🇪',fixtures:[]},
+    ligue1: {name:'Ligue 1',icon:'🇫🇷',fixtures:[]},
   };
 
   const SPORT_MAP = {
     'Champions League':'ucl', 'Premier League':'epl', 'La Liga':'laliga',
-    'Serie A':'seriea', 'Bundesliga':'buli', 'Ligue 1':'buli',
+    'Serie A':'seriea', 'Bundesliga':'buli', 'Ligue 1':'ligue1',
   };
 
   // Convert decimal odds to implied probability
@@ -7194,8 +7342,14 @@ export default {
 
   async function fetchFootballFixtures() {
     try {
-      const res = await fetch(ARB_WORKER_URL);
-      const data = await res.json();
+      // Reuse cached arb scan data if fresh (< 2 min old)
+      let data = _arbScanData;
+      if (!data || !data._fetchedAt || Date.now() - data._fetchedAt > 120000) {
+        const res = await fetchWithRetry(ARB_WORKER_URL, { cache: 'no-store' }, 2);
+        data = await res.json();
+        data._fetchedAt = Date.now();
+        _arbScanData = data; // share cache
+      }
       if (!data.opportunities) return;
 
       // Reset fixtures
@@ -7250,10 +7404,18 @@ export default {
   async function fetchLiveOdds() {
     if (_liveOddsCache && Date.now() - _liveOddsCacheTime < 120000) return _liveOddsCache;
     try {
-      const res = await fetch(ARB_WORKER_URL);
+      // Reuse cached arb scan data if fresh
+      if (_arbScanData && _arbScanData._fetchedAt && Date.now() - _arbScanData._fetchedAt < 120000) {
+        _liveOddsCache = _arbScanData;
+        _liveOddsCacheTime = Date.now();
+        return _liveOddsCache;
+      }
+      const res = await fetchWithRetry(ARB_WORKER_URL, { cache: 'no-store' }, 2);
       if (!res.ok) return null;
       _liveOddsCache = await res.json();
+      _liveOddsCache._fetchedAt = Date.now();
       _liveOddsCacheTime = Date.now();
+      _arbScanData = _liveOddsCache; // share cache
       return _liveOddsCache;
     } catch { return null; }
   }
@@ -7334,7 +7496,7 @@ export default {
   }
 
   function switchFbTab(tab) {
-    ['ucl','epl','laliga','seriea','buli'].forEach(t => {
+    ['ucl','epl','laliga','seriea','buli','ligue1'].forEach(t => {
       const panel = document.getElementById('fb-panel-' + t);
       const btn = document.getElementById('fb-tab-' + t);
       if (panel) panel.style.display = t === tab ? 'block' : 'none';
@@ -7417,8 +7579,8 @@ export default {
 
   // ══════════════════════════════════════════════════════════
   // NBA PREDICTIONS ENGINE
-  // Uses embedded data + statistical model
-  // Replace NBA_DATA fetch with API call when backend is ready
+  // Uses live data from arb worker + statistical model
+  // Falls back to embedded data when worker is unavailable
   // ══════════════════════════════════════════════════════════
 
   const NBA_TEAMS = {
@@ -7454,7 +7616,7 @@ export default {
     'SAC':{name:'Sacramento Kings',abbr:'SAC',conf:'West',w:15,l:50,ppg:109.5,oppg:117.2,streak:'W1'}
   };
 
-  const NBA_TODAY_GAMES = [
+  let NBA_TODAY_GAMES = [
     {home:'PHI',away:'MEM',time:'6:00 PM',winProb:{PHI:62.5,MEM:37.5}},
     {home:'BKN',away:'DET',time:'6:30 PM',winProb:{BKN:10.5,DET:89.5}},
     {home:'ATL',away:'DAL',time:'6:30 PM',winProb:{ATL:77.5,DAL:22.5}},
@@ -7526,10 +7688,46 @@ export default {
   window.switchNbaTab = switchNbaTab;
 
   async function renderNbaPage() {
-    // Render cards immediately with static data
+    // 1. Try to fetch live NBA games from arb worker
+    try {
+      const data = await fetchLiveOdds();
+      if (data && data.opportunities) {
+        const nbaEvents = data.opportunities.filter(o => !o.isThreeWay && o.sport && o.sport.toLowerCase().includes('basketball'));
+        if (nbaEvents.length > 0) {
+          // Build live games from worker data
+          NBA_TODAY_GAMES = nbaEvents.map(opp => {
+            const kickoff = opp.commenceTime ? new Date(opp.commenceTime) : new Date();
+            const timeStr = kickoff.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            // Find team abbrevs from NBA_TEAMS
+            const findAbbr = name => {
+              const norm = s => s.toLowerCase().replace(/[^a-z]/g, '');
+              const nn = norm(name);
+              for (const [abbr, t] of Object.entries(NBA_TEAMS)) {
+                if (norm(t.name).includes(nn) || nn.includes(norm(t.name)) ||
+                    nn.includes(norm(t.name.split(' ').pop())) ||
+                    norm(t.name).includes(nn.split(' ').pop())) return abbr;
+              }
+              return name.slice(0, 3).toUpperCase();
+            };
+            const homeAbbr = findAbbr(opp.homeTeam);
+            const awayAbbr = findAbbr(opp.awayTeam);
+            // Compute win probs from odds
+            const hOdds = opp.bestOdds?.home?.odds || 2;
+            const aOdds = opp.bestOdds?.away?.odds || 2;
+            const total = (1/hOdds) + (1/aOdds);
+            const hProb = ((1/hOdds)/total)*100;
+            const aProb = ((1/aOdds)/total)*100;
+            return {
+              home: homeAbbr, away: awayAbbr, time: timeStr,
+              winProb: { [homeAbbr]: Math.round(hProb*10)/10, [awayAbbr]: Math.round(aProb*10)/10 },
+              _homeTeamFull: opp.homeTeam, _awayTeamFull: opp.awayTeam
+            };
+          });
+        }
+      }
+    } catch(e) { console.warn('NBA live data fetch failed, using fallback:', e); }
+    // 2. Render with whatever data we have
     _renderNbaCards();
-    // Then fetch live odds and re-render with odds
-    try { await fetchLiveOdds(); _renderNbaCards(); } catch(e) { console.warn('Live odds fetch failed:', e); }
   }
 
   function _renderNbaCards() {
@@ -7977,7 +8175,7 @@ export default {
   // Auto-resolve predictions by fetching real scores from Worker
   async function autoResolvePredictions() {
     try {
-      const res = await fetch(ARB_WORKER_URL + 'api/scores');
+      const res = await fetchWithRetry(ARB_WORKER_URL + 'api/scores', { cache: 'no-store' }, 2);
       if (!res.ok) return;
       const data = await res.json();
       if (!data.scores || !data.scores.length) return;
@@ -8504,9 +8702,12 @@ export default {
     if (id === '49ja-stats')     computeStats();
     if (id === 'arbitrary-calc') _arbPageInit();
     if (id === 'profile')        renderUserDash();
-    if (id === 'nba-predictions') renderNbaPage();
-    if (id === 'football-predictions') renderFootballPage();
-    if (id === 'arb-scanner') { fetchArbData(); startArbAutoRefresh(); }
+    if (id === 'nba-predictions') { renderNbaPage(); startNbaAutoRefresh(); }
+    else stopNbaAutoRefresh();
+    if (id === 'football-predictions') { renderFootballPage(); startFbAutoRefresh(); }
+    else stopFbAutoRefresh();
+    if (id === 'arb-scanner') { _arbRetryCount = 0; fetchArbData(); startArbAutoRefresh(); }
+    else stopArbAutoRefresh();
     if (id === 'prediction-history') { renderPredictionHistoryPage(); autoResolvePredictions(); }
     if (id === 'aviator') { initAviatorDashboard(); }
     if (id === 'nba-predictions' || id === 'football-predictions') renderPredictionTracker();
