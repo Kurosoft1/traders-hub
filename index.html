@@ -7055,21 +7055,6 @@ export default {
         opps.sort((a,b) => { if(a.isArb&&!b.isArb)return-1; if(!a.isArb&&b.isArb)return 1; return b.profitPct-a.profitPct; });
       }
     }
-      // Filter: at least one best odd must be from a Nigeria-accessible bookmaker
-      opps = opps.filter(o => {
-        const bestBooks = [o.bestOdds.home?.key, o.bestOdds.away?.key, o.bestOdds.draw?.key].filter(Boolean);
-        return bestBooks.some(k => NIGERIA_BOOKS.includes(k));
-      });
-      // Sort: prioritize opportunities where 1xBet or Betway is involved
-      opps.sort((a, b) => {
-        const aPriority = [a.bestOdds.home?.key, a.bestOdds.away?.key, a.bestOdds.draw?.key].some(k => NIGERIA_PRIORITY.includes(k)) ? 1 : 0;
-        const bPriority = [b.bestOdds.home?.key, b.bestOdds.away?.key, b.bestOdds.draw?.key].some(k => NIGERIA_PRIORITY.includes(k)) ? 1 : 0;
-        if (bPriority !== aPriority) return bPriority - aPriority;
-        if (a.isArb && !b.isArb) return -1;
-        if (!a.isArb && b.isArb) return 1;
-        return b.profitPct - a.profitPct;
-      });
-    }
 
     if (!opps.length) {
       container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-muted)">No opportunities found for this filter.</div>';
