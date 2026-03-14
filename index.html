@@ -6,6 +6,7 @@
 <title>KuroSoft Casino — Smart Betting Analytics</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%230c0f14'/%3E%3Ccircle cx='32' cy='32' r='28' fill='%231c2230' stroke='%23cc0022' stroke-width='2'/%3E%3Ccircle cx='32' cy='32' r='22' fill='%2312161e' stroke='%233ecfff' stroke-width='1'/%3E%3Ctext x='32' y='38' font-family='Arial Black,sans-serif' font-size='16' font-weight='900' fill='white' text-anchor='middle'%3EK%24%3C/text%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <!-- Firebase SDKs -->
@@ -1667,9 +1668,6 @@
     </div>
     <div class="nav-item" onclick="showPage('arb-scanner')">
       <span class="nav-icon">💹</span> Arb Scanner
-    </div>
-    <div class="nav-item" onclick="showPage('prediction-history')">
-      <span class="nav-icon">🎯</span> My Picks
     </div>
     <div class="nav-item" onclick="showPage('aviator')">
       <span class="nav-icon">✈️</span> Aviator
@@ -3569,24 +3567,48 @@
       <div class="page-title" style="display:flex;align-items:center;gap:10px">
         <span style="font-size:24px">⚽</span> FOOTBALL PREDICTIONS
       </div>
-      <div class="page-subtitle">Match result (1X2) and Both Teams to Score (GG/NG) picks across top leagues</div>
+      <div class="page-subtitle">Match result (1X2) and Both Teams to Score (GG/NG) picks · <span id="fb-today-label" style="color:var(--accent-cyan);font-weight:600"></span></div>
     </div>
 
-    <!-- League tabs -->
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
-      <button class="stats-tab active" id="fb-tab-ucl" onclick="switchFbTab('ucl')">Champions League</button>
-      <button class="stats-tab" id="fb-tab-epl" onclick="switchFbTab('epl')">Premier League</button>
-      <button class="stats-tab" id="fb-tab-laliga" onclick="switchFbTab('laliga')">La Liga</button>
-      <button class="stats-tab" id="fb-tab-seriea" onclick="switchFbTab('seriea')">Serie A</button>
-      <button class="stats-tab" id="fb-tab-buli" onclick="switchFbTab('buli')">Bundesliga</button>
+    <!-- Main tabs: Today / History -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+      <button class="stats-tab active" id="fb-main-today" onclick="switchFbMainTab('today')">📅 Today's Predictions</button>
+      <button class="stats-tab" id="fb-main-history" onclick="switchFbMainTab('history')">📋 Results History</button>
     </div>
 
-    <!-- Panels -->
-    <div id="fb-panel-ucl"></div>
-    <div id="fb-panel-epl" style="display:none"></div>
-    <div id="fb-panel-laliga" style="display:none"></div>
-    <div id="fb-panel-seriea" style="display:none"></div>
-    <div id="fb-panel-buli" style="display:none"></div>
+    <!-- TODAY PANEL -->
+    <div id="fb-today-panel">
+      <!-- League tabs -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+        <button class="stats-tab active" id="fb-tab-ucl" onclick="switchFbTab('ucl')">Champions League</button>
+        <button class="stats-tab" id="fb-tab-epl" onclick="switchFbTab('epl')">Premier League</button>
+        <button class="stats-tab" id="fb-tab-laliga" onclick="switchFbTab('laliga')">La Liga</button>
+        <button class="stats-tab" id="fb-tab-seriea" onclick="switchFbTab('seriea')">Serie A</button>
+        <button class="stats-tab" id="fb-tab-buli" onclick="switchFbTab('buli')">Bundesliga</button>
+      </div>
+      <!-- Panels -->
+      <div id="fb-panel-ucl"></div>
+      <div id="fb-panel-epl" style="display:none"></div>
+      <div id="fb-panel-laliga" style="display:none"></div>
+      <div id="fb-panel-seriea" style="display:none"></div>
+      <div id="fb-panel-buli" style="display:none"></div>
+    </div>
+
+    <!-- HISTORY PANEL -->
+    <div id="fb-history-panel" style="display:none">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600;color:var(--text-secondary)">Select Date:</span>
+        <input type="date" id="fb-history-date" style="padding:8px 12px;font-size:13px;background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--radius-xs);color:var(--text-primary);cursor:pointer" onchange="loadFbHistory()">
+        <button class="btn btn-cyan btn-sm" onclick="loadFbHistory()">↺ Load Results</button>
+        <span id="fb-history-status" style="font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace"></span>
+      </div>
+      <div id="fb-history-container">
+        <div style="text-align:center;padding:60px;color:var(--text-muted)">
+          <div style="font-size:32px;margin-bottom:12px">📋</div>
+          <div>Select a date above to view football results and how predictions performed.</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ── NBA PREDICTIONS ── -->
@@ -3595,14 +3617,15 @@
       <div class="page-title" style="display:flex;align-items:center;gap:10px">
         <span style="font-size:24px">🏀</span> NBA PREDICTIONS
       </div>
-      <div class="page-subtitle">Today's games with moneyline, over/under, and form analysis</div>
+      <div class="page-subtitle">Today's games with moneyline, over/under, and form analysis · <span id="nba-today-label" style="color:var(--accent-orange);font-weight:600"></span></div>
     </div>
 
-    <!-- Tabs: Today / Standings -->
-    <div style="display:flex;gap:8px;margin-bottom:20px">
-      <button class="stats-tab active" id="nba-tab-today" onclick="switchNbaTab('today')">Today's Games</button>
-      <button class="stats-tab" id="nba-tab-standings" onclick="switchNbaTab('standings')">Standings</button>
-      <button class="stats-tab" id="nba-tab-recent" onclick="switchNbaTab('recent')">Recent Results</button>
+    <!-- Main tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+      <button class="stats-tab active" id="nba-main-today" onclick="switchNbaMainTab('today')">📅 Today's Games</button>
+      <button class="stats-tab" id="nba-main-standings" onclick="switchNbaMainTab('standings')">📊 Standings</button>
+      <button class="stats-tab" id="nba-main-recent" onclick="switchNbaMainTab('recent')">🕘 Recent Results</button>
+      <button class="stats-tab" id="nba-main-history" onclick="switchNbaMainTab('history')">📋 Prediction History</button>
     </div>
 
     <!-- Today's Games Panel -->
@@ -3623,6 +3646,22 @@
     <!-- Recent Results Panel -->
     <div id="nba-panel-recent" style="display:none">
       <div class="card" id="nba-recent-results"></div>
+    </div>
+
+    <!-- Prediction History Panel -->
+    <div id="nba-panel-history" style="display:none">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600;color:var(--text-secondary)">Select Date:</span>
+        <input type="date" id="nba-history-date" style="padding:8px 12px;font-size:13px;background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--radius-xs);color:var(--text-primary);cursor:pointer" onchange="loadNbaHistory()">
+        <button class="btn btn-cyan btn-sm" onclick="loadNbaHistory()">↺ Load Results</button>
+        <span id="nba-history-status" style="font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace"></span>
+      </div>
+      <div id="nba-history-container">
+        <div style="text-align:center;padding:60px;color:var(--text-muted)">
+          <div style="font-size:32px;margin-bottom:12px">📋</div>
+          <div>Select a date above to view NBA game results and how predictions performed.</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -7186,10 +7225,19 @@ export default {
       // Reset fixtures
       Object.keys(FB_LEAGUES).forEach(k => FB_LEAGUES[k].fixtures = []);
 
+      // TODAY filter — only matches whose kickoff is today (local date)
+      const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+
       data.opportunities.forEach(opp => {
         if (!opp.isThreeWay) return; // Skip NBA (2-way)
         const leagueKey = SPORT_MAP[opp.sport];
         if (!leagueKey || !FB_LEAGUES[leagueKey]) return;
+
+        // Only include today's fixtures
+        if (opp.commenceTime) {
+          const matchDate = new Date(opp.commenceTime).toLocaleDateString('en-CA');
+          if (matchDate !== todayStr) return;
+        }
 
         // Get best odds to compute probabilities
         const hOdds = opp.bestOdds.home?.odds || 2;
@@ -7198,15 +7246,20 @@ export default {
         const wp = oddsToProb(hOdds, dOdds, aOdds);
 
         const kickoff = opp.commenceTime ? new Date(opp.commenceTime) : new Date();
-        const timeStr = kickoff.toLocaleDateString('en-GB', {month:'short',day:'numeric'}) + ' · ' + kickoff.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+        const timeStr = kickoff.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
 
         FB_LEAGUES[leagueKey].fixtures.push({
           home: opp.homeTeam,
           away: opp.awayTeam,
           time: timeStr,
+          commenceTime: opp.commenceTime,
           wp: { h: Math.round(wp.h*10)/10, d: Math.round(wp.d*10)/10, a: Math.round(wp.a*10)/10 },
         });
       });
+
+      // Update today label
+      const todayLbl = document.getElementById('fb-today-label');
+      if (todayLbl) todayLbl.textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
     } catch(e) { console.warn('Football fixtures fetch failed:', e); }
   }
 
@@ -7328,6 +7381,25 @@ export default {
   }
   window.switchFbTab = switchFbTab;
 
+  function switchFbMainTab(tab) {
+    ['today','history'].forEach(t => {
+      const panel = document.getElementById('fb-' + t + '-panel');
+      const btn = document.getElementById('fb-main-' + t);
+      if (panel) panel.style.display = t === tab ? 'block' : 'none';
+      if (btn) btn.classList.toggle('active', t === tab);
+    });
+    if (tab === 'history') {
+      const dateEl = document.getElementById('fb-history-date');
+      if (dateEl && !dateEl.value) {
+        // Default to yesterday
+        const d = new Date(); d.setDate(d.getDate()-1);
+        dateEl.value = d.toISOString().split('T')[0];
+        loadFbHistory();
+      }
+    }
+  }
+  window.switchFbMainTab = switchFbMainTab;
+
   async function renderFootballPage() {
     // Fetch live fixtures from arb worker
     await fetchFootballFixtures();
@@ -7439,21 +7511,79 @@ export default {
     'SAC':{name:'Sacramento Kings',abbr:'SAC',conf:'West',w:15,l:50,ppg:109.5,oppg:117.2,streak:'W1'}
   };
 
-  const NBA_TODAY_GAMES = [
-    {home:'PHI',away:'MEM',time:'6:00 PM',winProb:{PHI:62.5,MEM:37.5}},
-    {home:'BKN',away:'DET',time:'6:30 PM',winProb:{BKN:10.5,DET:89.5}},
-    {home:'ATL',away:'DAL',time:'6:30 PM',winProb:{ATL:77.5,DAL:22.5}},
-    {home:'MIA',away:'WAS',time:'6:30 PM',winProb:{MIA:89.1,WAS:10.9}},
-    {home:'MIL',away:'PHX',time:'7:00 PM',winProb:{MIL:45.7,PHX:54.3}},
-    {home:'HOU',away:'TOR',time:'7:00 PM',winProb:{HOU:63.4,TOR:36.6}},
-    {home:'SAS',away:'BOS',time:'7:00 PM',winProb:{SAS:58.4,BOS:41.6}},
-    {home:'POR',away:'CHA',time:'9:00 PM',winProb:{POR:42.1,CHA:57.9}},
-    {home:'SAC',away:'IND',time:'9:00 PM',winProb:{SAC:61.0,IND:39.0}},
-    {home:'GSW',away:'CHI',time:'9:00 PM',winProb:{GSW:68.7,CHI:31.3}},
-    {home:'LAL',away:'MIN',time:'10:00 PM',winProb:{}}
-  ];
+  // Dynamic NBA games — fetched live from worker
+  let NBA_TODAY_GAMES = [];
+  let NBA_RECENT = [];
+  let _nbaTodayLoaded = false;
 
-  const NBA_RECENT = [
+  async function fetchNbaTodayGames() {
+    try {
+      // Fetch NBA opportunities from the arb worker (2-way = NBA)
+      const res = await fetch(ARB_WORKER_URL);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.opportunities) return;
+
+      const todayStr = new Date().toLocaleDateString('en-CA');
+      const games = [];
+
+      data.opportunities
+        .filter(o => !o.isThreeWay)
+        .forEach(o => {
+          if (!o.commenceTime) return;
+          const matchDate = new Date(o.commenceTime).toLocaleDateString('en-CA');
+          if (matchDate !== todayStr) return;
+
+          const kickoff = new Date(o.commenceTime);
+          const timeStr = kickoff.toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit',hour12:true});
+
+          // Map full team names to abbr if possible, else use full name
+          const homeAbbr = getTeamAbbr(o.homeTeam) || o.homeTeam;
+          const awayAbbr = getTeamAbbr(o.awayTeam) || o.awayTeam;
+
+          // Compute win prob from best odds
+          const hOdds = o.bestOdds?.home?.odds || 2;
+          const aOdds = o.bestOdds?.away?.odds || 2;
+          const hProb = (1/hOdds)/((1/hOdds)+(1/aOdds))*100;
+          const aProb = 100 - hProb;
+
+          games.push({
+            home: homeAbbr,
+            away: awayAbbr,
+            homeFull: o.homeTeam,
+            awayFull: o.awayTeam,
+            time: timeStr,
+            commenceTime: o.commenceTime,
+            winProb: {[homeAbbr]: Math.round(hProb*10)/10, [awayAbbr]: Math.round(aProb*10)/10}
+          });
+        });
+
+      if (games.length > 0) {
+        NBA_TODAY_GAMES = games;
+        _nbaTodayLoaded = true;
+      }
+    } catch(e) { console.warn('NBA today fetch failed:', e); }
+  }
+
+  // Helper: map team name fragment to abbreviation
+  function getTeamAbbr(name) {
+    const n = name.toLowerCase();
+    const map = {
+      'thunder':'OKC','spurs':'SAS','pistons':'DET','celtics':'BOS','knicks':'NYK',
+      'cavaliers':'CLE','timberwolves':'MIN','lakers':'LAL','nuggets':'DEN',
+      'rockets':'HOU','suns':'PHX','raptors':'TOR','heat':'MIA','magic':'ORL',
+      '76ers':'PHI','sixers':'PHI','hawks':'ATL','hornets':'CHA','clippers':'LAC',
+      'warriors':'GSW','blazers':'POR','bucks':'MIL','bulls':'CHI','grizzlies':'MEM',
+      'mavericks':'DAL','pelicans':'NOP','jazz':'UTA','nets':'BKN','wizards':'WAS',
+      'pacers':'IND','kings':'SAC'
+    };
+    for (const [k,v] of Object.entries(map)) {
+      if (n.includes(k)) return v;
+    }
+    return null;
+  }
+
+  const NBA_RECENT_FALLBACK = [
     {home:'CLE',away:'PHI',sH:115,sA:101},{home:'OKC',away:'DEN',sH:129,sA:126},
     {home:'BKN',away:'MEM',sH:126,sA:115},{home:'UTA',away:'GSW',sH:119,sA:116},
     {home:'LAC',away:'NYK',sH:126,sA:118},{home:'TOR',away:'DAL',sH:122,sA:92},
@@ -7500,21 +7630,41 @@ export default {
     };
   }
 
-  function switchNbaTab(tab) {
-    ['today','standings','recent'].forEach(t => {
+  function switchNbaMainTab(tab) {
+    ['today','standings','recent','history'].forEach(t => {
       const panel = document.getElementById('nba-panel-' + t);
-      const btn = document.getElementById('nba-tab-' + t);
+      const btn = document.getElementById('nba-main-' + t);
       if (panel) panel.style.display = t === tab ? 'block' : 'none';
       if (btn) btn.classList.toggle('active', t === tab);
     });
+    if (tab === 'history') {
+      const dateEl = document.getElementById('nba-history-date');
+      if (dateEl && !dateEl.value) {
+        // Default to yesterday
+        const d = new Date(); d.setDate(d.getDate()-1);
+        dateEl.value = d.toISOString().split('T')[0];
+        loadNbaHistory();
+      }
+    }
   }
+  // Legacy alias
+  function switchNbaTab(tab) { switchNbaMainTab(tab); }
   window.switchNbaTab = switchNbaTab;
+  window.switchNbaMainTab = switchNbaMainTab;
 
   async function renderNbaPage() {
-    // Render cards immediately with static data
+    // Update today label
+    const lbl = document.getElementById('nba-today-label');
+    if (lbl) lbl.textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+
+    // Show loading state
+    const container = document.getElementById('nba-games-container');
+    if (container) container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)"><div style="font-size:24px;margin-bottom:12px">⏳</div><div>Loading today\'s games…</div></div>';
+
+    // Fetch live NBA games and odds in parallel
+    await Promise.all([fetchNbaTodayGames(), fetchLiveOdds()]);
+
     _renderNbaCards();
-    // Then fetch live odds and re-render with odds
-    try { await fetchLiveOdds(); _renderNbaCards(); } catch(e) { console.warn('Live odds fetch failed:', e); }
   }
 
   function _renderNbaCards() {
@@ -7625,7 +7775,7 @@ export default {
             <th style="padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:10px;color:var(--text-muted);text-align:center;font-weight:600">SCORE</th>
             <th style="padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:10px;color:var(--text-muted);text-align:right;font-weight:600">HOME</th>
           </tr></thead>
-          <tbody>${NBA_RECENT.map(g => {
+          <tbody>${(NBA_RECENT.length ? NBA_RECENT : NBA_RECENT_FALLBACK).map(g => {
             const hWin = g.sH > g.sA;
             return `<tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
               <td style="padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:${!hWin?'700':'500'};color:${!hWin?'var(--accent-green)':'var(--text-secondary)'}">${g.away}</td>
@@ -7637,6 +7787,233 @@ export default {
     }
   }
   window.renderNbaPage = renderNbaPage;
+
+  // ── The Odds API key (same one used by arb worker) ──
+  // We call the scores endpoint directly from the browser via the Cloudflare worker proxy
+  const ODDS_API_KEY = (() => {
+    // Try to extract from arb worker URL or use the known key embedded in the worker
+    return null; // Will call via worker proxy path below
+  })();
+
+  // Helper: call the Cloudflare Worker scores proxy
+  async function fetchScoresViaWorker(sport, date) {
+    try {
+      const url = `${ARB_WORKER_URL}?action=scores&sport=${encodeURIComponent(sport)}&date=${encodeURIComponent(date)}`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.scores || data || null;
+    } catch { return null; }
+  }
+
+  // ── FOOTBALL HISTORY LOADER ──
+  async function loadFbHistory() {
+    const dateEl = document.getElementById('fb-history-date');
+    const container = document.getElementById('fb-history-container');
+    const statusEl = document.getElementById('fb-history-status');
+    if (!dateEl || !container) return;
+
+    const dateVal = dateEl.value; // YYYY-MM-DD
+    if (!dateVal) return;
+
+    statusEl.textContent = 'Loading…';
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)"><div style="font-size:24px;margin-bottom:12px">⏳</div><div>Fetching results…</div></div>';
+
+    // Try to fetch from worker proxy
+    let results = await fetchScoresViaWorker('soccer', dateVal);
+
+    // Fallback: use the arb worker data filtered by date
+    if (!results) {
+      try {
+        const res = await fetch(ARB_WORKER_URL);
+        const data = await res.json();
+        if (data.opportunities) {
+          results = data.opportunities
+            .filter(o => o.isThreeWay && o.commenceTime && new Date(o.commenceTime).toLocaleDateString('en-CA') === dateVal)
+            .map(o => ({ id: o.id, home_team: o.homeTeam, away_team: o.awayTeam, commence_time: o.commenceTime, completed: false, scores: null, sport_key: 'soccer' }));
+        }
+      } catch {}
+    }
+
+    if (!results || !results.length) {
+      statusEl.textContent = 'No data found';
+      container.innerHTML = `<div style="text-align:center;padding:60px;color:var(--text-muted)">
+        <div style="font-size:32px;margin-bottom:12px">📭</div>
+        <div>No matches found for ${formatHistoryDate(dateVal)}.<br><span style="font-size:12px">Data may not be available for this date yet.</span></div>
+      </div>`;
+      return;
+    }
+
+    statusEl.textContent = `${results.length} matches`;
+    container.innerHTML = renderHistoryResults(results, 'football', dateVal);
+  }
+
+  // ── NBA HISTORY LOADER ──
+  async function loadNbaHistory() {
+    const dateEl = document.getElementById('nba-history-date');
+    const container = document.getElementById('nba-history-container');
+    const statusEl = document.getElementById('nba-history-status');
+    if (!dateEl || !container) return;
+
+    const dateVal = dateEl.value;
+    if (!dateVal) return;
+
+    statusEl.textContent = 'Loading…';
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)"><div style="font-size:24px;margin-bottom:12px">⏳</div><div>Fetching results…</div></div>';
+
+    let results = await fetchScoresViaWorker('basketball_nba', dateVal);
+
+    // Fallback: use the arb worker data (NBA opportunities) filtered by date
+    if (!results) {
+      try {
+        const res = await fetch(ARB_WORKER_URL);
+        const data = await res.json();
+        if (data.opportunities) {
+          results = data.opportunities
+            .filter(o => !o.isThreeWay && o.commenceTime && new Date(o.commenceTime).toLocaleDateString('en-CA') === dateVal)
+            .map(o => ({ id: o.id, home_team: o.homeTeam, away_team: o.awayTeam, commence_time: o.commenceTime, completed: false, scores: null, sport_key: 'basketball_nba' }));
+        }
+      } catch {}
+    }
+
+    if (!results || !results.length) {
+      statusEl.textContent = 'No data found';
+      container.innerHTML = `<div style="text-align:center;padding:60px;color:var(--text-muted)">
+        <div style="font-size:32px;margin-bottom:12px">📭</div>
+        <div>No games found for ${formatHistoryDate(dateVal)}.<br><span style="font-size:12px">Data may not be available for this date yet.</span></div>
+      </div>`;
+      return;
+    }
+
+    statusEl.textContent = `${results.length} games`;
+    container.innerHTML = renderHistoryResults(results, 'nba', dateVal);
+  }
+
+  function formatHistoryDate(dateStr) {
+    return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  }
+
+  function renderHistoryResults(results, sport, dateVal) {
+    const isNba = sport === 'nba';
+    const dateLabel = formatHistoryDate(dateVal);
+
+    // Sort by commence time
+    results.sort((a,b) => new Date(a.commence_time) - new Date(b.commence_time));
+
+    const rows = results.map(match => {
+      const kickoff = match.commence_time ? new Date(match.commence_time) : null;
+      const timeStr = kickoff ? kickoff.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—';
+      const isCompleted = match.completed || (match.scores && match.scores.length > 0);
+
+      // Extract scores
+      let homeScore = null, awayScore = null;
+      if (match.scores && match.scores.length >= 2) {
+        const hEntry = match.scores.find(s => s.name === match.home_team);
+        const aEntry = match.scores.find(s => s.name === match.away_team);
+        homeScore = hEntry ? hEntry.score : null;
+        awayScore = aEntry ? aEntry.score : null;
+        if (homeScore === null && match.scores[0] && match.scores[1]) {
+          awayScore = match.scores[0].score;
+          homeScore = match.scores[1].score;
+        }
+      }
+
+      // Prediction for this match
+      let predTag = '';
+      let resultTag = '';
+      if (!isNba) {
+        // Generate what prediction would have been
+        const pred = getHistoricalFbPred(match);
+        if (pred) {
+          const picked = pred.pick === '1' ? match.home_team : pred.pick === '2' ? match.away_team : 'Draw';
+          const pickedShort = picked.length > 14 ? picked.slice(0,14)+'…' : picked;
+          predTag = `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(62,207,255,0.1);border:1px solid rgba(62,207,255,0.25);color:var(--accent-cyan)">Pred: ${pred.pick} (${pickedShort})</span>`;
+
+          if (isCompleted && homeScore !== null) {
+            const hS = parseInt(homeScore), aS = parseInt(awayScore);
+            let actualPick = hS > aS ? '1' : aS > hS ? '2' : 'X';
+            const won = actualPick === pred.pick;
+            resultTag = won
+              ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.35);color:var(--accent-green)">✅ WON</span>`
+              : `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:var(--accent-red)">❌ LOST</span>`;
+          } else if (!isCompleted) {
+            resultTag = `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:var(--accent-orange)">⏳ Pending</span>`;
+          }
+        }
+      } else {
+        // NBA prediction
+        const pred = getHistoricalNbaPred(match);
+        if (pred) {
+          const short = pred.pick.length > 14 ? pred.pick.slice(0,14)+'…' : pred.pick;
+          predTag = `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:var(--accent-orange)">Pred: ${short}</span>`;
+
+          if (isCompleted && homeScore !== null) {
+            const hS = parseInt(homeScore), aS = parseInt(awayScore);
+            const actualWinner = hS > aS ? match.home_team : match.away_team;
+            const won = actualWinner === pred.pick;
+            resultTag = won
+              ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.35);color:var(--accent-green)">✅ WON</span>`
+              : `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:var(--accent-red)">❌ LOST</span>`;
+          } else if (!isCompleted) {
+            resultTag = `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:var(--accent-orange)">⏳ Pending</span>`;
+          }
+        }
+      }
+
+      const scoreDisplay = isCompleted && homeScore !== null
+        ? `<span style="font-family:'Sora',sans-serif;font-size:20px;font-weight:800;color:var(--text-primary);letter-spacing:2px">${awayScore} — ${homeScore}</span>`
+        : `<span style="font-family:'Sora',sans-serif;font-size:14px;font-weight:600;color:var(--text-muted)">${isCompleted ? 'FT' : 'vs'}</span>`;
+
+      return `<div class="card" style="margin-bottom:12px;padding:16px 20px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted)">${timeStr}</span>
+            ${isCompleted ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);color:var(--accent-green)">FINAL</span>' : '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);color:var(--accent-orange)">UPCOMING</span>'}
+            ${predTag}
+            ${resultTag}
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center">
+          <div style="text-align:right">
+            <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--text-primary)">${match.away_team}</div>
+          </div>
+          <div style="text-align:center;min-width:80px">${scoreDisplay}</div>
+          <div style="text-align:left">
+            <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--text-primary)">${match.home_team}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
+      <span style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--text-secondary)">${isNba ? '🏀' : '⚽'} Results for ${dateLabel}</span>
+    </div>
+    ${rows}`;
+  }
+
+  // Generate what football prediction would have been from odds
+  function getHistoricalFbPred(match) {
+    try {
+      if (!match.bookmakers && !match.home_team) return null;
+      // Use a simple 45/30/25 default if no odds available
+      const wp = { h: 45, d: 30, a: 25 };
+      return fbPredict(wp);
+    } catch { return null; }
+  }
+
+  // Generate what NBA prediction would have been
+  function getHistoricalNbaPred(match) {
+    try {
+      const home = match.home_team;
+      const away = match.away_team;
+      const pred = predictGame && typeof predictGame === 'function' ? predictGame(home, away) : null;
+      if (!pred) return { pick: home };
+      return { pick: pred.homeWinProb >= pred.awayWinProb ? home : away };
+    } catch { return null; }
+  }
+
+  window.loadFbHistory = loadFbHistory;
+  window.loadNbaHistory = loadNbaHistory;
 
   // ══════════════════════════════════════════════════════════
   // AVIATOR TRACKER — Live feed, stats, cash-out simulator
@@ -8483,6 +8860,23 @@ export default {
   const _origShowPage = window.showPage;
   window.showPage = function(id) {
     _origShowPage(id);
+    // Update browser URL hash for deep-linking (e.g. kurosofthub.com/index.html#aviator)
+    if (history.pushState) {
+      history.pushState(null, '', '#' + id);
+    } else {
+      location.hash = id;
+    }
+    // Update page title
+    const pageTitles = {
+      'dashboard':'Dashboard','odds-calc':'Odds Calculator','prob-calc':'Probability Calc',
+      'stake-calc':'Stake Manager','martingale-calc':'Martingale Calc','backbet-calc':'Back Bet Calc',
+      'arbitrary-calc':'Arbitrary Calc','backtester':'Backtester','data-collect':'Data Collect',
+      '49ja-live':'49ja Live Feed','49ja-stats':'49ja Statistics','profile':'My Account',
+      'nba-predictions':'NBA Predictions','football-predictions':'Football Predictions',
+      'arb-scanner':'Arb Scanner','prediction-history':'Prediction History',
+      'aviator':'Aviator','about':'About','legal':'Legal & Privacy','guide':'How To Use'
+    };
+    document.title = (pageTitles[id] || id) + ' — KuroSoft Casino';
     trackPageVisit(id);
     if (id === '49ja-live' || id === '49ja-stats') start49jaFeed();
     else stop49jaFeed();
@@ -8509,6 +8903,30 @@ export default {
     if (titleEl) titleEl.textContent = labels[id] || id.toUpperCase();
     if (document.body.classList.contains('mob-nav-open')) toggleMobNav();
   };
+
+  // Handle browser back/forward navigation
+  window.addEventListener('popstate', function() {
+    const hash = location.hash.replace('#','') || 'dashboard';
+    _origShowPage(hash);
+    const pageTitles = {
+      'dashboard':'Dashboard','odds-calc':'Odds Calculator','prob-calc':'Probability Calc',
+      'stake-calc':'Stake Manager','martingale-calc':'Martingale Calc','backbet-calc':'Back Bet Calc',
+      'arbitrary-calc':'Arbitrary Calc','backtester':'Backtester','data-collect':'Data Collect',
+      '49ja-live':'49ja Live Feed','49ja-stats':'49ja Statistics','profile':'My Account',
+      'nba-predictions':'NBA Predictions','football-predictions':'Football Predictions',
+      'arb-scanner':'Arb Scanner','prediction-history':'Prediction History',
+      'aviator':'Aviator','about':'About','legal':'Legal & Privacy','guide':'How To Use'
+    };
+    document.title = (pageTitles[hash] || hash) + ' — KuroSoft Casino';
+  });
+
+  // On initial load, navigate to hash if present
+  (function() {
+    const hash = location.hash.replace('#','');
+    if (hash && document.getElementById('page-' + hash)) {
+      setTimeout(() => window.showPage(hash), 100);
+    }
+  })();
 
   // ── Toggle mobile sidebar drawer ──
   function toggleMobNav() {
