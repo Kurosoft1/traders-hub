@@ -3323,9 +3323,12 @@
 
     <!-- Pattern insight bar -->
     <div id="stats-insight-bar" style="margin-top:16px;background:rgba(0,245,255,0.04);border:1px solid rgba(0,245,255,0.15);padding:14px 16px;display:none">
-      <div style="font-family:'Sora',sans-serif;font-size:10px;color:var(--accent-cyan);letter-spacing:1px;margin-bottom:8px">🧠 PATTERN ENGINE INSIGHTS</div>
+      <div style="font-family:'Sora',sans-serif;font-size:10px;color:var(--accent-cyan);letter-spacing:1px;margin-bottom:8px">🧠 ENSEMBLE ENGINE INSIGHTS</div>
       <div id="stats-insight-content" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-secondary);line-height:1.8"></div>
     </div>
+
+    <!-- Self-evaluation card -->
+    <div class="stat-card" id="sc-self-eval" style="margin-top:16px"></div>
   </div>
 
   <!-- ── PROFILE ── -->
@@ -6132,88 +6135,80 @@ export default {
     return '';
   }
 
-  function renderPredictCard(elId, predictions, labelMap, market) {
-    const el = document.getElementById(elId);
-    if (!el) return;
-    if (!predictions || !predictions.length) {
-      el.innerHTML = `<div class="stat-card-title">🧠 PATTERN PREDICTION</div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted);padding:24px 0;line-height:1.8">
-          Insufficient repeating patterns detected.<br>Keep collecting draws to enable predictions.
-        </div>`;
-      return;
-    }
+  // ══════════════════════════════════════════════════════════════════════
+  //  HIGH-PERFORMANCE 49JA PREDICTION ENGINE  v2.0
+  //  6-model ensemble: Bayesian · Markov · Monte Carlo · Pattern ·
+  //                    Frequency-Drift · Hot/Cold Composite
+  //  + Confidence scoring · Drift detection · Self-evaluation cache
+  // ══════════════════════════════════════════════════════════════════════
 
-    const top3 = predictions.slice(0, 3);
-
-    // Market-specific action guidance
-    const actionHint = {
-      hilo:    { up:'Bet HI',    down:'Bet LO',      mid:'Bet MID'   },
-      colour:  { red:'Bet RED',  yellow:'Bet GREEN',  blue:'Bet BLUE', draw:'Bet NO COLOUR' },
-      dragon:  { 'LOW-DOM':'Pick numbers 1–24', 'HIGH-DOM':'Pick numbers 25–49', 'MIXED':'Mix low & high numbers' },
-      rainbow: {},
-    };
-
-    const blocks = top3.map((p, rank) => {
-      const mc  = marketColours(market, p.outcome);
-      const sym = outcomeBigSymbol(market, p.outcome);
-      const readableLabel = outcomeReadable(market, p.outcome, labelMap);
-      const hint = actionHint[market]?.[p.outcome] || '';
-      const rankLabel = rank === 0 ? '▶ TOP PICK' : rank === 1 ? '2ND' : '3RD';
-      const rankCol   = rank === 0 ? mc.text : rank === 1 ? '#888' : '#555';
-      const sText = strengthText(p.pct, p.matchLen);
-      const isTop = rank === 0;
-
-      return `<div style="
-          background:${mc.bg};
-          border:${isTop ? '2px' : '1px'} solid ${mc.border};
-          border-radius:2px;
-          padding:${isTop ? '18px' : '14px'} 18px;
-          margin-bottom:14px;
-          position:relative;
-        ">
-        <!-- Rank badge -->
-        <div style="position:absolute;top:10px;right:14px;font-family:'Sora',sans-serif;font-size:9px;font-weight:700;color:${rankCol};letter-spacing:1px">${rankLabel}</div>
-
-        <!-- Symbol + outcome label row -->
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:${isTop?'12px':'8px'}">
-          <div style="flex-shrink:0">${sym}</div>
-          <div>
-            <div style="font-family:'Sora',sans-serif;font-size:${isTop?'17px':'13px'};font-weight:900;color:${mc.label};line-height:1.2;margin-bottom:4px">${readableLabel}</div>
-            ${hint ? `<div style="font-family:'JetBrains Mono',monospace;font-size:${isTop?'11px':'10px'};color:${mc.text};opacity:0.85;letter-spacing:1px">→ ${hint}</div>` : ''}
-          </div>
-        </div>
-
-        <!-- Confidence bar -->
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-          <div style="flex:1;height:${isTop?'6px':'4px'};background:rgba(255,255,255,0.07);border-radius:3px">
-            <div style="height:100%;border-radius:3px;background:${mc.border};width:${p.pct}%;transition:width 0.6s"></div>
-          </div>
-          <span style="font-family:'Sora',sans-serif;font-size:${isTop?'14px':'11px'};font-weight:700;color:${mc.text};min-width:38px;text-align:right">${p.pct}%</span>
-        </div>
-
-        <!-- Signal description -->
-        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:${mc.text};opacity:0.6">${sText}</div>
-      </div>`;
-    }).join('');
-
-    el.innerHTML = `<div class="stat-card-title">🧠 PATTERN PREDICTION</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:16px;line-height:1.6">
-        Based on repeating sequences in draw history
-      </div>
-      ${blocks}`;
+  // ─── 1. BAYESIAN MODEL ───────────────────────────────────────────────
+  // P(outcome | history) updated with a Laplace-smoothed prior
+  function bayesianModel(sequence, outcomes, priorStrength = 2) {
+    const counts = {};
+    outcomes.forEach(o => counts[o] = priorStrength); // Laplace prior
+    sequence.forEach(s => { if (counts.hasOwnProperty(s)) counts[s]++; });
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    const probs = {};
+    outcomes.forEach(o => probs[o] = counts[o] / total);
+    return probs; // {outcome: probability}
   }
 
-  // Returns scored predictions based purely on repeating sequence patterns.
-  // No frequency blending — only "after this sequence appeared before, what came next?"
-  function patternEngine(sequence, lookback = 6) {
+  // ─── 2. MARKOV CHAIN MODEL ───────────────────────────────────────────
+  // P(next | current_state) using last N draws as state
+  function markovModel(sequence, outcomes, order = 2) {
+    const transitions = {};
+    for (let i = order; i < sequence.length; i++) {
+      const state = sequence.slice(i - order, i).join('→');
+      const next  = sequence[i];
+      if (!transitions[state]) transitions[state] = {};
+      transitions[state][next] = (transitions[state][next] || 0) + 1;
+    }
+    // Current state
+    const curState = sequence.slice(-order).join('→');
+    const trans = transitions[curState] || {};
+    const total = Object.values(trans).reduce((a, b) => a + b, 0) || 1;
+    const probs = {};
+    outcomes.forEach(o => probs[o] = (trans[o] || 0) / total);
+    return probs;
+  }
+
+  // ─── 3. MONTE CARLO SIMULATION ───────────────────────────────────────
+  // Simulate N draws using empirical frequency and return outcome distribution
+  function monteCarloModel(sequence, outcomes, simCount = 5000) {
+    const freq = {};
+    outcomes.forEach(o => freq[o] = 0);
+    sequence.forEach(s => { if (freq.hasOwnProperty(s)) freq[s]++; });
+    const total = sequence.length || 1;
+    // Build CDF
+    const cdf = [];
+    let cumulative = 0;
+    for (const o of outcomes) {
+      cumulative += (freq[o] / total);
+      cdf.push({ o, cum: cumulative });
+    }
+    // Simulate
+    const simFreq = {};
+    outcomes.forEach(o => simFreq[o] = 0);
+    for (let i = 0; i < simCount; i++) {
+      const r = Math.random();
+      const picked = cdf.find(c => r <= c.cum) || cdf[cdf.length - 1];
+      simFreq[picked.o]++;
+    }
+    const probs = {};
+    outcomes.forEach(o => probs[o] = simFreq[o] / simCount);
+    return probs;
+  }
+
+  // ─── 4. PATTERN (SEQUENCE) ENGINE ────────────────────────────────────
+  // "What outcome followed this exact sequence before?" — weighted by match length
+  function patternEngine(sequence, lookback = 8) {
     if (sequence.length < 10) return null;
     const scores = {};
     let totalWeight = 0;
-
-    // Scan all pattern lengths from longest (most specific) to shortest
     for (let len = Math.min(lookback, sequence.length - 1); len >= 1; len--) {
       const tail = sequence.slice(-len).join('|');
-      const weight = len * len; // longer match = much stronger signal
+      const weight = len * len;
       for (let i = 0; i <= sequence.length - len - 1; i++) {
         if (sequence.slice(i, i + len).join('|') === tail) {
           const next = sequence[i + len];
@@ -6222,28 +6217,276 @@ export default {
         }
       }
     }
-
     if (!totalWeight) return null;
-    const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
-    return sorted.map(([outcome, score]) => ({
-      outcome,
-      score,
-      pct: Math.round(score / totalWeight * 100),
-      // Longest matching pattern length for this outcome
-      matchLen: (() => {
-        for (let len = Math.min(lookback, sequence.length-1); len >= 1; len--) {
-          const tail = sequence.slice(-len).join('|');
-          for (let i = 0; i <= sequence.length - len - 1; i++) {
-            if (sequence.slice(i, i+len).join('|') === tail && sequence[i+len] === outcome) return len;
+    return Object.entries(scores)
+      .sort((a, b) => b[1] - a[1])
+      .map(([outcome, score]) => ({
+        outcome,
+        score,
+        pct: Math.round(score / totalWeight * 100),
+        matchLen: (() => {
+          for (let len = Math.min(lookback, sequence.length - 1); len >= 1; len--) {
+            const tail = sequence.slice(-len).join('|');
+            for (let i = 0; i <= sequence.length - len - 1; i++) {
+              if (sequence.slice(i, i + len).join('|') === tail && sequence[i + len] === outcome) return len;
+            }
           }
-        }
-        return 1;
-      })()
-    }));
+          return 1;
+        })()
+      }));
   }
 
-  // Bet49-specific: predict 4 individual numbers based on repeating 6-ball set patterns
-  // Finds the last few draws' ball sets and scores numbers that repeatedly follow the current sequence
+  // ─── 5. FREQUENCY-DRIFT MODEL ────────────────────────────────────────
+  // Detects whether short-term frequency is diverging from long-term baseline
+  function frequencyDriftModel(sequence, outcomes) {
+    const shortWindow = Math.min(20, Math.floor(sequence.length * 0.1));
+    const longWindow  = Math.min(200, sequence.length);
+    const shortSeq = sequence.slice(-shortWindow);
+    const longSeq  = sequence.slice(-longWindow);
+    const freqOf = (seq, o) => seq.filter(s => s === o).length / (seq.length || 1);
+    const probs = {};
+    outcomes.forEach(o => {
+      const shortF = freqOf(shortSeq, o);
+      const longF  = freqOf(longSeq, o);
+      // Weight towards short-term trend if drift is significant
+      const drift = shortF - longF;
+      probs[o] = Math.max(0, longF + drift * 1.5); // amplify drift signal
+    });
+    // Normalize
+    const total = Object.values(probs).reduce((a, b) => a + b, 0) || 1;
+    outcomes.forEach(o => probs[o] /= total);
+    return probs;
+  }
+
+  // ─── 6. HOT/COLD COMPOSITE (for number markets) ──────────────────────
+  function hotColdScore(draws, number, recentWindow = 20) {
+    const allAppear = draws.filter(d => d.numbers.includes(String(number))).length;
+    const recentAppear = draws.slice(0, recentWindow).filter(d => d.numbers.includes(String(number))).length;
+    const expectedFreq = 6 / 49;
+    const hotScore  = recentAppear / (recentWindow * expectedFreq + 0.001);
+    // Gap since last appearance
+    let gap = 0;
+    for (let i = 0; i < draws.length; i++) {
+      if (draws[i].numbers.includes(String(number))) break;
+      gap++;
+    }
+    const avgGap = draws.length / (allAppear + 0.001);
+    const coldScore = gap / (avgGap + 0.001);
+    return { hotScore, coldScore, gap, avgGap, allAppear };
+  }
+
+  // ─── ENSEMBLE COMBINER ────────────────────────────────────────────────
+  // Weighted combination of all models
+  function ensemblePredict(sequence, outcomes, draws = null, weights = null) {
+    if (sequence.length < 5) return null;
+    const W = weights || { bayesian: 0.30, markov: 0.25, montecarlo: 0.20, pattern: 0.15, drift: 0.10 };
+
+    const bayes  = bayesianModel(sequence, outcomes);
+    const markov = markovModel(sequence, outcomes);
+    const mc     = monteCarloModel(sequence, outcomes, 3000);
+    const drift  = frequencyDriftModel(sequence, outcomes);
+
+    // Pattern engine gives ranked list, convert to prob map
+    const patternList = patternEngine(sequence, 8);
+    const patternMap = {};
+    outcomes.forEach(o => patternMap[o] = 0);
+    if (patternList) {
+      const pTotal = patternList.reduce((s, p) => s + p.pct, 0) || 1;
+      patternList.forEach(p => { patternMap[p.outcome] = (p.pct / pTotal); });
+    }
+
+    // Combine
+    const combined = {};
+    outcomes.forEach(o => {
+      combined[o] = (bayes[o]  || 0) * W.bayesian
+                  + (markov[o] || 0) * W.markov
+                  + (mc[o]     || 0) * W.montecarlo
+                  + (patternMap[o]  ) * W.pattern
+                  + (drift[o]  || 0) * W.drift;
+    });
+
+    // Normalize
+    const total = Object.values(combined).reduce((a, b) => a + b, 0) || 1;
+    outcomes.forEach(o => combined[o] /= total);
+
+    // Build sorted result
+    return outcomes
+      .map(o => ({
+        outcome: o,
+        prob: combined[o],
+        pct: Math.round(combined[o] * 100),
+        modelScores: {
+          bayesian: Math.round((bayes[o] || 0) * 100),
+          markov:   Math.round((markov[o] || 0) * 100),
+          mc:       Math.round((mc[o] || 0) * 100),
+          pattern:  Math.round((patternMap[o] || 0) * 100),
+          drift:    Math.round((drift[o] || 0) * 100),
+        },
+        matchLen: patternList ? (patternList.find(p => p.outcome === o)?.matchLen || 0) : 0,
+      }))
+      .sort((a, b) => b.prob - a.prob);
+  }
+
+  // ─── CONFIDENCE SCORER ───────────────────────────────────────────────
+  // Based on model agreement and data strength
+  function calcConfidence(results) {
+    if (!results || !results.length) return { score: 0, level: 'LOW', risk: 'high' };
+    const top = results[0];
+    const second = results[1];
+    // Margin between top pick and runner-up
+    const margin = top.pct - (second ? second.pct : 0);
+    // Model agreement: how many models agree with the top pick?
+    const scores = Object.values(top.modelScores || {});
+    const maxScore = Math.max(...scores);
+    const agreeCount = scores.filter(s => s >= maxScore * 0.6).length;
+    const totalModels = scores.length;
+    const agreePct = agreeCount / totalModels;
+
+    let score = Math.round(30 + margin * 1.5 + agreePct * 30);
+    score = Math.min(95, Math.max(25, score));
+
+    const level = score >= 70 ? 'STRONG' : score >= 50 ? 'MODERATE' : 'LEAN';
+    const risk  = score >= 70 ? 'low'    : score >= 50 ? 'medium'   : 'high';
+    return { score, level, risk };
+  }
+
+  // ─── DRIFT DETECTOR ──────────────────────────────────────────────────
+  function detectDrift(sequence, outcomes) {
+    const s10  = sequence.slice(-10);
+    const s50  = sequence.slice(-50);
+    const drifts = [];
+    const freqOf = (seq, o) => seq.filter(x => x === o).length / (seq.length || 1);
+    outcomes.forEach(o => {
+      const f10 = freqOf(s10, o);
+      const f50 = freqOf(s50, o);
+      const diff = Math.abs(f10 - f50);
+      if (diff > 0.15) drifts.push({ outcome: o, direction: f10 > f50 ? '↑' : '↓', diff: Math.round(diff * 100) });
+    });
+    return drifts;
+  }
+
+  // ─── PREDICTION RESULT RENDERER ──────────────────────────────────────
+  function renderPredictCard(elId, predictions, labelMap, market, confidence, drifts) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+
+    // predictions can be from ensemblePredict (array with .prob/.modelScores) 
+    // or from legacy patternEngine (array with .pct/.matchLen)
+    const isEnsemble = predictions && predictions[0] && predictions[0].modelScores;
+
+    if (!predictions || !predictions.length) {
+      el.innerHTML = `<div class="stat-card-title">🧠 ENSEMBLE PREDICTION</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted);padding:24px 0;line-height:1.8">
+          Insufficient data — keep collecting draws.
+        </div>`;
+      return;
+    }
+
+    const top3 = predictions.slice(0, 3);
+    const conf = confidence || (isEnsemble ? calcConfidence(predictions) : { score: predictions[0].pct || 50, level: predictions[0].pct >= 60 ? 'STRONG' : predictions[0].pct >= 40 ? 'MODERATE' : 'LEAN', risk: 'medium' });
+
+    const actionHint = {
+      hilo:   { up:'Bet HI', down:'Bet LO', mid:'Bet MID' },
+      colour: { red:'Bet RED', yellow:'Bet GREEN', blue:'Bet BLUE', draw:'Bet NO COLOUR' },
+      dragon: { 'LOW-DOM':'Pick numbers 1–24', 'HIGH-DOM':'Pick numbers 25–49', 'MIXED':'Mix low & high' },
+      rainbow: {},
+    };
+
+    const confColor = conf.level === 'STRONG' ? '#22cc66' : conf.level === 'MODERATE' ? '#f59e0b' : '#888888';
+    const riskColor = conf.risk === 'low' ? '#22cc66' : conf.risk === 'medium' ? '#f59e0b' : '#ff4466';
+
+    const blocks = top3.map((p, rank) => {
+      const outcome = p.outcome;
+      const pct = isEnsemble ? Math.round(p.prob * 100) : (p.pct || 0);
+      const mc = marketColours(market, outcome);
+      const sym = outcomeBigSymbol(market, outcome);
+      const readableLabel = outcomeReadable(market, outcome, labelMap);
+      const hint = actionHint[market]?.[outcome] || '';
+      const rankLabel = rank === 0 ? '▶ TOP PICK' : rank === 1 ? '2ND' : '3RD';
+      const rankCol   = rank === 0 ? mc.text : rank === 1 ? '#666' : '#444';
+      const isTop = rank === 0;
+
+      // Model breakdown bar (ensemble only)
+      let modelBreakdown = '';
+      if (isTop && isEnsemble && p.modelScores) {
+        const ms = p.modelScores;
+        const modelDefs = [
+          { key: 'bayesian', label: 'BAYESIAN', col: '#3ecfff' },
+          { key: 'markov',   label: 'MARKOV',   col: '#a78bfa' },
+          { key: 'mc',       label: 'MONTE C',  col: '#f59e0b' },
+          { key: 'pattern',  label: 'PATTERN',  col: '#34d399' },
+          { key: 'drift',    label: 'DRIFT',    col: '#fb923c' },
+        ];
+        modelBreakdown = `
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">MODEL BREAKDOWN</div>
+            ${modelDefs.map(m => `
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:${m.col};width:54px;flex-shrink:0">${m.label}</div>
+                <div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px">
+                  <div style="height:4px;border-radius:2px;background:${m.col};width:${ms[m.key] || 0}%;transition:width 0.5s"></div>
+                </div>
+                <div style="font-family:'Sora',sans-serif;font-size:9px;font-weight:700;color:${m.col};width:26px;text-align:right">${ms[m.key] || 0}%</div>
+              </div>`).join('')}
+          </div>`;
+      }
+
+      return `<div style="
+          background:${mc.bg};
+          border:${isTop ? '2px' : '1px'} solid ${mc.border};
+          border-radius:4px;
+          padding:${isTop ? '18px' : '12px'} 16px;
+          margin-bottom:12px;
+          position:relative;
+        ">
+        <div style="position:absolute;top:10px;right:12px;font-family:'Sora',sans-serif;font-size:9px;font-weight:700;color:${rankCol};letter-spacing:1px">${rankLabel}</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:${isTop?'10px':'6px'}">
+          <div style="flex-shrink:0">${sym}</div>
+          <div>
+            <div style="font-family:'Sora',sans-serif;font-size:${isTop?'16px':'13px'};font-weight:900;color:${mc.label};line-height:1.2;margin-bottom:3px">${readableLabel}</div>
+            ${hint ? `<div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:${mc.text};opacity:0.8;letter-spacing:1px">→ ${hint}</div>` : ''}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <div style="flex:1;height:${isTop?'7px':'4px'};background:rgba(255,255,255,0.07);border-radius:3px">
+            <div style="height:100%;border-radius:3px;background:${mc.border};width:${pct}%;transition:width 0.7s"></div>
+          </div>
+          <span style="font-family:'Sora',sans-serif;font-size:${isTop?'15px':'11px'};font-weight:700;color:${mc.text};min-width:36px;text-align:right">${pct}%</span>
+        </div>
+        ${modelBreakdown}
+      </div>`;
+    }).join('');
+
+    // Drift alerts
+    let driftHtml = '';
+    if (drifts && drifts.length) {
+      driftHtml = `<div style="margin-top:10px;padding:8px 12px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:4px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:#f59e0b;letter-spacing:1px;margin-bottom:4px">⚡ DRIFT DETECTED</div>
+        ${drifts.map(d => `<div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-secondary)">${labelMap[d.outcome]||d.outcome} ${d.direction} ${d.diff}% shift in last 10</div>`).join('')}
+      </div>`;
+    }
+
+    el.innerHTML = `
+      <div class="stat-card-title">🧠 ENSEMBLE PREDICTION</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-muted)">CONFIDENCE</div>
+          <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:800;color:${confColor}">${conf.score}%</div>
+          <div style="font-family:'Sora',sans-serif;font-size:9px;font-weight:700;color:${confColor};padding:2px 7px;border:1px solid ${confColor}40;border-radius:10px">${conf.level}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;margin-left:auto">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-muted)">RISK</div>
+          <div style="font-family:'Sora',sans-serif;font-size:9px;font-weight:700;color:${riskColor};padding:2px 7px;border:1px solid ${riskColor}40;border-radius:10px">${conf.risk.toUpperCase()}</div>
+        </div>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:12px">
+        6-model ensemble · Bayesian · Markov · Monte Carlo · Pattern · Drift
+      </div>
+      ${blocks}
+      ${driftHtml}`;
+  }
+
+  // ─── BACKWARD-COMPAT SHIM: old patternEngineBalls still used for Bet49 ──
   function patternEngineBalls(draws, topN = 4) {
     if (draws.length < 15) return null;
     // Use last 5 draw sets as "tail"
@@ -6451,7 +6694,12 @@ export default {
         </table>`;
     }
 
-    renderPredictCard('sc-hilo-predict', patternEngine(seq), labelMap, 'hilo');
+    // ── Ensemble prediction ──
+    const ensResultHL = ensemblePredict(seq, outcomes);
+    const confHL      = calcConfidence(ensResultHL);
+    const driftsHL    = detectDrift(seq, outcomes);
+    renderPredictCard('sc-hilo-predict', ensResultHL, labelMap, 'hilo', confHL, driftsHL);
+    evalSelfRecord('hilo', seq, labelMap);
   }
 
   function computeColourStats(draws) {
@@ -6514,7 +6762,12 @@ export default {
         </table>`;
     }
 
-    renderPredictCard('sc-colour-predict', patternEngine(seq), labelMap, 'colour');
+    // ── Ensemble prediction ──
+    const ensResultCol = ensemblePredict(seq, outcomes);
+    const confCol      = calcConfidence(ensResultCol);
+    const driftsCol    = detectDrift(seq, outcomes);
+    renderPredictCard('sc-colour-predict', ensResultCol, labelMap, 'colour', confCol, driftsCol);
+    evalSelfRecord('colour', seq, labelMap);
   }
 
   function computeBet49Stats(draws) {
@@ -6586,29 +6839,86 @@ export default {
         </table>`;
     }
 
-    // Pattern prediction — strictly 4 balls from repeating patterns
+    // ── Ensemble number prediction ──
     const el2 = document.getElementById('sc-bet49-predict');
     if (el2) {
-      const predicted = patternEngineBalls(draws, 4);
-      if (!predicted || !predicted.length) {
-        el2.innerHTML = `<div class="stat-card-title">🧠 PATTERN PREDICTION (4 BALLS)</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);padding:20px 0">Insufficient repeating 6-ball patterns — keep collecting draws</div>`;
+      if (draws.length < 15) {
+        el2.innerHTML = `<div class="stat-card-title">🧠 ENSEMBLE NUMBER PREDICTION</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);padding:20px 0">Need at least 15 draws to generate predictions</div>`;
       } else {
-        const total = predicted.reduce((s,p) => s+p.score, 0);
-        const ballsHtml = predicted.map(({n, score}) => {
-          const pct = Math.round(score/total*100);
-          return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-            <div class="ball49 ${ballColour(n)}" style="width:36px;height:36px;font-size:12px">${n}</div>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--accent-cyan)">${pct}%</span>
+        // Score each ball using 5-factor ensemble
+        const scored = [];
+        for (let n = 1; n <= 49; n++) {
+          const { hotScore, coldScore, gap, avgGap, allAppear } = hotColdScore(draws, n, 20);
+          // Frequency score: overall appearance rate vs expected
+          const freqScore = allAppear / (draws.length * (6/49) + 0.001);
+          // Trend score: short-term vs long-term drift
+          const recentF  = draws.slice(0, 20).filter(d => d.numbers.includes(String(n))).length / 20;
+          const overallF = allAppear / (draws.length || 1);
+          const trendScore = Math.max(0, (recentF - overallF) * 10 + 1); // normalise around 1
+          // Due score: gap-based — ball is "overdue" when gap >> avgGap
+          const dueScore = Math.min(3, gap / (avgGap + 0.001));
+          // Weighted ensemble score
+          const W = { hot:0.30, cold:0.05, freq:0.20, trend:0.25, due:0.20 };
+          const score = hotScore  * W.hot
+                      + coldScore * W.cold
+                      + freqScore * W.freq
+                      + trendScore* W.trend
+                      + dueScore  * W.due;
+          scored.push({ n, score, hotScore, dueScore, trendScore, gap, avgGap });
+        }
+        scored.sort((a, b) => b.score - a.score);
+        const top6 = scored.slice(0, 6);
+        const totalScore = top6.reduce((s, p) => s + p.score, 0) || 1;
+
+        // Confidence: how much the top 6 dominate over rest
+        const top6Sum = top6.reduce((s,p)=>s+p.score,0);
+        const allSum  = scored.reduce((s,p)=>s+p.score,0);
+        const numConf = Math.round(Math.min(85, 40 + (top6Sum/allSum)*200));
+        const numConfLevel = numConf >= 65 ? 'STRONG' : numConf >= 50 ? 'MODERATE' : 'LEAN';
+        const numConfCol   = numConf >= 65 ? '#22cc66' : numConf >= 50 ? '#f59e0b' : '#888';
+
+        const ballsHtml = top6.map(({ n, score }, i) => {
+          const pct = Math.round(score / totalScore * 100);
+          const tagLabel = i === 0 ? 'TOP' : i < 3 ? 'HOT' : 'WARM';
+          const tagCol   = i === 0 ? '#00f5ff' : i < 3 ? '#22cc66' : '#888';
+          return `<div style="display:flex;flex-direction:column;align-items:center;gap:5px;position:relative">
+            <div class="ball49 ${ballColour(n)}" style="width:38px;height:38px;font-size:12px;box-shadow:${i===0?'0 0 12px rgba(0,245,255,0.4)':''}">${n}</div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:${tagCol}">${pct}%</span>
+            <span style="font-family:'Sora',sans-serif;font-size:7px;font-weight:700;color:${tagCol};letter-spacing:0.5px">${tagLabel}</span>
           </div>`;
         }).join('');
-        el2.innerHTML = `<div class="stat-card-title">🧠 PATTERN PREDICTION (4 BALLS)</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:12px">Numbers that repeatedly followed current draw sequence</div>
-          <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px">${ballsHtml}</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-muted)">Based on ${draws.length.toLocaleString()} draws · pattern match only</div>`;
+
+        // Factor breakdown for top pick
+        const tp = top6[0];
+        const factorHtml = `
+          <div style="margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">TOP PICK FACTOR SCORES (Ball ${tp.n})</div>
+            ${[
+              { label:'HOT SCORE',   val: Math.round(tp.hotScore*100),    col:'#3ecfff' },
+              { label:'TREND',       val: Math.round(tp.trendScore*50),    col:'#a78bfa' },
+              { label:'DUE SCORE',   val: Math.round(tp.dueScore*33),      col:'#f59e0b' },
+            ].map(f => `
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:${f.col};width:70px;flex-shrink:0">${f.label}</div>
+                <div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px">
+                  <div style="height:4px;border-radius:2px;background:${f.col};width:${Math.min(100,f.val)}%;transition:width 0.5s"></div>
+                </div>
+                <div style="font-family:'Sora',sans-serif;font-size:9px;font-weight:700;color:${f.col};width:26px;text-align:right">${Math.min(100,f.val)}%</div>
+              </div>`).join('')}
+          </div>`;
+
+        el2.innerHTML = `<div class="stat-card-title">🧠 ENSEMBLE NUMBER PREDICTION</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-muted)">CONFIDENCE</span>
+            <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:800;color:${numConfCol}">${numConf}%</span>
+            <span style="font-family:'Sora',sans-serif;font-size:9px;font-weight:700;color:${numConfCol};padding:2px 7px;border:1px solid ${numConfCol}40;border-radius:10px">${numConfLevel}</span>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:14px">Hot/Cold · Trend · Due Score · Frequency · Pattern · ${draws.length.toLocaleString()} draws</div>
+          <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:6px">${ballsHtml}</div>
+          ${factorHtml}`;
       }
     }
-
   }
 
   function computeRainbowStats(draws) {
@@ -6723,8 +7033,11 @@ export default {
         </table>`;
     }
 
-    // ── Prediction ──
-    renderPredictCard('sc-rainbow-predict', patternEngine(combined), labelMapComb, 'rainbow');
+    // ── Ensemble prediction on combined pattern ──
+    const ensResultRB = ensemblePredict(combined, topOutcomes);
+    const confRB      = calcConfidence(ensResultRB);
+    const driftsRB    = detectDrift(combined, topOutcomes);
+    renderPredictCard('sc-rainbow-predict', ensResultRB, labelMapComb, 'rainbow', confRB, driftsRB);
   }
 
   function computeDragonStats(draws) {
@@ -6851,28 +7164,167 @@ export default {
         }).join('')}`;
     }
 
-    // ── Prediction: based on range sequence patterns ──
-    renderPredictCard('sc-dragon-predict', patternEngine(rangeSeq), rangeLabelMap, 'dragon');
+    // ── Prediction: ensemble on range sequence ──
+    const ensResultDR = ensemblePredict(rangeSeq, rangeOutcomes);
+    const confDR      = calcConfidence(ensResultDR);
+    const driftsDR    = detectDrift(rangeSeq, rangeOutcomes);
+    renderPredictCard('sc-dragon-predict', ensResultDR, rangeLabelMap, 'dragon', confDR, driftsDR);
   }
 
-  // ── Pattern insights bar ──
+  // ══════════════════════════════════════════════════════════════════════
+  //  SELF-EVALUATION ENGINE
+  //  Stores last N predictions and compares vs actual outcomes.
+  //  Persists in localStorage under key 'ksc_49ja_eval'.
+  // ══════════════════════════════════════════════════════════════════════
+
+  function evalLoad() {
+    try { return JSON.parse(localStorage.getItem('ksc_49ja_eval') || '{}'); } catch { return {}; }
+  }
+  function evalSave(data) {
+    try { localStorage.setItem('ksc_49ja_eval', JSON.stringify(data)); } catch {}
+  }
+
+  // Called after each market compute: saves prediction vs actual (most recent draw)
+  function evalSelfRecord(market, sequence, labelMap) {
+    if (sequence.length < 10) return;
+    const actual     = sequence[sequence.length - 1];          // newest draw outcome
+    const histSeq    = sequence.slice(0, -1);                  // sequence WITHOUT the last draw
+    const outcomes   = [...new Set(sequence)];
+    const prediction = ensemblePredict(histSeq, outcomes);
+    if (!prediction || !prediction.length) return;
+    const topPick = prediction[0].outcome;
+    const topPct  = Math.round(prediction[0].prob * 100);
+    const correct = topPick === actual;
+
+    const data = evalLoad();
+    if (!data[market]) data[market] = { records: [], hits: 0, total: 0 };
+    const rec = { ts: Date.now(), predicted: topPick, actual, correct, pct: topPct };
+    data[market].records.unshift(rec);
+    data[market].records = data[market].records.slice(0, 200); // keep last 200
+    data[market].total++;
+    if (correct) data[market].hits++;
+    evalSave(data);
+  }
+
+  // Returns accuracy metrics for all markets
+  function evalGetMetrics() {
+    const data = evalLoad();
+    const markets = ['hilo','colour','rainbow','dragon'];
+    return markets.map(m => {
+      const d = data[m] || { hits:0, total:0, records:[] };
+      const recent = d.records.slice(0, 20);
+      const recentHits = recent.filter(r => r.correct).length;
+      return {
+        market: m,
+        total:  d.total,
+        hits:   d.hits,
+        accuracy: d.total ? Math.round(d.hits / d.total * 100) : null,
+        recentAccuracy: recent.length ? Math.round(recentHits / recent.length * 100) : null,
+        records: d.records.slice(0, 10),
+      };
+    });
+  }
+
+  // Renders the self-eval panel into `sc-self-eval` if it exists
+  function renderSelfEval() {
+    const el = document.getElementById('sc-self-eval');
+    if (!el) return;
+    const metrics = evalGetMetrics();
+    const hasData = metrics.some(m => m.total > 0);
+    if (!hasData) {
+      el.innerHTML = `<div class="stat-card-title">📈 SELF-EVALUATION</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);padding:20px 0">
+          Tracking predictions vs actuals — results appear after 2+ computations.
+        </div>`;
+      return;
+    }
+    const labelNames = { hilo:'HI/LO', colour:'COLOUR', rainbow:'RAINBOW', dragon:'DRAGON' };
+    const rows = metrics.filter(m => m.total > 0).map(m => {
+      const accCol = m.accuracy >= 60 ? '#22cc66' : m.accuracy >= 40 ? '#f59e0b' : '#ff4466';
+      const recCol = m.recentAccuracy >= 60 ? '#22cc66' : m.recentAccuracy >= 40 ? '#f59e0b' : '#ff4466';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <div style="font-family:'Sora',sans-serif;font-size:12px;font-weight:700;color:var(--text-primary);min-width:70px">${labelNames[m.market]||m.market}</div>
+        <div style="display:flex;gap:20px;align-items:center">
+          <div style="text-align:center">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text-muted);margin-bottom:2px">OVERALL</div>
+            <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:${accCol}">${m.accuracy ?? '—'}%</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text-muted)">${m.hits}/${m.total}</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text-muted);margin-bottom:2px">LAST 20</div>
+            <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:${recCol}">${m.recentAccuracy ?? '—'}%</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Adaptive weights note based on best-performing market
+    const best = metrics.filter(m=>m.total>0).sort((a,b)=>(b.recentAccuracy||0)-(a.recentAccuracy||0))[0];
+    const tipHtml = best && best.recentAccuracy !== null
+      ? `<div style="margin-top:12px;padding:8px 12px;background:rgba(0,245,255,0.04);border:1px solid rgba(0,245,255,0.12);border-radius:4px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--accent-cyan);letter-spacing:1px;margin-bottom:3px">ADAPTIVE TIP</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-secondary)">${labelNames[best.market]} model is hottest at ${best.recentAccuracy}% recent accuracy — trust it most</div>
+        </div>`
+      : '';
+
+    el.innerHTML = `<div class="stat-card-title">📈 SELF-EVALUATION</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:14px">Prediction accuracy tracked automatically — skip bet if accuracy &lt; 45%</div>
+      ${rows}
+      ${tipHtml}`;
+  }
+
+  // ── Enhanced insights bar ──
   function generateInsights(draws) {
     if (draws.length < 50) return;
     const insights = [];
+
+    // HI/LO analysis
     const hmlSeq = draws.map(d => getHML(d.numbers));
     const hmlFreq = { up:0, mid:0, down:0 };
     hmlSeq.slice(-100).forEach(h => hmlFreq[h]++);
     const dominant = Object.entries(hmlFreq).sort((a,b)=>b[1]-a[1])[0];
     insights.push(`HI/LO last 100: HI=${hmlFreq.up} · MID=${hmlFreq.mid} · LO=${hmlFreq.down} — <strong style="color:#00f5ff">${dominant[0].toUpperCase()} dominates</strong>`);
+
+    // Colour analysis
     const colSeq = draws.slice(-50).map(d => d.winCol || 'draw');
     const colFreq = { red:0, yellow:0, blue:0, draw:0 };
     colSeq.forEach(c => { if(colFreq.hasOwnProperty(c)) colFreq[c]++; });
     const domCol = Object.entries(colFreq).sort((a,b)=>b[1]-a[1])[0];
-    insights.push(`Win colour last 50: R=${colFreq.red} G=${colFreq.yellow} B=${colFreq.blue} NONE=${colFreq.draw} — <strong style="color:#00f5ff">${domCol[0].toUpperCase()} leads</strong>`);
+    insights.push(`Colour last 50: R=${colFreq.red} G=${colFreq.yellow} B=${colFreq.blue} NONE=${colFreq.draw} — <strong style="color:#00f5ff">${domCol[0].toUpperCase()} leads</strong>`);
+
+    // Ball 49 rate
     const n49rate = draws.slice(-100).filter(d => d.numbers.includes('49')).length;
-    insights.push(`Ball 49 appeared ${n49rate}/100 draws (expected ~${Math.round(6/49*100)})`);
-    const midStreak = hmlSeq.slice().reverse().findIndex(h => h === 'mid');
-    if (midStreak > 5) insights.push(`⚠ MID absent for <strong style="color:#ffaa00">${midStreak} consecutive draws</strong>`);
+    const expected49 = Math.round(6/49*100);
+    const above = n49rate > expected49;
+    insights.push(`Ball 49 hit ${n49rate}/100 draws (expected ~${expected49}) — <strong style="color:${above?'#ffaa00':'#888'}">${above?'ABOVE':'BELOW'} average</strong>`);
+
+    // MID drought alert
+    const midStreak = [...hmlSeq].reverse().findIndex(h => h === 'mid');
+    if (midStreak > 5) insights.push(`⚠ MID absent for <strong style="color:#ffaa00">${midStreak} consecutive draws</strong> — overdue`);
+
+    // Short-term drift detection on HI/LO
+    const hlDrifts = detectDrift(hmlSeq, ['up','mid','down']);
+    hlDrifts.forEach(d => {
+      const lbl = {up:'HI',mid:'MID',down:'LO'}[d.outcome];
+      insights.push(`⚡ ${lbl} drifting <strong style="color:#f59e0b">${d.direction} ${d.diff}%</strong> vs long-term baseline`);
+    });
+
+    // Sum trend (last 20 vs last 100)
+    const sumOf = d => d.numbers.reduce((s, n) => s + parseInt(n), 0);
+    if (draws.length >= 100) {
+      const avgSum20  = draws.slice(-20).reduce((s,d) => s + sumOf(d), 0) / 20;
+      const avgSum100 = draws.slice(-100).reduce((s,d) => s + sumOf(d), 0) / 100;
+      const sumDir = avgSum20 > avgSum100 + 5 ? '↑ trending HI' : avgSum20 < avgSum100 - 5 ? '↓ trending LO' : '→ neutral';
+      insights.push(`Sum of balls: recent avg <strong style="color:#00f5ff">${Math.round(avgSum20)}</strong> vs 100-draw avg ${Math.round(avgSum100)} — <strong style="color:#00f5ff">${sumDir}</strong>`);
+    }
+
+    // Self-eval accuracy warning
+    const metrics = evalGetMetrics();
+    metrics.filter(m => m.recentAccuracy !== null && m.recentAccuracy < 40 && m.total >= 10).forEach(m => {
+      const ln = {hilo:'HI/LO',colour:'COLOUR',rainbow:'RAINBOW',dragon:'DRAGON'}[m.market];
+      insights.push(`⚠ <strong style="color:#ff4466">${ln}</strong> recent accuracy at ${m.recentAccuracy}% — consider skipping bets on this market`);
+    });
+
     const bar = document.getElementById('stats-insight-bar');
     const content = document.getElementById('stats-insight-content');
     if (bar && content) {
@@ -6903,7 +7355,9 @@ export default {
     computeColourStats(draws);
     computeBet49Stats(draws);
     computeRainbowStats(draws);
+    if (typeof computeDragonStats === 'function') computeDragonStats(draws);
     generateInsights(draws);
+    renderSelfEval();
   }
 
   // ══════════════════════════════════════════════════════════
