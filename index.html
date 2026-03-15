@@ -1669,6 +1669,9 @@
     <div class="nav-item" onclick="showPage('arb-scanner')">
       <span class="nav-icon">💹</span> Arb Scanner
     </div>
+    <div class="nav-item" onclick="showPage('nigerian-arb')">
+      <span class="nav-icon">🇳🇬</span> Nigerian Arbs
+    </div>
     <div class="nav-item" onclick="showPage('aviator')">
       <span class="nav-icon">✈️</span> Aviator
     </div>
@@ -3560,6 +3563,65 @@
       <div style="text-align:center;padding:60px;color:var(--text-muted)">
         <div style="font-size:32px;margin-bottom:12px">💹</div>
         <div style="font-size:14px">Scanning bookmakers for arbitrage opportunities...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── NIGERIAN ARB SCANNER ── -->
+  <div id="page-nigerian-arb" class="page">
+    <div class="page-header" style="background:linear-gradient(135deg, rgba(0,135,81,0.15), rgba(255,255,255,0.03));border:1px solid rgba(0,135,81,0.3)">
+      <div class="page-title" style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:28px">🇳🇬</span> NIGERIAN ARB SCANNER
+      </div>
+      <div class="page-subtitle">Compare odds between SportyBet, Bet9ja & more Nigerian bookmakers</div>
+    </div>
+
+    <!-- Status bar -->
+    <div id="ng-status-bar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px">Matches</div>
+          <div id="ng-stat-matches" style="font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;color:var(--accent-cyan)">--</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px">Arb Found</div>
+          <div id="ng-stat-arbs" style="font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;color:var(--accent-green)">--</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px">Near-Arb</div>
+          <div id="ng-stat-near" style="font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;color:var(--accent-orange)">--</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span id="ng-last-update" style="font-size:11px;color:var(--text-muted)"></span>
+        <button onclick="ngRefreshData()" style="padding:8px 16px;background:linear-gradient(135deg,#008751,#00a86b);color:white;border:none;border-radius:6px;font-family:'Rajdhani',sans-serif;font-weight:600;cursor:pointer">🔄 REFRESH</button>
+      </div>
+    </div>
+
+    <!-- Bookmaker status -->
+    <div id="ng-bookmaker-status" style="display:flex;gap:15px;justify-content:center;flex-wrap:wrap;margin-bottom:20px">
+      <!-- Filled by JS -->
+    </div>
+
+    <!-- Filters -->
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px">
+      <button class="ng-filter-btn active" data-filter="all" onclick="ngSetFilter('all')" style="padding:10px 20px;border-radius:8px;border:1px solid var(--border-dim);background:var(--bg-deep);color:var(--text-secondary);font-family:'Rajdhani',sans-serif;font-weight:600;cursor:pointer">All</button>
+      <button class="ng-filter-btn" data-filter="arb" onclick="ngSetFilter('arb')" style="padding:10px 20px;border-radius:8px;border:1px solid var(--border-dim);background:var(--bg-deep);color:var(--text-secondary);font-family:'Rajdhani',sans-serif;font-weight:600;cursor:pointer">💰 Arb Only</button>
+      <button class="ng-filter-btn" data-filter="near" onclick="ngSetFilter('near')" style="padding:10px 20px;border-radius:8px;border:1px solid var(--border-dim);background:var(--bg-deep);color:var(--text-secondary);font-family:'Rajdhani',sans-serif;font-weight:600;cursor:pointer">📊 Near-Arb</button>
+    </div>
+
+    <!-- Stake input -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:25px">
+      <span style="color:var(--text-secondary)">Your stake:</span>
+      <span style="background:var(--bg-deep);padding:8px 12px;border-radius:6px;font-weight:600;color:var(--accent-green)">₦ NGN</span>
+      <input type="number" id="ng-stake-amount" value="10000" onchange="ngRecalculate()" style="width:120px;padding:10px 15px;background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:8px;color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:14px">
+    </div>
+
+    <!-- Results -->
+    <div id="ng-arb-list" style="display:flex;flex-direction:column;gap:20px">
+      <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+        <div style="width:50px;height:50px;border:3px solid var(--border-dim);border-top-color:var(--accent-cyan);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px"></div>
+        <p>Loading Nigerian bookmaker odds...</p>
       </div>
     </div>
   </div>
@@ -7633,6 +7695,288 @@ export default {
     container.innerHTML = cards;
   }
   window.renderArbCards = renderArbCards;
+
+  // ══════════════════════════════════════════════════════════
+  // 🇳🇬 NIGERIAN ARB SCANNER
+  // ══════════════════════════════════════════════════════════
+
+  let _ngOpportunities = [];
+  let _ngFilter = 'all';
+  let _ngSportyBetData = null;
+  let _ngBet9jaData = null;
+
+  async function ngFetchBookmakerData() {
+    const [sbRes, b9Res] = await Promise.all([
+      fetch(`${ARB_WORKER_URL}/api/sportybet`).then(r => r.json()).catch(() => ({ events: [] })),
+      fetch(`${ARB_WORKER_URL}/api/bet9ja`).then(r => r.json()).catch(() => ({ events: [] }))
+    ]);
+    
+    _ngSportyBetData = sbRes;
+    _ngBet9jaData = b9Res;
+    
+    ngUpdateBookmakerStatus();
+    return { sportyBet: sbRes.events || [], bet9ja: b9Res.events || [] };
+  }
+
+  function ngUpdateBookmakerStatus() {
+    const container = document.getElementById('ng-bookmaker-status');
+    if (!container) return;
+    
+    const sbOnline = _ngSportyBetData?.eventCount > 0;
+    const b9Online = _ngBet9jaData?.eventCount > 0;
+    
+    container.innerHTML = `
+      <div style="padding:12px 20px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-dim);display:flex;align-items:center;gap:10px">
+        <span style="width:10px;height:10px;border-radius:50%;background:${sbOnline ? 'var(--accent-green)' : 'var(--accent-red)'}"></span>
+        <span style="font-weight:600">SportyBet</span>
+        <span style="color:var(--text-muted);font-size:0.85rem">${_ngSportyBetData?.eventCount || 0} events</span>
+      </div>
+      <div style="padding:12px 20px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-dim);display:flex;align-items:center;gap:10px">
+        <span style="width:10px;height:10px;border-radius:50%;background:${b9Online ? 'var(--accent-green)' : 'var(--accent-red)'}"></span>
+        <span style="font-weight:600">Bet9ja</span>
+        <span style="color:var(--text-muted);font-size:0.85rem">${_ngBet9jaData?.eventCount || 0} events</span>
+      </div>
+    `;
+  }
+
+  function ngNormalizeTeam(name) {
+    if (!name) return '';
+    return name.toLowerCase()
+      .replace(/fc |afc |sc |cf |united|city|utd/gi, '')
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+  }
+
+  function ngTeamsMatch(name1, name2) {
+    const n1 = ngNormalizeTeam(name1);
+    const n2 = ngNormalizeTeam(name2);
+    
+    if (n1 === n2) return true;
+    if (n1.includes(n2) || n2.includes(n1)) return true;
+    
+    const words1 = n1.match(/[a-z]{3,}/g) || [];
+    const words2 = n2.match(/[a-z]{3,}/g) || [];
+    
+    return words1.some(w => words2.includes(w));
+  }
+
+  function ngFindMatchingEvents(sportyBetEvents, bet9jaEvents) {
+    const matched = [];
+    
+    for (const sb of sportyBetEvents) {
+      for (const b9 of bet9jaEvents) {
+        if (ngTeamsMatch(sb.homeTeam, b9.homeTeam) && ngTeamsMatch(sb.awayTeam, b9.awayTeam)) {
+          matched.push({
+            homeTeam: sb.homeTeam,
+            awayTeam: sb.awayTeam,
+            bookmakers: {
+              sportybet: sb.odds?.h2h || {},
+              bet9ja: b9.odds?.h2h || {}
+            }
+          });
+          break;
+        }
+      }
+    }
+    
+    return matched;
+  }
+
+  function ngAnalyzeArbitrage(match) {
+    const bms = match.bookmakers;
+    
+    const bestHome = { odds: 0, bookmaker: '' };
+    const bestDraw = { odds: 0, bookmaker: '' };
+    const bestAway = { odds: 0, bookmaker: '' };
+    
+    for (const [bmName, odds] of Object.entries(bms)) {
+      if (odds.home > bestHome.odds) { bestHome.odds = odds.home; bestHome.bookmaker = bmName; }
+      if (odds.draw > bestDraw.odds) { bestDraw.odds = odds.draw; bestDraw.bookmaker = bmName; }
+      if (odds.away > bestAway.odds) { bestAway.odds = odds.away; bestAway.bookmaker = bmName; }
+    }
+    
+    const arbSum = (1/bestHome.odds) + (1/bestDraw.odds) + (1/bestAway.odds);
+    const isArb = arbSum < 1;
+    const profitPct = ((1 - arbSum) * 100).toFixed(2);
+    
+    return {
+      ...match,
+      bestOdds: { home: bestHome, draw: bestDraw, away: bestAway },
+      arbSum: arbSum.toFixed(4),
+      isArb,
+      profitPct: parseFloat(profitPct)
+    };
+  }
+
+  function ngCalculateStakes(analysis, totalStake) {
+    const { bestOdds, arbSum } = analysis;
+    const arbSumNum = parseFloat(arbSum);
+    
+    return {
+      home: { amount: (totalStake / bestOdds.home.odds / arbSumNum).toFixed(2), payout: (totalStake / arbSumNum).toFixed(2) },
+      draw: { amount: (totalStake / bestOdds.draw.odds / arbSumNum).toFixed(2), payout: (totalStake / arbSumNum).toFixed(2) },
+      away: { amount: (totalStake / bestOdds.away.odds / arbSumNum).toFixed(2), payout: (totalStake / arbSumNum).toFixed(2) }
+    };
+  }
+
+  function ngRenderOpportunities() {
+    const container = document.getElementById('ng-arb-list');
+    if (!container) return;
+    
+    const stake = parseFloat(document.getElementById('ng-stake-amount')?.value) || 10000;
+    
+    let filtered = _ngOpportunities;
+    
+    if (_ngFilter === 'arb') {
+      filtered = filtered.filter(o => o.isArb);
+    } else if (_ngFilter === 'near') {
+      filtered = filtered.filter(o => !o.isArb && parseFloat(o.arbSum) < 1.05);
+    }
+    
+    // Update stats
+    const matchesEl = document.getElementById('ng-stat-matches');
+    const arbsEl = document.getElementById('ng-stat-arbs');
+    const nearEl = document.getElementById('ng-stat-near');
+    
+    if (matchesEl) matchesEl.textContent = _ngOpportunities.length;
+    if (arbsEl) arbsEl.textContent = _ngOpportunities.filter(o => o.isArb).length;
+    if (nearEl) nearEl.textContent = _ngOpportunities.filter(o => !o.isArb && parseFloat(o.arbSum) < 1.05).length;
+    
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+          <div style="font-size:48px;margin-bottom:15px">🇳🇬</div>
+          <h3 style="font-size:1.3rem;margin-bottom:10px;color:var(--text-secondary)">No matching events found</h3>
+          <p>Waiting for the scraper to post data with matching events between SportyBet and Bet9ja.</p>
+          <p style="margin-top:15px;font-size:0.9rem">SportyBet: ${_ngSportyBetData?.eventCount || 0} events · Bet9ja: ${_ngBet9jaData?.eventCount || 0} events</p>
+        </div>
+      `;
+      return;
+    }
+    
+    container.innerHTML = filtered.map(opp => {
+      const stakes = ngCalculateStakes(opp, stake);
+      const profitClass = opp.isArb ? 'positive' : 'negative';
+      const profitText = opp.isArb ? `+${opp.profitPct}%` : `${opp.profitPct}%`;
+      const profitNaira = opp.isArb ? (stake * opp.profitPct / 100).toFixed(2) : '0.00';
+      
+      const cardBorder = opp.isArb ? 'border-color:rgba(34,211,153,0.4);box-shadow:0 0 20px rgba(34,211,153,0.1)' : '';
+      
+      return `
+        <div style="background:var(--bg-card);border-radius:var(--radius);border:1px solid var(--border-dim);overflow:hidden;${cardBorder}">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 20px;background:var(--bg-deep);border-bottom:1px solid var(--border-dim)">
+            <div>
+              <h3 style="font-size:1.3rem;font-weight:600;margin-bottom:5px">${opp.homeTeam} vs ${opp.awayTeam}</h3>
+              <div style="font-size:0.85rem;color:var(--text-muted)">⚽ Football · Σ(1/odds) = ${opp.arbSum}</div>
+            </div>
+            <div style="padding:8px 16px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;background:${opp.isArb ? 'rgba(34,211,153,0.15)' : 'rgba(251,146,60,0.15)'};color:${opp.isArb ? 'var(--accent-green)' : 'var(--accent-orange)'};border:1px solid ${opp.isArb ? 'rgba(34,211,153,0.3)' : 'rgba(251,146,60,0.3)'}">
+              ${profitText} ${opp.isArb ? `· ₦${profitNaira}` : ''}
+            </div>
+          </div>
+          
+          <div style="padding:20px">
+            <table style="width:100%;border-collapse:collapse">
+              <thead>
+                <tr>
+                  <th style="text-align:left;padding:10px;font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border-dim)">Bookmaker</th>
+                  <th style="text-align:center;padding:10px;font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border-dim)">Home (1)</th>
+                  <th style="text-align:center;padding:10px;font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border-dim)">Draw (X)</th>
+                  <th style="text-align:center;padding:10px;font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border-dim)">Away (2)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${Object.entries(opp.bookmakers).map(([bm, odds]) => `
+                  <tr>
+                    <td style="padding:12px 10px;border-bottom:1px solid var(--border-dim);font-weight:600">
+                      <span style="display:inline-flex;align-items:center;gap:8px">
+                        <span style="width:24px;height:24px;border-radius:4px;background:var(--bg-deep);display:flex;align-items:center;justify-content:center;font-size:0.7rem">${bm === 'sportybet' ? 'SB' : 'B9'}</span>
+                        ${bm === 'sportybet' ? 'SportyBet' : 'Bet9ja'} 🇳🇬
+                      </span>
+                    </td>
+                    <td style="padding:12px 10px;border-bottom:1px solid var(--border-dim);text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;${opp.bestOdds.home.bookmaker === bm ? 'color:var(--accent-green);background:rgba(34,211,153,0.1);border-radius:4px' : ''}">${odds.home || '-'}</td>
+                    <td style="padding:12px 10px;border-bottom:1px solid var(--border-dim);text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;${opp.bestOdds.draw.bookmaker === bm ? 'color:var(--accent-green);background:rgba(34,211,153,0.1);border-radius:4px' : ''}">${odds.draw || '-'}</td>
+                    <td style="padding:12px 10px;border-bottom:1px solid var(--border-dim);text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;${opp.bestOdds.away.bookmaker === bm ? 'color:var(--accent-green);background:rgba(34,211,153,0.1);border-radius:4px' : ''}">${odds.away || '-'}</td>
+                  </tr>
+                `).join('')}
+                <tr style="background:rgba(34,211,153,0.05)">
+                  <td style="padding:12px 10px;font-weight:700;color:var(--accent-cyan)">STAKE →</td>
+                  <td style="padding:12px 10px;text-align:center;color:var(--accent-cyan);font-weight:600">₦${stakes.home.amount}<br><small style="color:var(--text-muted)">@ ${opp.bestOdds.home.bookmaker}</small></td>
+                  <td style="padding:12px 10px;text-align:center;color:var(--accent-cyan);font-weight:600">₦${stakes.draw.amount}<br><small style="color:var(--text-muted)">@ ${opp.bestOdds.draw.bookmaker}</small></td>
+                  <td style="padding:12px 10px;text-align:center;color:var(--accent-cyan);font-weight:600">₦${stakes.away.amount}<br><small style="color:var(--text-muted)">@ ${opp.bestOdds.away.bookmaker}</small></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function ngSetFilter(filter) {
+    _ngFilter = filter;
+    document.querySelectorAll('.ng-filter-btn').forEach(btn => {
+      const isActive = btn.dataset.filter === filter;
+      btn.style.background = isActive ? 'rgba(34,211,238,0.1)' : 'var(--bg-deep)';
+      btn.style.color = isActive ? 'var(--accent-cyan)' : 'var(--text-secondary)';
+      btn.style.borderColor = isActive ? 'var(--accent-cyan)' : 'var(--border-dim)';
+    });
+    ngRenderOpportunities();
+  }
+  window.ngSetFilter = ngSetFilter;
+
+  function ngRecalculate() {
+    ngRenderOpportunities();
+  }
+  window.ngRecalculate = ngRecalculate;
+
+  async function ngRefreshData() {
+    const container = document.getElementById('ng-arb-list');
+    if (container) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+          <div style="width:50px;height:50px;border:3px solid var(--border-dim);border-top-color:var(--accent-cyan);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px"></div>
+          <p>Fetching Nigerian bookmaker odds...</p>
+        </div>
+      `;
+    }
+    
+    try {
+      const { sportyBet, bet9ja } = await ngFetchBookmakerData();
+      
+      const matched = ngFindMatchingEvents(sportyBet, bet9ja);
+      
+      _ngOpportunities = matched
+        .map(m => ngAnalyzeArbitrage(m))
+        .filter(m => m.bestOdds.home.odds > 0 && m.bestOdds.draw.odds > 0 && m.bestOdds.away.odds > 0)
+        .sort((a, b) => parseFloat(a.arbSum) - parseFloat(b.arbSum));
+      
+      ngRenderOpportunities();
+      
+      const updateEl = document.getElementById('ng-last-update');
+      if (updateEl) updateEl.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+      
+    } catch (err) {
+      if (container) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+            <div style="font-size:48px;margin-bottom:15px">❌</div>
+            <h3 style="font-size:1.3rem;margin-bottom:10px;color:var(--accent-red)">Error loading data</h3>
+            <p>${err.message}</p>
+          </div>
+        `;
+      }
+    }
+  }
+  window.ngRefreshData = ngRefreshData;
+
+  // Auto-load Nigerian arb scanner when page is shown
+  const ngObserver = new MutationObserver(() => {
+    const ngPage = document.getElementById('page-nigerian-arb');
+    if (ngPage && ngPage.classList.contains('active') && !_ngSportyBetData) {
+      ngRefreshData();
+    }
+  });
+  ngObserver.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
 
   // ══════════════════════════════════════════════════════════
   // FOOTBALL PREDICTIONS ENGINE
