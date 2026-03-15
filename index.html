@@ -7753,11 +7753,12 @@ export default {
     const n2 = ngNormalizeTeam(name2);
     
     if (n1 === n2) return true;
-    if (n1.includes(n2) || n2.includes(n1)) return true;
+    if (n1.length > 4 && n2.length > 4 && (n1.includes(n2) || n2.includes(n1))) return true;
     
-    const words1 = n1.match(/[a-z]{3,}/g) || [];
-    const words2 = n2.match(/[a-z]{3,}/g) || [];
+    const words1 = n1.match(/[a-z]{4,}/g) || [];
+    const words2 = n2.match(/[a-z]{4,}/g) || [];
     
+    // Need at least one matching word of 4+ chars
     return words1.some(w => words2.includes(w));
   }
 
@@ -7765,11 +7766,27 @@ export default {
     const matched = [];
     
     for (const sb of sportyBetEvents) {
+      // Determine if this is a 2-way sport (no draw)
+      const is2Way = !sb.odds?.h2h?.draw || sb.odds.h2h.draw === 0;
+      const sbSport = sb.sport || 'football';
+      
       for (const b9 of bet9jaEvents) {
+        // Only match same sport type
+        const b9Sport = b9.sport || 'football';
+        
+        // Skip if sports don't match (football vs basketball)
+        // But allow matching if both are football or both are same sport
+        const sportsCompatible = sbSport === b9Sport || 
+          (sbSport === 'football' && b9Sport === 'football');
+        
+        if (!sportsCompatible) continue;
+        
         if (ngTeamsMatch(sb.homeTeam, b9.homeTeam) && ngTeamsMatch(sb.awayTeam, b9.awayTeam)) {
           matched.push({
             homeTeam: sb.homeTeam,
             awayTeam: sb.awayTeam,
+            sport: sbSport,
+            is2Way: is2Way,
             bookmakers: {
               sportybet: sb.odds?.h2h || {},
               bet9ja: b9.odds?.h2h || {}
@@ -7785,6 +7802,7 @@ export default {
 
   function ngAnalyzeArbitrage(match) {
     const bms = match.bookmakers;
+    const is2Way = match.is2Way;
     
     const bestHome = { odds: 0, bookmaker: '' };
     const bestDraw = { odds: 0, bookmaker: '' };
@@ -7792,11 +7810,19 @@ export default {
     
     for (const [bmName, odds] of Object.entries(bms)) {
       if (odds.home > bestHome.odds) { bestHome.odds = odds.home; bestHome.bookmaker = bmName; }
-      if (odds.draw > bestDraw.odds) { bestDraw.odds = odds.draw; bestDraw.bookmaker = bmName; }
+      if (!is2Way && odds.draw > bestDraw.odds) { bestDraw.odds = odds.draw; bestDraw.bookmaker = bmName; }
       if (odds.away > bestAway.odds) { bestAway.odds = odds.away; bestAway.bookmaker = bmName; }
     }
     
-    const arbSum = (1/bestHome.odds) + (1/bestDraw.odds) + (1/bestAway.odds);
+    // Calculate arb sum based on 2-way or 3-way
+    let arbSum;
+    if (is2Way) {
+      // 2-way: only home and away (basketball, tennis)
+      arbSum = (1/bestHome.odds) + (1/bestAway.odds);
+    } else {
+      // 3-way: home, draw, away (football, volleyball)
+      arbSum = (1/bestHome.odds) + (1/bestDraw.odds) + (1/bestAway.odds);
+    }
     const isArb = arbSum < 1;
     const profitPct = ((1 - arbSum) * 100).toFixed(2);
     
@@ -7810,14 +7836,19 @@ export default {
   }
 
   function ngCalculateStakes(analysis, totalStake) {
-    const { bestOdds, arbSum } = analysis;
+    const { bestOdds, arbSum, is2Way } = analysis;
     const arbSumNum = parseFloat(arbSum);
     
-    return {
+    const stakes = {
       home: { amount: (totalStake / bestOdds.home.odds / arbSumNum).toFixed(2), payout: (totalStake / arbSumNum).toFixed(2) },
-      draw: { amount: (totalStake / bestOdds.draw.odds / arbSumNum).toFixed(2), payout: (totalStake / arbSumNum).toFixed(2) },
       away: { amount: (totalStake / bestOdds.away.odds / arbSumNum).toFixed(2), payout: (totalStake / arbSumNum).toFixed(2) }
     };
+    
+    if (!is2Way && bestOdds.draw?.odds > 0) {
+      stakes.draw = { amount: (totalStake / bestOdds.draw.odds / arbSumNum).toFixed(2), payout: (totalStake / arbSumNum).toFixed(2) };
+    }
+    
+    return stakes;
   }
 
   function ngRenderOpportunities() {
@@ -7863,12 +7894,17 @@ export default {
       
       const cardBorder = opp.isArb ? 'border-color:rgba(34,211,153,0.4);box-shadow:0 0 20px rgba(34,211,153,0.1)' : '';
       
+      // Sport icon
+      const sportIcon = opp.sport === 'basketball' ? '🏀' : opp.sport === 'tennis' ? '🎾' : opp.sport === 'volleyball' ? '🏐' : '⚽';
+      const sportName = opp.sport ? opp.sport.charAt(0).toUpperCase() + opp.sport.slice(1) : 'Football';
+      const is2Way = opp.is2Way;
+      
       return `
         <div style="background:var(--bg-card);border-radius:var(--radius);border:1px solid var(--border-dim);overflow:hidden;${cardBorder}">
           <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 20px;background:var(--bg-deep);border-bottom:1px solid var(--border-dim)">
             <div>
               <h3 style="font-size:1.3rem;font-weight:600;margin-bottom:5px">${opp.homeTeam} vs ${opp.awayTeam}</h3>
-              <div style="font-size:0.85rem;color:var(--text-muted)">⚽ Football · Σ(1/odds) = ${opp.arbSum}</div>
+              <div style="font-size:0.85rem;color:var(--text-muted)">${sportIcon} ${sportName} · Σ(1/odds) = ${opp.arbSum}</div>
             </div>
             <div style="padding:8px 16px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;background:${opp.isArb ? 'rgba(34,211,153,0.15)' : 'rgba(251,146,60,0.15)'};color:${opp.isArb ? 'var(--accent-green)' : 'var(--accent-orange)'};border:1px solid ${opp.isArb ? 'rgba(34,211,153,0.3)' : 'rgba(251,146,60,0.3)'}">
               ${profitText} ${opp.isArb ? `· ₦${profitNaira}` : ''}
@@ -7881,7 +7917,7 @@ export default {
                 <tr>
                   <th style="text-align:left;padding:10px;font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border-dim)">Bookmaker</th>
                   <th style="text-align:center;padding:10px;font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border-dim)">Home (1)</th>
-                  <th style="text-align:center;padding:10px;font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border-dim)">Draw (X)</th>
+                  ${!is2Way ? '<th style="text-align:center;padding:10px;font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border-dim)">Draw (X)</th>' : ''}
                   <th style="text-align:center;padding:10px;font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border-dim)">Away (2)</th>
                 </tr>
               </thead>
@@ -7895,14 +7931,14 @@ export default {
                       </span>
                     </td>
                     <td style="padding:12px 10px;border-bottom:1px solid var(--border-dim);text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;${opp.bestOdds.home.bookmaker === bm ? 'color:var(--accent-green);background:rgba(34,211,153,0.1);border-radius:4px' : ''}">${odds.home || '-'}</td>
-                    <td style="padding:12px 10px;border-bottom:1px solid var(--border-dim);text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;${opp.bestOdds.draw.bookmaker === bm ? 'color:var(--accent-green);background:rgba(34,211,153,0.1);border-radius:4px' : ''}">${odds.draw || '-'}</td>
+                    ${!is2Way ? `<td style="padding:12px 10px;border-bottom:1px solid var(--border-dim);text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;${opp.bestOdds.draw?.bookmaker === bm ? 'color:var(--accent-green);background:rgba(34,211,153,0.1);border-radius:4px' : ''}">${odds.draw || '-'}</td>` : ''}
                     <td style="padding:12px 10px;border-bottom:1px solid var(--border-dim);text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;${opp.bestOdds.away.bookmaker === bm ? 'color:var(--accent-green);background:rgba(34,211,153,0.1);border-radius:4px' : ''}">${odds.away || '-'}</td>
                   </tr>
                 `).join('')}
                 <tr style="background:rgba(34,211,153,0.05)">
                   <td style="padding:12px 10px;font-weight:700;color:var(--accent-cyan)">STAKE →</td>
                   <td style="padding:12px 10px;text-align:center;color:var(--accent-cyan);font-weight:600">₦${stakes.home.amount}<br><small style="color:var(--text-muted)">@ ${opp.bestOdds.home.bookmaker}</small></td>
-                  <td style="padding:12px 10px;text-align:center;color:var(--accent-cyan);font-weight:600">₦${stakes.draw.amount}<br><small style="color:var(--text-muted)">@ ${opp.bestOdds.draw.bookmaker}</small></td>
+                  ${!is2Way ? `<td style="padding:12px 10px;text-align:center;color:var(--accent-cyan);font-weight:600">₦${stakes.draw?.amount || '0'}<br><small style="color:var(--text-muted)">@ ${opp.bestOdds.draw?.bookmaker || '-'}</small></td>` : ''}
                   <td style="padding:12px 10px;text-align:center;color:var(--accent-cyan);font-weight:600">₦${stakes.away.amount}<br><small style="color:var(--text-muted)">@ ${opp.bestOdds.away.bookmaker}</small></td>
                 </tr>
               </tbody>
