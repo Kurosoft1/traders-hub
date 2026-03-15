@@ -3581,20 +3581,8 @@
 
     <!-- TODAY PANEL -->
     <div id="fb-today-panel">
-      <!-- League tabs -->
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
-        <button class="stats-tab active" id="fb-tab-ucl" onclick="switchFbTab('ucl')">Champions League</button>
-        <button class="stats-tab" id="fb-tab-epl" onclick="switchFbTab('epl')">Premier League</button>
-        <button class="stats-tab" id="fb-tab-laliga" onclick="switchFbTab('laliga')">La Liga</button>
-        <button class="stats-tab" id="fb-tab-seriea" onclick="switchFbTab('seriea')">Serie A</button>
-        <button class="stats-tab" id="fb-tab-buli" onclick="switchFbTab('buli')">Bundesliga</button>
-      </div>
-      <!-- Panels -->
-      <div id="fb-panel-ucl"></div>
-      <div id="fb-panel-epl" style="display:none"></div>
-      <div id="fb-panel-laliga" style="display:none"></div>
-      <div id="fb-panel-seriea" style="display:none"></div>
-      <div id="fb-panel-buli" style="display:none"></div>
+      <!-- All leagues combined in one panel -->
+      <div id="fb-all-fixtures"></div>
     </div>
 
     <!-- HISTORY PANEL -->
@@ -7825,15 +7813,7 @@ export default {
     </div>`;
   }
 
-  function switchFbTab(tab) {
-    ['ucl','epl','laliga','seriea','buli'].forEach(t => {
-      const panel = document.getElementById('fb-panel-' + t);
-      const btn = document.getElementById('fb-tab-' + t);
-      if (panel) panel.style.display = t === tab ? 'block' : 'none';
-      if (btn) btn.classList.toggle('active', t === tab);
-    });
-  }
-  window.switchFbTab = switchFbTab;
+  // switchFbTab removed - all leagues shown on one page now
 
   function switchFbMainTab(tab) {
     ['today','history'].forEach(t => {
@@ -7864,9 +7844,16 @@ export default {
   }
 
   function _renderFootballCards() {
+    const container = document.getElementById('fb-all-fixtures');
+    if (!container) return;
+
+    let allCards = '';
+
     Object.entries(FB_LEAGUES).forEach(([key, league]) => {
-      const panel = document.getElementById('fb-panel-' + key);
-      if (!panel) return;
+      if (!league.fixtures || league.fixtures.length === 0) return;
+
+      // Add league header
+      allCards += `<div style="font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:var(--text-primary);margin:24px 0 16px 0;padding-bottom:8px;border-bottom:1px solid var(--border-dim)">${league.icon} ${league.name}</div>`;
 
       const cards = league.fixtures.map(g => {
         try {
@@ -7925,8 +7912,14 @@ export default {
         } catch(e) { console.warn('Football card error:', g.home, g.away, e); return ''; }
       }).join('');
 
-      panel.innerHTML = `<div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:16px">${league.icon} ${league.name} — Upcoming Fixtures</div>${cards}`;
+      allCards += cards;
     });
+
+    if (!allCards) {
+      container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-muted)">No football fixtures available today</div>';
+    } else {
+      container.innerHTML = allCards;
+    }
   }
   window.renderFootballPage = renderFootballPage;
 
