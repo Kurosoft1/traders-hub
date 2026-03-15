@@ -7704,19 +7704,22 @@ export default {
   let _ngFilter = 'all';
   let _ngSportyBetData = null;
   let _ngBet9jaData = null;
+  let _ngBetPawaData = null;
 
   async function ngFetchBookmakerData() {
     const baseUrl = ARB_WORKER_URL.replace(/\/$/, ''); // Remove trailing slash
-    const [sbRes, b9Res] = await Promise.all([
+    const [sbRes, b9Res, bpRes] = await Promise.all([
       fetch(`${baseUrl}/api/sportybet`).then(r => r.json()).catch(() => ({ events: [] })),
-      fetch(`${baseUrl}/api/bet9ja`).then(r => r.json()).catch(() => ({ events: [] }))
+      fetch(`${baseUrl}/api/bet9ja`).then(r => r.json()).catch(() => ({ events: [] })),
+      fetch(`${baseUrl}/api/betpawa`).then(r => r.json()).catch(() => ({ events: [] }))
     ]);
     
     _ngSportyBetData = sbRes;
     _ngBet9jaData = b9Res;
+    _ngBetPawaData = bpRes;
     
     ngUpdateBookmakerStatus();
-    return { sportyBet: sbRes.events || [], bet9ja: b9Res.events || [] };
+    return { sportyBet: sbRes.events || [], bet9ja: b9Res.events || [], betpawa: bpRes.events || [] };
   }
 
   function ngUpdateBookmakerStatus() {
@@ -7725,6 +7728,7 @@ export default {
     
     const sbOnline = _ngSportyBetData?.eventCount > 0;
     const b9Online = _ngBet9jaData?.eventCount > 0;
+    const bpOnline = _ngBetPawaData?.eventCount > 0;
     
     container.innerHTML = `
       <div style="padding:12px 20px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-dim);display:flex;align-items:center;gap:10px">
@@ -7736,6 +7740,11 @@ export default {
         <span style="width:10px;height:10px;border-radius:50%;background:${b9Online ? 'var(--accent-green)' : 'var(--accent-red)'}"></span>
         <span style="font-weight:600">Bet9ja</span>
         <span style="color:var(--text-muted);font-size:0.85rem">${_ngBet9jaData?.eventCount || 0} events</span>
+      </div>
+      <div style="padding:12px 20px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border-dim);display:flex;align-items:center;gap:10px">
+        <span style="width:10px;height:10px;border-radius:50%;background:${bpOnline ? 'var(--accent-green)' : 'var(--accent-red)'}"></span>
+        <span style="font-weight:600">BetPawa</span>
+        <span style="color:var(--text-muted);font-size:0.85rem">${_ngBetPawaData?.eventCount || 0} events</span>
       </div>
     `;
   }
@@ -7762,38 +7771,40 @@ export default {
     return words1.some(w => words2.includes(w));
   }
 
-  function ngFindMatchingEvents(sportyBetEvents, bet9jaEvents) {
+  function ngFindMatchingEvents(sportyBetEvents, bet9jaEvents, betpawaEvents = []) {
     const matched = [];
+    const allEvents = [
+      ...sportyBetEvents.map(e => ({ ...e, source: 'sportybet' })),
+      ...bet9jaEvents.map(e => ({ ...e, source: 'bet9ja' })),
+      ...betpawaEvents.map(e => ({ ...e, source: 'betpawa' }))
+    ];
     
-    for (const sb of sportyBetEvents) {
-      // Determine if this is a 2-way sport (no draw)
-      const is2Way = !sb.odds?.h2h?.draw || sb.odds.h2h.draw === 0;
-      const sbSport = sb.sport || 'football';
+    // Group events by normalized team names
+    const groups = {};
+    
+    for (const event of allEvents) {
+      const homeNorm = ngNormalizeTeam(event.homeTeam);
+      const awayNorm = ngNormalizeTeam(event.awayTeam);
+      const key = `${homeNorm}__${awayNorm}`;
       
-      for (const b9 of bet9jaEvents) {
-        // Only match same sport type
-        const b9Sport = b9.sport || 'football';
-        
-        // Skip if sports don't match (football vs basketball)
-        // But allow matching if both are football or both are same sport
-        const sportsCompatible = sbSport === b9Sport || 
-          (sbSport === 'football' && b9Sport === 'football');
-        
-        if (!sportsCompatible) continue;
-        
-        if (ngTeamsMatch(sb.homeTeam, b9.homeTeam) && ngTeamsMatch(sb.awayTeam, b9.awayTeam)) {
-          matched.push({
-            homeTeam: sb.homeTeam,
-            awayTeam: sb.awayTeam,
-            sport: sbSport,
-            is2Way: is2Way,
-            bookmakers: {
-              sportybet: sb.odds?.h2h || {},
-              bet9ja: b9.odds?.h2h || {}
-            }
-          });
-          break;
-        }
+      if (!groups[key]) {
+        groups[key] = {
+          homeTeam: event.homeTeam,
+          awayTeam: event.awayTeam,
+          sport: event.sport || 'football',
+          is2Way: !event.odds?.h2h?.draw || event.odds.h2h.draw === 0,
+          bookmakers: {}
+        };
+      }
+      
+      groups[key].bookmakers[event.source] = event.odds?.h2h || {};
+    }
+    
+    // Only include groups that have at least 2 bookmakers
+    for (const key of Object.keys(groups)) {
+      const group = groups[key];
+      if (Object.keys(group.bookmakers).length >= 2) {
+        matched.push(group);
       }
     }
     
@@ -7922,19 +7933,22 @@ export default {
                 </tr>
               </thead>
               <tbody>
-                ${Object.entries(opp.bookmakers).map(([bm, odds]) => `
+                ${Object.entries(opp.bookmakers).map(([bm, odds]) => {
+                  const bmLabel = bm === 'sportybet' ? 'SB' : bm === 'bet9ja' ? 'B9' : 'BP';
+                  const bmName = bm === 'sportybet' ? 'SportyBet' : bm === 'bet9ja' ? 'Bet9ja' : 'BetPawa';
+                  return `
                   <tr>
                     <td style="padding:12px 10px;border-bottom:1px solid var(--border-dim);font-weight:600">
                       <span style="display:inline-flex;align-items:center;gap:8px">
-                        <span style="width:24px;height:24px;border-radius:4px;background:var(--bg-deep);display:flex;align-items:center;justify-content:center;font-size:0.7rem">${bm === 'sportybet' ? 'SB' : 'B9'}</span>
-                        ${bm === 'sportybet' ? 'SportyBet' : 'Bet9ja'} 🇳🇬
+                        <span style="width:24px;height:24px;border-radius:4px;background:var(--bg-deep);display:flex;align-items:center;justify-content:center;font-size:0.7rem">${bmLabel}</span>
+                        ${bmName} 🇳🇬
                       </span>
                     </td>
                     <td style="padding:12px 10px;border-bottom:1px solid var(--border-dim);text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;${opp.bestOdds.home.bookmaker === bm ? 'color:var(--accent-green);background:rgba(34,211,153,0.1);border-radius:4px' : ''}">${odds.home || '-'}</td>
                     ${!is2Way ? `<td style="padding:12px 10px;border-bottom:1px solid var(--border-dim);text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;${opp.bestOdds.draw?.bookmaker === bm ? 'color:var(--accent-green);background:rgba(34,211,153,0.1);border-radius:4px' : ''}">${odds.draw || '-'}</td>` : ''}
                     <td style="padding:12px 10px;border-bottom:1px solid var(--border-dim);text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;${opp.bestOdds.away.bookmaker === bm ? 'color:var(--accent-green);background:rgba(34,211,153,0.1);border-radius:4px' : ''}">${odds.away || '-'}</td>
                   </tr>
-                `).join('')}
+                `}).join('')}
                 <tr style="background:rgba(34,211,153,0.05)">
                   <td style="padding:12px 10px;font-weight:700;color:var(--accent-cyan)">STAKE →</td>
                   <td style="padding:12px 10px;text-align:center;color:var(--accent-cyan);font-weight:600">₦${stakes.home.amount}<br><small style="color:var(--text-muted)">@ ${opp.bestOdds.home.bookmaker}</small></td>
@@ -7978,13 +7992,13 @@ export default {
     }
     
     try {
-      const { sportyBet, bet9ja } = await ngFetchBookmakerData();
+      const { sportyBet, bet9ja, betpawa } = await ngFetchBookmakerData();
       
-      const matched = ngFindMatchingEvents(sportyBet, bet9ja);
+      const matched = ngFindMatchingEvents(sportyBet, bet9ja, betpawa);
       
       _ngOpportunities = matched
         .map(m => ngAnalyzeArbitrage(m))
-        .filter(m => m.bestOdds.home.odds > 0 && m.bestOdds.draw.odds > 0 && m.bestOdds.away.odds > 0)
+        .filter(m => m.bestOdds.home.odds > 0 && (m.is2Way || m.bestOdds.draw.odds > 0) && m.bestOdds.away.odds > 0)
         .sort((a, b) => parseFloat(a.arbSum) - parseFloat(b.arbSum));
       
       ngRenderOpportunities();
