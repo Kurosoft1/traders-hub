@@ -7706,9 +7706,10 @@ export default {
   let _ngBet9jaData = null;
 
   async function ngFetchBookmakerData() {
+    const baseUrl = ARB_WORKER_URL.replace(/\/$/, ''); // Remove trailing slash
     const [sbRes, b9Res] = await Promise.all([
-      fetch(`${ARB_WORKER_URL}/api/sportybet`).then(r => r.json()).catch(() => ({ events: [] })),
-      fetch(`${ARB_WORKER_URL}/api/bet9ja`).then(r => r.json()).catch(() => ({ events: [] }))
+      fetch(`${baseUrl}/api/sportybet`).then(r => r.json()).catch(() => ({ events: [] })),
+      fetch(`${baseUrl}/api/bet9ja`).then(r => r.json()).catch(() => ({ events: [] }))
     ]);
     
     _ngSportyBetData = sbRes;
