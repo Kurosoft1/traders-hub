@@ -7873,6 +7873,10 @@ export default {
         const pred = fbPredict(g.wp);
         const pickLabel = pred.pick === '1' ? g.home : pred.pick === '2' ? g.away : 'Draw';
 
+        // Auto-log prediction for historical tracking
+        logGeneratedPrediction('Football', g.home, g.away, '1X2', pickLabel, pred.conf, g.time, { h: g.wp.h, d: g.wp.d, a: g.wp.a });
+        logGeneratedPrediction('Football', g.home, g.away, 'BTTS', pred.gg ? 'GG' : 'NG', pred.conf, g.time, null);
+
         return `<div class="card" style="margin-bottom:14px;padding:18px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
             <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted)">${g.time}</span>
@@ -8140,6 +8144,11 @@ export default {
         const confLabel = pickConf >= 60 ? 'STRONG' : pickConf >= 30 ? 'MODERATE' : 'LEAN';
         const confColor = pickConf >= 60 ? '#22cc66' : pickConf >= 30 ? '#f59e0b' : 'var(--text-muted)';
 
+        // Auto-log predictions for historical tracking
+        const pickTeamName = pickTeam === g.home ? h.name : a.name;
+        logGeneratedPrediction('NBA', h.name, a.name, 'Moneyline', pickTeamName, confLabel, g.time + ' ET', { home: hProb, away: aProb });
+        logGeneratedPrediction('NBA', h.name, a.name, 'Over/Under', pred.ouPick + ' ' + pred.ouLine, confLabel, g.time + ' ET', null);
+
         return `<div class="card" style="margin-bottom:16px;padding:20px">
           <!-- Time & Confidence -->
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -8250,14 +8259,81 @@ export default {
   })();
 
   // Helper: call the Cloudflare Worker scores proxy
+  // Local cache for historical scores (prevents redundant API calls)
+  const _scoresCache = {};
+
   async function fetchScoresViaWorker(sport, date) {
+    const cacheKey = `${sport}_${date}`;
+    
+    // Check local cache first
+    if (_scoresCache[cacheKey]) {
+      console.log('[Scores] Using cached data for', cacheKey);
+      return _scoresCache[cacheKey];
+    }
+
+    // Also check localStorage for persistence across sessions
     try {
-      const url = `${ARB_WORKER_URL}?action=scores&sport=${encodeURIComponent(sport)}&date=${encodeURIComponent(date)}`;
-      const res = await fetch(url);
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data.scores || data || null;
-    } catch { return null; }
+      const stored = JSON.parse(localStorage.getItem('betlab_scores_cache') || '{}');
+      if (stored[cacheKey] && stored[cacheKey].data) {
+        // Use cached data if less than 6 hours old for completed games, 10 min for recent dates
+        const age = Date.now() - (stored[cacheKey].ts || 0);
+        const isRecent = new Date().toISOString().slice(0,10) === date;
+        const maxAge = isRecent ? 10 * 60 * 1000 : 6 * 60 * 60 * 1000;
+        if (age < maxAge) {
+          console.log('[Scores] Using localStorage cache for', cacheKey);
+          _scoresCache[cacheKey] = stored[cacheKey].data;
+          return stored[cacheKey].data;
+        }
+      }
+    } catch {}
+
+    try {
+      // Try the Worker's scores endpoint
+      const url = `${ARB_WORKER_URL}api/scores?sport=${encodeURIComponent(sport)}&date=${encodeURIComponent(date)}`;
+      console.log('[Scores] Fetching:', url);
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const scores = data.scores || data.data || data || [];
+        if (scores && scores.length > 0) {
+          _scoresCache[cacheKey] = scores;
+          saveScoresToCache(cacheKey, scores);
+          return scores;
+        }
+      }
+    } catch (e) { console.warn('[Scores] Worker api/scores failed:', e); }
+
+    // Try query parameter format
+    try {
+      const url2 = `${ARB_WORKER_URL}?action=scores&sport=${encodeURIComponent(sport)}&date=${encodeURIComponent(date)}`;
+      const res2 = await fetch(url2);
+      if (res2.ok) {
+        const data = await res2.json();
+        const scores = data.scores || data || [];
+        if (scores && scores.length > 0) {
+          _scoresCache[cacheKey] = scores;
+          saveScoresToCache(cacheKey, scores);
+          return scores;
+        }
+      }
+    } catch {}
+
+    return null;
+  }
+
+  function saveScoresToCache(key, data) {
+    try {
+      const stored = JSON.parse(localStorage.getItem('betlab_scores_cache') || '{}');
+      stored[key] = { data, ts: Date.now() };
+      // Limit cache size (keep last 30 days)
+      const keys = Object.keys(stored);
+      if (keys.length > 30) {
+        keys.sort((a,b) => (stored[a].ts || 0) - (stored[b].ts || 0));
+        keys.slice(0, keys.length - 30).forEach(k => delete stored[k]);
+      }
+      localStorage.setItem('betlab_scores_cache', JSON.stringify(stored));
+    } catch {}
   }
 
   // ── FOOTBALL HISTORY LOADER ──
@@ -8377,7 +8453,7 @@ export default {
       let resultTag = '';
       if (!isNba) {
         // Generate what prediction would have been
-        const pred = getHistoricalFbPred(match);
+        const pred = getHistoricalFbPred(match, dateVal);
         if (pred) {
           const picked = pred.pick === '1' ? match.home_team : pred.pick === '2' ? match.away_team : 'Draw';
           const pickedShort = picked.length > 14 ? picked.slice(0,14)+'…' : picked;
@@ -8396,7 +8472,7 @@ export default {
         }
       } else {
         // NBA prediction
-        const pred = getHistoricalNbaPred(match);
+        const pred = getHistoricalNbaPred(match, dateVal);
         if (pred) {
           const short = pred.pick.length > 14 ? pred.pick.slice(0,14)+'…' : pred.pick;
           predTag = `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:var(--accent-orange)">Pred: ${short}</span>`;
@@ -8446,18 +8522,75 @@ export default {
   }
 
   // Generate what football prediction would have been from odds
-  function getHistoricalFbPred(match) {
+  // First checks daily prediction log, then falls back to generating new prediction
+  function getHistoricalFbPred(match, dateKey) {
     try {
+      // First check the daily prediction log
+      if (dateKey) {
+        const log = getDailyPredictionLog();
+        if (log[dateKey]) {
+          const norm = s => s.toLowerCase().replace(/\b(fc|cf|sc|afc|ssc|ac|as|bc|us)\b/gi, '').replace(/[^a-z0-9]/g, '');
+          const homeNorm = norm(match.home_team || '');
+          const awayNorm = norm(match.away_team || '');
+          
+          const saved = log[dateKey].find(p => {
+            if (p.sport !== 'Football' || p.market !== '1X2') return false;
+            return norm(p.homeTeam).includes(homeNorm.slice(0,5)) && norm(p.awayTeam).includes(awayNorm.slice(0,5));
+          });
+          
+          if (saved) {
+            // Map pick back to 1/X/2 format
+            const pickNorm = norm(saved.pick);
+            let pick = 'X';
+            if (pickNorm.includes(homeNorm.slice(0,5))) pick = '1';
+            else if (pickNorm.includes(awayNorm.slice(0,5))) pick = '2';
+            
+            return {
+              pick,
+              conf: saved.confidence,
+              confColor: saved.confidence === 'STRONG' ? '#22cc66' : saved.confidence === 'MODERATE' ? '#f59e0b' : 'var(--text-muted)',
+              pickProb: saved.probabilities ? Math.max(saved.probabilities.h || 0, saved.probabilities.d || 0, saved.probabilities.a || 0) : 0,
+              gg: false // Would need separate BTTS entry
+            };
+          }
+        }
+      }
+      
+      // Fallback: generate prediction
       if (!match.bookmakers && !match.home_team) return null;
-      // Use a simple 45/30/25 default if no odds available
       const wp = { h: 45, d: 30, a: 25 };
       return fbPredict(wp);
     } catch { return null; }
   }
 
   // Generate what NBA prediction would have been
-  function getHistoricalNbaPred(match) {
+  // First checks daily prediction log, then falls back to generating new prediction
+  function getHistoricalNbaPred(match, dateKey) {
     try {
+      // First check the daily prediction log
+      if (dateKey) {
+        const log = getDailyPredictionLog();
+        if (log[dateKey]) {
+          const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const homeNorm = norm(match.home_team || '');
+          const awayNorm = norm(match.away_team || '');
+          
+          const saved = log[dateKey].find(p => {
+            if (p.sport !== 'NBA' || p.market !== 'Moneyline') return false;
+            return norm(p.homeTeam).includes(homeNorm.slice(0,5)) || norm(p.awayTeam).includes(awayNorm.slice(0,5));
+          });
+          
+          if (saved) {
+            return { 
+              pick: saved.pick,
+              confidence: saved.confidence,
+              probabilities: saved.probabilities
+            };
+          }
+        }
+      }
+      
+      // Fallback: generate prediction
       const home = match.home_team;
       const away = match.away_team;
       const pred = predictGame && typeof predictGame === 'function' ? predictGame(home, away) : null;
@@ -8723,6 +8856,141 @@ export default {
   }
   function savePredictionHistory(p) { localStorage.setItem('betlab_predictions', JSON.stringify(p)); }
 
+  // ── Daily Prediction Log — Stores ALL generated predictions for historical tracking ──
+  function getDailyPredictionLog() {
+    try { return JSON.parse(localStorage.getItem('betlab_daily_preds') || '{}'); } catch { return {}; }
+  }
+  function saveDailyPredictionLog(log) { 
+    // Limit to last 30 days
+    const keys = Object.keys(log).sort().reverse();
+    if (keys.length > 30) {
+      keys.slice(30).forEach(k => delete log[k]);
+    }
+    localStorage.setItem('betlab_daily_preds', JSON.stringify(log)); 
+  }
+
+  // Auto-save a generated prediction (called when rendering prediction cards)
+  function logGeneratedPrediction(sport, homeTeam, awayTeam, market, pick, confidence, kickoff, probabilities) {
+    const dateKey = new Date().toISOString().slice(0, 10);
+    const log = getDailyPredictionLog();
+    if (!log[dateKey]) log[dateKey] = [];
+    
+    const eventKey = `${homeTeam} vs ${awayTeam}`.toLowerCase();
+    const exists = log[dateKey].find(p => p.eventKey === eventKey && p.market === market);
+    if (exists) return; // Already logged
+    
+    log[dateKey].push({
+      id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6),
+      sport,
+      homeTeam,
+      awayTeam,
+      eventKey,
+      market,
+      pick,
+      confidence,
+      kickoff,
+      probabilities: probabilities || null,
+      ts: Date.now(),
+      status: 'generated', // 'generated' = auto-logged, 'picked' = user added, 'win'/'loss' = resolved
+      actualScore: null
+    });
+    
+    saveDailyPredictionLog(log);
+    console.log('[PredLog] Saved prediction:', sport, homeTeam, 'vs', awayTeam, pick);
+  }
+  window.logGeneratedPrediction = logGeneratedPrediction;
+
+  // Get predictions for a specific date (from daily log)
+  function getPredictionsForDate(dateKey) {
+    const log = getDailyPredictionLog();
+    return log[dateKey] || [];
+  }
+  window.getPredictionsForDate = getPredictionsForDate;
+
+  // Resolve daily predictions against actual scores
+  async function resolveDailyPredictions(dateKey) {
+    const log = getDailyPredictionLog();
+    if (!log[dateKey]) return { resolved: 0, wins: 0, losses: 0 };
+    
+    // Fetch scores for that date
+    let scores = await fetchScoresViaWorker('basketball_nba', dateKey);
+    let soccerScores = await fetchScoresViaWorker('soccer', dateKey);
+    if (soccerScores) scores = (scores || []).concat(soccerScores);
+    
+    if (!scores || !scores.length) return { resolved: 0, wins: 0, losses: 0 };
+    
+    let resolved = 0, wins = 0, losses = 0;
+    
+    log[dateKey].forEach(pred => {
+      if (pred.status === 'win' || pred.status === 'loss') return; // Already resolved
+      
+      // Find matching game
+      const norm = s => s.toLowerCase().replace(/\b(fc|cf|sc|afc|ssc|ac|as|bc|us)\b/gi, '').replace(/[^a-z0-9]/g, '');
+      const match = scores.find(s => {
+        const homeMatch = norm(pred.homeTeam).includes(norm(s.home_team || '').slice(0,5)) || 
+                          norm(s.home_team || '').includes(norm(pred.homeTeam).slice(0,5));
+        const awayMatch = norm(pred.awayTeam).includes(norm(s.away_team || '').slice(0,5)) ||
+                          norm(s.away_team || '').includes(norm(pred.awayTeam).slice(0,5));
+        return homeMatch && awayMatch && s.completed;
+      });
+      
+      if (!match) return;
+      
+      // Extract scores
+      let hScore = null, aScore = null;
+      if (match.scores && match.scores.length >= 2) {
+        const hEntry = match.scores.find(x => x.name === match.home_team);
+        const aEntry = match.scores.find(x => x.name === match.away_team);
+        hScore = hEntry ? parseInt(hEntry.score) : parseInt(match.scores[1]?.score);
+        aScore = aEntry ? parseInt(aEntry.score) : parseInt(match.scores[0]?.score);
+      }
+      
+      if (hScore === null || isNaN(hScore)) return;
+      
+      pred.actualScore = `${aScore} - ${hScore}`;
+      
+      // Determine if prediction won
+      if (pred.market === 'Moneyline' || pred.market === '1X2') {
+        const actualWinner = hScore > aScore ? pred.homeTeam : pred.awayTeam;
+        const pickNorm = norm(pred.pick);
+        const winnerNorm = norm(actualWinner);
+        if (pickNorm.includes(winnerNorm.slice(0,5)) || winnerNorm.includes(pickNorm.slice(0,5))) {
+          pred.status = 'win'; wins++;
+        } else if (pred.pick.toLowerCase() === 'draw' && hScore === aScore) {
+          pred.status = 'win'; wins++;
+        } else {
+          pred.status = 'loss'; losses++;
+        }
+        resolved++;
+      } else if (pred.market === 'BTTS') {
+        const bothScored = hScore > 0 && aScore > 0;
+        if ((pred.pick === 'GG' && bothScored) || (pred.pick === 'NG' && !bothScored)) {
+          pred.status = 'win'; wins++;
+        } else {
+          pred.status = 'loss'; losses++;
+        }
+        resolved++;
+      } else if (pred.market === 'Over/Under') {
+        const total = hScore + aScore;
+        const ouMatch = pred.pick.match(/(OVER|UNDER)\s*([\d.]+)/i);
+        if (ouMatch) {
+          const dir = ouMatch[1].toUpperCase();
+          const line = parseFloat(ouMatch[2]);
+          if ((dir === 'OVER' && total > line) || (dir === 'UNDER' && total < line)) {
+            pred.status = 'win'; wins++;
+          } else {
+            pred.status = 'loss'; losses++;
+          }
+          resolved++;
+        }
+      }
+    });
+    
+    if (resolved > 0) saveDailyPredictionLog(log);
+    return { resolved, wins, losses };
+  }
+  window.resolveDailyPredictions = resolveDailyPredictions;
+
   // Add a prediction pick to the user's slip
   function addPick(sport, event, market, pick, odds, confidence, kickoff) {
     const predictions = getPredictionHistory();
@@ -8793,10 +9061,47 @@ export default {
   // Auto-resolve predictions by fetching real scores from Worker
   async function autoResolvePredictions() {
     try {
-      const res = await fetch(ARB_WORKER_URL + 'api/scores');
-      if (!res.ok) return;
-      const data = await res.json();
-      if (!data.scores || !data.scores.length) return;
+      // Try fetching scores for both sports
+      let allScores = [];
+      
+      // Fetch NBA scores
+      try {
+        const nbaRes = await fetch(ARB_WORKER_URL + 'api/scores?sport=basketball_nba&days=3');
+        if (nbaRes.ok) {
+          const nbaData = await nbaRes.json();
+          if (nbaData.scores) allScores = allScores.concat(nbaData.scores);
+        }
+      } catch {}
+      
+      // Fetch soccer scores
+      try {
+        const soccerRes = await fetch(ARB_WORKER_URL + 'api/scores?sport=soccer&days=3');
+        if (soccerRes.ok) {
+          const soccerData = await soccerRes.json();
+          if (soccerData.scores) allScores = allScores.concat(soccerData.scores);
+        }
+      } catch {}
+      
+      // Fallback to legacy endpoint
+      if (allScores.length === 0) {
+        const res = await fetch(ARB_WORKER_URL + 'api/scores');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.scores) allScores = data.scores;
+        }
+      }
+      
+      if (!allScores.length) return;
+      
+      // Normalize scores format
+      const data = { scores: allScores.map(s => ({
+        homeTeam: s.home_team || s.homeTeam,
+        awayTeam: s.away_team || s.awayTeam,
+        homeScore: s.scores ? (s.scores.find(x => x.name === (s.home_team || s.homeTeam))?.score ?? s.scores[1]?.score) : s.homeScore,
+        awayScore: s.scores ? (s.scores.find(x => x.name === (s.away_team || s.awayTeam))?.score ?? s.scores[0]?.score) : s.awayScore,
+        commenceTime: s.commence_time || s.commenceTime,
+        completed: s.completed
+      })).filter(s => s.homeScore !== null && s.homeScore !== undefined) };
 
       const predictions = getPredictionHistory();
       let changed = false;
